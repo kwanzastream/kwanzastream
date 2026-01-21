@@ -1,0 +1,183 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============== ENUMS ==============
+
+enum Role {
+  USER
+  ADMIN
+  STREAMER
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  DONATION_SENT
+  DONATION_RECEIVED
+  REFUND
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum StreamStatus {
+  OFFLINE
+  LIVE
+  ENDED
+}
+
+// ============== MODELS ==============
+
+model User {
+  id            String   @id @default(uuid())
+  phone         String   @unique
+  email         String?  @unique
+  passwordHash  String?
+  username      String?  @unique
+  displayName   String?
+  avatarUrl     String?
+  bio           String?
+  role          Role     @default(USER)
+  isVerified    Boolean  @default(false)
+  streamKey     String?  @unique
+  
+  // Wallet
+  balance       Float    @default(0.0)
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lastLoginAt   DateTime?
+  
+  // Relations
+  otpCodes          OtpCode[]
+  refreshTokens     RefreshToken[]
+  streams           Stream[]
+  donationsSent     Donation[]     @relation("DonationsSent")
+  donationsReceived Donation[]     @relation("DonationsReceived")
+  transactions      Transaction[]
+  followers         Follow[]       @relation("Following")
+  following         Follow[]       @relation("Followers")
+  
+  @@index([phone])
+  @@index([email])
+  @@index([username])
+}
+
+model OtpCode {
+  id        String   @id @default(uuid())
+  code      String
+  phone     String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+  
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([phone, code])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([token])
+  @@index([userId])
+}
+
+model Stream {
+  id           String       @id @default(uuid())
+  title        String
+  description  String?
+  thumbnailUrl String?
+  category     String?
+  status       StreamStatus @default(OFFLINE)
+  viewerCount  Int          @default(0)
+  peakViewers  Int          @default(0)
+  
+  // Timestamps
+  startedAt    DateTime?
+  endedAt      DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  
+  // Relations
+  streamerId   String
+  streamer     User         @relation(fields: [streamerId], references: [id], onDelete: Cascade)
+  donations    Donation[]
+  
+  @@index([streamerId])
+  @@index([status])
+}
+
+model Donation {
+  id        String   @id @default(uuid())
+  amount    Float
+  saloType  String   // bronze, silver, gold, diamond, legendary
+  message   String?
+  createdAt DateTime @default(now())
+  
+  // Relations
+  senderId    String
+  sender      User     @relation("DonationsSent", fields: [senderId], references: [id])
+  receiverId  String
+  receiver    User     @relation("DonationsReceived", fields: [receiverId], references: [id])
+  streamId    String?
+  stream      Stream?  @relation(fields: [streamId], references: [id])
+  
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([streamId])
+}
+
+model Transaction {
+  id          String            @id @default(uuid())
+  amount      Float
+  type        TransactionType
+  status      TransactionStatus @default(PENDING)
+  description String?
+  reference   String?           @unique
+  metadata    Json?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  
+  // Relations
+  userId      String
+  user        User              @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now())
+  
+  followerId  String
+  follower    User     @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}

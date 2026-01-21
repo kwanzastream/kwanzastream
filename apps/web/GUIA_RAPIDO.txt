@@ -1,0 +1,338 @@
+═══════════════════════════════════════════════════════════════════════════════
+  KWANZA STREAM - GUIA RÁPIDO DE REFERÊNCIA
+═══════════════════════════════════════════════════════════════════════════════
+
+STATUS ATUAL: MVP VISUAL (90% PRONTO)
+├─ ✅ 35 páginas implementadas
+├─ ✅ 20+ componentes React
+├─ ✅ Design responsivo completo
+└─ ❌ Backend 0% (ainda a fazer)
+
+═══════════════════════════════════════════════════════════════════════════════
+  4 FASES PARA COMPLETAR A PLATAFORMA
+═══════════════════════════════════════════════════════════════════════════════
+
+FASE 1: BACKEND & AUTENTICAÇÃO (3 SEMANAS)
+┌─────────────────────────────────────────┐
+│ Objetivo: Login real funcionar           │
+│ Requisitos: Node.js, PostgreSQL, Redis   │
+│ Tarefas:                                  │
+│  • Setup Express + TypeScript             │
+│  • Database schema (users, transactions)  │
+│  • OTP via SMS (Twilio/Afrika's Talking)  │
+│  • JWT token generation                   │
+│  • 5 Auth endpoints                       │
+│  • Tests e CI/CD                          │
+│ Resultado: Users podem fazer login        │
+│ Custo: $15K desenvolvimento               │
+└─────────────────────────────────────────┘
+        ↓
+FASE 2: USUÁRIOS & WALLET (3 SEMANAS)
+┌─────────────────────────────────────────┐
+│ Objetivo: Criar users e enviar presentes  │
+│ Tarefas:                                  │
+│  • User profiles e followers              │
+│  • Wallet balance management              │
+│  • Salo system (5 níveis de gifts)        │
+│  • Leaderboards em Redis                  │
+│  • Badges e status social                 │
+│  • Feed social (posts, comments)          │
+│ Resultado: Users podem enviar Salos       │
+│ Custo: $20K desenvolvimento               │
+└─────────────────────────────────────────┘
+        ↓
+FASE 3: STREAMING & CHAT (3 SEMANAS)
+┌─────────────────────────────────────────┐
+│ Objetivo: Transmitir vídeos ao vivo       │
+│ Tarefas:                                  │
+│  • RTMP ingestão (Nginx + FFmpeg)         │
+│  • HLS delivery (Cloudflare Stream)       │
+│  • WebSocket chat em tempo real           │
+│  • Viewers counter                        │
+│  • Modo Rádio (áudio apenas)              │
+│  • Notificações real-time                 │
+│ Resultado: Viewers veem lives com chat    │
+│ Custo: $25K desenvolvimento               │
+└─────────────────────────────────────────┘
+        ↓
+FASE 4: PAGAMENTOS & PRODUÇÃO (3 SEMANAS)
+┌─────────────────────────────────────────┐
+│ Objetivo: Dinheiro real sendo processado  │
+│ Tarefas:                                  │
+│  • Integração Multicaixa (MCX)            │
+│  • Integração USSD (Unitel Money)         │
+│  • Admin dashboard completo               │
+│  • Analytics e KPIs                       │
+│  • Moderação de conteúdo                  │
+│  • Compliance e segurança                 │
+│  • Produção deployment                    │
+│ Resultado: Creators ganhando dinheiro     │
+│ Custo: $25K desenvolvimento               │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════════
+  TIMELINE VISUAL
+═══════════════════════════════════════════════════════════════════════════════
+
+SEMANA:  1  2  3  4  5  6  7  8  9  10 11 12
+         ┌──────┐                           
+Fase 1:  │ Auth │──── Testing & Docs ────┐
+         └──────┘                         │
+                 ┌──────────────┐         │
+Fase 2:         │ Users+Wallet  │─ Test ─┤
+                └──────────────┘         │
+                           ┌──────────────┐
+Fase 3:                   │ Stream + Chat │─ Test ─┐
+                          └──────────────┘         │
+                                      ┌────────────┐
+Fase 4:                              │ Payments   │─ Launch
+                                      └────────────┘
+
+MVP:       SEMANA 3 (Login)  →  SEMANA 6 (Salo)  →  SEMANA 9 (Live TV)  →  SEMANA 12 (Paid)
+BETA:      100 users         →  1K users        →  10K users         →  Public
+
+═══════════════════════════════════════════════════════════════════════════════
+  TECNOLOGIAS & STACK
+═══════════════════════════════════════════════════════════════════════════════
+
+FRONTEND (JÁ PRONTO):
+  Next.js 16 | React 19 | TypeScript | Tailwind CSS v4 | Shadcn/UI
+
+BACKEND (FAZER):
+  Node.js 20 | Express.js | TypeScript | PostgreSQL 15 | Redis 7
+
+INFRAESTRUTURA:
+  Docker | GitHub Actions | AWS (S3, RDS) | Cloudflare | Prometheus
+
+INTEGRAÇÕES:
+  Twilio (SMS) | Multicaixa (Payments) | USSD Gateway | Firebase
+
+═══════════════════════════════════════════════════════════════════════════════
+  ESTIMATIVAS
+═══════════════════════════════════════════════════════════════════════════════
+
+DESENVOLVIMENTO:
+  Fase 1: $15K (3 semanas, 2 devs)
+  Fase 2: $20K (3 semanas, 2 devs)
+  Fase 3: $25K (3 semanas, 3 devs)
+  Fase 4: $25K (3 semanas, 3 devs)
+  ────────────────────────────────
+  TOTAL: $85K (12 semanas)
+
+INFRAESTRUTURA (MENSAL):
+  Servidores: $2K/mês
+  CDN + Streaming: $1.5K/mês
+  Database: $800/mês
+  Monitoring: $500/mês
+  ────────────────────
+  TOTAL: $5K/mês ($60K/ano)
+
+TERCEIROS (% TRANSAÇÕES):
+  SMS: ~$5K/ano
+  Multicaixa: 2-3% fees
+  Payment gateway: 1-2% fees
+  
+BREAK-EVEN:
+  Se 1M Kz/mês em transações:
+    Arrecada: 200K Kz (20%)
+    Custos: 80K Kz
+    Lucro: 120K Kz/mês
+
+═══════════════════════════════════════════════════════════════════════════════
+  EQUIPE NECESSÁRIA
+═══════════════════════════════════════════════════════════════════════════════
+
+FASE 1-2 (Primeiras 6 semanas):
+  • 2x Backend Developer
+  • 1x DevOps/Infrastructure
+  • 1x QA Tester
+  
+FASE 3-4 (Últimas 6 semanas):
+  • 1x Backend Lead
+  • 2x Backend Developer
+  • 1x Frontend Developer (connect APIs)
+  • 1x DevOps/Infrastructure
+  • 1x QA Tester
+  • 0.5x Product/Tech Lead
+
+TOTAL: 3-4 pessoas core
+
+═══════════════════════════════════════════════════════════════════════════════
+  O QUE JÁ EXISTE (FRONTEND)
+═══════════════════════════════════════════════════════════════════════════════
+
+PÁGINAS (35):
+  ✓ Landing (/)
+  ✓ Auth (/auth)
+  ✓ Feed (/feed)
+  ✓ Explore (/explore)
+  ✓ Stream (/stream)
+  ✓ Dashboard (/dashboard)
+  ✓ Wallet (/wallet)
+  ✓ Perfil (/profile)
+  ✓ Notificações (/notifications)
+  ✓ Mensagens (/messages)
+  ✓ Configurações (/settings)
+  ✓ Categorias (/categories)
+  ✓ Busca (/search)
+  ✓ Trending (/watch)
+  ... + 20+ páginas
+
+COMPONENTES (20+):
+  ✓ Navbar com balance e notifications
+  ✓ Live Feed com grid de streams
+  ✓ Salo System (5 tipos de presentes)
+  ✓ Wallet Section com histórico
+  ✓ Creator Dashboard com analytics
+  ✓ Feed Components (posts, trending, etc)
+  ✓ 50+ shadcn/ui components
+
+DESIGN:
+  ✓ Dark theme profissional
+  ✓ Responsivo (mobile + desktop)
+  ✓ Animações e micro-interações
+  ✓ Acessibilidade (ARIA labels)
+  ✓ Cores Angola-inspiradas
+
+═══════════════════════════════════════════════════════════════════════════════
+  O QUE FALTA IMPLEMENTAR
+═══════════════════════════════════════════════════════════════════════════════
+
+FASE 1 (12 endpoints):
+  ❌ POST /auth/request-otp (enviar código)
+  ❌ POST /auth/verify-otp (login com código)
+  ❌ POST /auth/signup (registrar novo user)
+  ❌ POST /auth/login (login com senha)
+  ❌ POST /auth/logout (logout)
+  ❌ POST /auth/refresh-token (renovar token)
+  ❌ GET /health (health check)
+  ❌ Database schema (users, transactions, logs)
+  ❌ Redis setup (sessions, cache)
+  ❌ JWT tokens funcionar
+  ❌ OTP SMS via Twilio
+  ❌ Tests (100+ testes)
+
+FASE 2 (15 endpoints):
+  ❌ User profiles e CRUD
+  ❌ Followers/Following
+  ❌ POST /salo/send (enviar presentes)
+  ❌ GET /salo/leaderboard (ranking)
+  ❌ POST /wallet/deposit (preparar)
+  ❌ GET /wallet/balance
+  ❌ GET /wallet/transactions
+  ❌ POST /users/:id/follow
+  ❌ GET /feed (posts)
+  ❌ POST /posts (criar post)
+  ❌ + mais endpoints
+
+FASE 3 (streaming):
+  ❌ RTMP ingestão funcionar
+  ❌ HLS delivery via Cloudflare
+  ❌ WebSocket /chat/:stream-id
+  ❌ POST /stream/start
+  ❌ GET /stream/:id/viewers
+  ❌ Notificações push (Firebase)
+  ❌ Modo Rádio
+
+FASE 4 (pagamentos):
+  ❌ Integração Multicaixa API
+  ❌ Integração USSD
+  ❌ Admin dashboard
+  ❌ Moderação system
+  ❌ Analytics/Prometheus
+  ❌ Error tracking (Sentry)
+
+═══════════════════════════════════════════════════════════════════════════════
+  PRÓXIMOS PASSOS (HOJE)
+═══════════════════════════════════════════════════════════════════════════════
+
+48 HORAS:
+  [ ] Ler RESUMO_EXECUTIVO.md (10 min)
+  [ ] Ler RELATORIO_STATUS_PLATAFORMA.md (25 min)
+  [ ] Discutir com stakeholders (30 min)
+  [ ] Aprovar budget ($15K Fase 1)
+  [ ] Approvar timeline (12 semanas)
+  [ ] Selecionar team
+  [ ] Agendar kickoff
+
+SEMANA 1:
+  [ ] Setup GitHub repos
+  [ ] Setup AWS/Twilio/Redis accounts
+  [ ] Primeira reunião tech (arquitetura)
+  [ ] Começar Fase 1 (backend)
+
+═══════════════════════════════════════════════════════════════════════════════
+  PERGUNTAS FREQUENTES
+═══════════════════════════════════════════════════════════════════════════════
+
+P: Quanto custa tudo?
+R: $85K desenvolvimento + $60K infraestrutura/ano
+
+P: Quanto tempo?
+R: 12 semanas com 3-4 pessoas
+
+P: Posso usar diferentes tecnologias?
+R: Sim, mas recomendo seguir o stack sugerido
+
+P: E se quiser ir mais rápido?
+R: Adicione mais devs, mas não comprime as fases
+
+P: Posso começar com menos fases?
+R: Sim, MVP mínimo é Fases 1-2 (6 semanas)
+
+P: Que risco maior?
+R: Integração Multicaixa - mitigue com USSD backup
+
+P: Quanto posso ganhar?
+R: Break-even ~200K Kz/mês se 1M Kz transações
+
+═══════════════════════════════════════════════════════════════════════════════
+  DOCUMENTAÇÃO DISPONÍVEL
+═══════════════════════════════════════════════════════════════════════════════
+
+1. INDICE_DOCUMENTACAO.md (LE ISTO PRIMEIRO!)
+   → Onde estão os documentos
+   → Como ler cada documento
+   → Fluxo recomendado por role
+
+2. RESUMO_EXECUTIVO.md
+   → Para gerentes/PMs
+   → Visão de 30 segundos
+   → Financeiro e timeline
+
+3. RELATORIO_STATUS_PLATAFORMA.md
+   → Para tech leads
+   → Análise detalhada
+   → 4 fases explicadas
+
+4. ARQUITETURA_TECNICA.md
+   → Para arquitetos
+   → Diagramas técnicos
+   → Fluxo de dados
+
+5. CHECKLIST_IMPLEMENTACAO_FASE1.md
+   → Para developers
+   → Tarefas específicas
+   → Código de exemplo
+
+═══════════════════════════════════════════════════════════════════════════════
+  CONCLUSÃO
+═══════════════════════════════════════════════════════════════════════════════
+
+A plataforma Kwanza Stream tem interface bonita 90% pronta.
+
+Nos próximos 12 semanas:
+  → Semana 3: Login funciona
+  → Semana 6: Users podem enviar Salos
+  → Semana 9: Creators podem fazer lives
+  → Semana 12: Dinheiro sendo pago
+
+Pronto para começar? Leia INDICE_DOCUMENTACAO.md agora.
+
+═══════════════════════════════════════════════════════════════════════════════
+Criado: Janeiro 2025
+Versão: 1.0
+Status: ✅ Pronto para Implementação
+
+LÊ AGORA: INDICE_DOCUMENTACAO.md 📖
+═══════════════════════════════════════════════════════════════════════════════
