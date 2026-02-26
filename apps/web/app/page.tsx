@@ -10,7 +10,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background angola-pattern overflow-x-hidden">
       {/* Navbar */}
-      <Navbar userLoggedIn={false} />
+      <Navbar />
 
       {/* Hero Section */}
       <section className="relative pt-20 pb-32 px-6 max-w-7xl mx-auto text-center">

@@ -51,8 +51,8 @@ model User {
   isVerified    Boolean  @default(false)
   streamKey     String?  @unique
   
-  // Wallet
-  balance       Float    @default(0.0)
+  // Wallet (stored in centimos: 1 Kz = 100 centimos)
+  balance       BigInt   @default(0)
   
   // Timestamps
   createdAt     DateTime @default(now())
@@ -130,7 +130,7 @@ model Stream {
 
 model Donation {
   id        String   @id @default(uuid())
-  amount    Float
+  amount    BigInt
   saloType  String   // bronze, silver, gold, diamond, legendary
   message   String?
   createdAt DateTime @default(now())
@@ -149,13 +149,14 @@ model Donation {
 }
 
 model Transaction {
-  id          String            @id @default(uuid())
-  amount      Float
+  id             String            @id @default(uuid())
+  amount         BigInt
   type        TransactionType
-  status      TransactionStatus @default(PENDING)
-  description String?
-  reference   String?           @unique
-  metadata    Json?
+  status         TransactionStatus @default(PENDING)
+  description    String?
+  reference      String?           @unique
+  idempotencyKey String?           @unique
+  metadata       Json?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   

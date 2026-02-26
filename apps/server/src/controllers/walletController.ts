@@ -4,7 +4,26 @@ import prisma from '../config/prisma';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 import { v4 as uuidv4 } from 'uuid';
 
-// Validation schemas
+// ============== Helpers ==============
+/** Convert a user-facing Kz amount to centimos (BigInt) */
+const toCentimos = (kz: number): bigint => BigInt(Math.round(kz * 100));
+
+/** Convert centimos (BigInt) back to Kz for API responses */
+const toKz = (centimos: bigint): number => Number(centimos) / 100;
+
+/** Serialize BigInt fields for JSON responses */
+const serializeTransaction = (tx: any) => ({
+    ...tx,
+    amount: typeof tx.amount === 'bigint' ? toKz(tx.amount) : tx.amount,
+    user: tx.user ? tx.user : undefined,
+});
+
+const serializeUser = (user: any) => ({
+    ...user,
+    balance: toKz(user.balance),
+});
+
+// ============== Validation schemas ==============
 const depositSchema = z.object({
     amount: z.number().min(100).max(1000000), // Min 100 Kz, Max 1M Kz
     paymentMethod: z.enum(['multicaixa', 'unitel_money', 'bank_transfer']),
@@ -23,6 +42,8 @@ const paginationSchema = z.object({
     page: z.coerce.number().min(1).default(1),
     limit: z.coerce.number().min(1).max(50).default(20),
 });
+
+// ============== Controllers ==============
 
 // Get wallet balance and recent transactions
 export const getWallet = async (req: AuthenticatedRequest, res: Response) => {
@@ -52,19 +73,19 @@ export const getWallet = async (req: AuthenticatedRequest, res: Response) => {
 
         const totalEarned = stats
             .filter((s) => s.type === 'DONATION_RECEIVED' || s.type === 'DEPOSIT')
-            .reduce((sum, s) => sum + Math.abs(s._sum.amount || 0), 0);
+            .reduce((sum, s) => sum + Math.abs(Number(s._sum.amount ?? 0n)), 0);
 
         const totalSpent = stats
             .filter((s) => s.type === 'DONATION_SENT' || s.type === 'WITHDRAWAL')
-            .reduce((sum, s) => sum + Math.abs(s._sum.amount || 0), 0);
+            .reduce((sum, s) => sum + Math.abs(Number(s._sum.amount ?? 0n)), 0);
 
         res.json({
-            balance: user?.balance || 0,
+            balance: user ? toKz(user.balance as unknown as bigint) : 0,
             stats: {
-                totalEarned,
-                totalSpent,
+                totalEarned: totalEarned / 100, // Convert centimos back to Kz
+                totalSpent: totalSpent / 100,
             },
-            recentTransactions,
+            recentTransactions: recentTransactions.map(serializeTransaction),
         });
     } catch (error) {
         console.error('Get wallet error:', error);
@@ -81,12 +102,13 @@ export const requestDeposit = async (req: AuthenticatedRequest, res: Response) =
         }
 
         const { amount, paymentMethod } = depositSchema.parse(req.body);
+        const amountCentimos = toCentimos(amount);
         const reference = `DEP-${uuidv4().slice(0, 8).toUpperCase()}`;
 
         const transaction = await prisma.transaction.create({
             data: {
                 userId,
-                amount,
+                amount: amountCentimos,
                 type: 'DEPOSIT',
                 status: 'PENDING',
                 reference,
@@ -105,26 +127,25 @@ export const requestDeposit = async (req: AuthenticatedRequest, res: Response) =
                 }),
                 prisma.user.update({
                     where: { id: userId },
-                    data: { balance: { increment: amount } },
+                    data: { balance: { increment: amountCentimos } },
                 }),
             ]);
 
             return res.json({
                 success: true,
                 message: 'Deposit completed (dev mode)',
-                transaction: { ...transaction, status: 'COMPLETED' },
+                transaction: serializeTransaction({ ...transaction, status: 'COMPLETED' }),
             });
         }
 
         res.json({
             success: true,
             message: 'Deposit request created',
-            transaction,
+            transaction: serializeTransaction(transaction),
             paymentInstructions: {
                 reference,
                 amount,
                 paymentMethod,
-                // Add payment provider specific instructions here
             },
         });
     } catch (error) {
@@ -136,7 +157,7 @@ export const requestDeposit = async (req: AuthenticatedRequest, res: Response) =
     }
 };
 
-// Request a withdrawal
+// Request a withdrawal — ATOMIC: check-and-deduct in one operation
 export const requestWithdrawal = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
@@ -145,50 +166,53 @@ export const requestWithdrawal = async (req: AuthenticatedRequest, res: Response
         }
 
         const { amount, bankAccount } = withdrawSchema.parse(req.body);
-
-        // Check balance
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-        });
-
-        if (!user || user.balance < amount) {
-            return res.status(400).json({
-                error: 'Insufficient balance',
-                required: amount,
-                current: user?.balance || 0,
-            });
-        }
-
+        const amountCentimos = toCentimos(amount);
         const reference = `WIT-${uuidv4().slice(0, 8).toUpperCase()}`;
 
-        // Create withdrawal and deduct balance atomically
-        const [transaction] = await prisma.$transaction([
-            prisma.transaction.create({
+        // ATOMIC: check balance AND deduct in a single transaction
+        // Uses interactive transaction with raw SQL for conditional update
+        const result = await prisma.$transaction(async (tx) => {
+            // Conditional update: only succeeds if balance >= amount
+            const updated = await tx.$executeRaw`
+                UPDATE "User"
+                SET "balance" = "balance" - ${amountCentimos}::bigint,
+                    "updatedAt" = NOW()
+                WHERE "id" = ${userId}
+                AND "balance" >= ${amountCentimos}::bigint
+            `;
+
+            if (updated === 0) {
+                throw new Error('INSUFFICIENT_BALANCE');
+            }
+
+            // Create withdrawal transaction record
+            const transaction = await tx.transaction.create({
                 data: {
                     userId,
-                    amount: -amount,
+                    amount: -amountCentimos,
                     type: 'WITHDRAWAL',
                     status: 'PENDING',
                     reference,
                     description: `Saque para ${bankAccount.bank}`,
                     metadata: { bankAccount },
                 },
-            }),
-            prisma.user.update({
-                where: { id: userId },
-                data: { balance: { decrement: amount } },
-            }),
-        ]);
+            });
+
+            return transaction;
+        });
 
         res.json({
             success: true,
             message: 'Withdrawal request created',
-            transaction,
+            transaction: serializeTransaction(result),
             estimatedProcessingTime: '1-3 business days',
         });
     } catch (error) {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ error: 'Validation error', details: error.errors });
+        }
+        if (error instanceof Error && error.message === 'INSUFFICIENT_BALANCE') {
+            return res.status(400).json({ error: 'Insufficient balance' });
         }
         console.error('Request withdrawal error:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -221,7 +245,7 @@ export const getTransactionHistory = async (req: AuthenticatedRequest, res: Resp
         ]);
 
         res.json({
-            transactions,
+            transactions: transactions.map(serializeTransaction),
             pagination: {
                 page,
                 limit,

@@ -57,7 +57,7 @@ export default function ChannelSettingsPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar userLoggedIn={true} />
+      <Navbar />
 
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto px-4 md:px-6 py-8 space-y-8">

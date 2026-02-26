@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { 
+import {
   CheckCircle2,
   Users,
   UserPlus,
@@ -57,7 +57,7 @@ export default function UserProfilePage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar userLoggedIn={true} />
+      <Navbar />
 
       <main className="flex-1 overflow-y-auto">
         {/* Profile Header */}

@@ -6,13 +6,13 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { 
-  Video, 
-  Radio, 
-  Users, 
-  TrendingUp, 
-  Clock, 
-  MapPin, 
+import {
+  Video,
+  Radio,
+  Users,
+  TrendingUp,
+  Clock,
+  MapPin,
   CheckCircle2,
   Flame,
   ArrowLeft
@@ -112,7 +112,7 @@ export default function CategoryPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar userLoggedIn={true} />
+      <Navbar />
 
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-8">

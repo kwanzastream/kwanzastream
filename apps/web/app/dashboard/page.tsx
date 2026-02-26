@@ -108,7 +108,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar userLoggedIn={true} />
+      <Navbar />
 
       {/* Top Header */}
       <header className="sticky top-16 z-50 w-full border-b border-white/10 bg-background/80 backdrop-blur-md">

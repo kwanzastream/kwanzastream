@@ -42,7 +42,7 @@ import { useRouter } from 'next/navigation'
 import { LiveFeed } from '@/components/live-feed'
 import { SaloSystem } from '@/components/salo-system'
 import { WalletSection } from '@/components/wallet-section'
-import { NavItem, LivePreviewItem, SuggestionItem, TrendingItem } from '@/components/feed-components'
+import { streamService } from '@/lib/services'
 
 interface Post {
   id: string
@@ -62,6 +62,22 @@ interface Post {
   category?: string
 }
 
+interface LiveStream {
+  id: string
+  title: string
+  description?: string
+  category?: string
+  status: string
+  viewerCount: number
+  startedAt?: string
+  streamer: {
+    id: string
+    displayName?: string
+    username?: string
+    avatarUrl?: string
+  }
+}
+
 const cn = (...classes: any[]) => classes.filter(Boolean).join(' ')
 
 export default function FeedPage() {
@@ -69,6 +85,7 @@ export default function FeedPage() {
   const router = useRouter()
   const [pageLoaded, setPageLoaded] = React.useState(false)
   const [posts, setPosts] = React.useState<Post[]>([])
+  const [liveStreams, setLiveStreams] = React.useState<LiveStream[]>([])
   const [postContent, setPostContent] = React.useState('')
   const [activeTab, setActiveTab] = React.useState('para-ti')
 
@@ -78,45 +95,46 @@ export default function FeedPage() {
     }
   }, [isLoggedIn, isLoading, router])
 
+  // Fetch real data from API
   React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setPageLoaded(true)
-      setPosts([
-        {
-          id: "1",
-          author: "Preto Show",
-          avatar: "/abstract-profile.png",
-          handle: "@pretshow",
-          timestamp: "Há 5 minutos",
-          location: "Luanda",
-          content: "Preparativos para o grande show no estádio! 🇦🇴🔥",
-          image: "/vibrant-concert-stage.png",
+    const fetchFeedData = async () => {
+      try {
+        // Fetch live streams from the real API
+        const liveRes = await streamService.getLive(1, 20)
+        const streams: LiveStream[] = liveRes.data.streams || []
+        setLiveStreams(streams)
+
+        // Convert live streams to posts for the feed
+        const streamPosts: Post[] = streams.map((s: LiveStream) => ({
+          id: s.id,
+          author: s.streamer?.displayName || s.streamer?.username || 'Streamer',
+          avatar: s.streamer?.avatarUrl || '/abstract-profile.png',
+          handle: `@${s.streamer?.username || s.streamer?.displayName?.toLowerCase().replace(/\s/g, '') || 'user'}`,
+          timestamp: s.startedAt ? `Desde ${new Date(s.startedAt).toLocaleTimeString('pt-AO', { hour: '2-digit', minute: '2-digit' })}` : 'Ao vivo',
+          location: 'Angola',
+          content: s.title || 'Live Stream',
           isLive: true,
-          viewers: 1400,
-          likes: 4200,
-          comments: 156,
-          shares: 89,
-          category: "Música",
-        },
-        {
-          id: "2",
-          author: "Sandra Gomes",
-          avatar: "/abstract-profile.png",
-          handle: "@sandragomes",
-          timestamp: "Há 2 horas",
-          location: "Benguela",
-          content:
-            "A curtir as praias de Benguela hoje! Quem mais gosta da nossa costa? 🌊🇦🇴 #Angola #Benguela #Viagem",
-          image: "/tropical-beach-paradise.png",
-          likes: 892,
-          comments: 24,
-          shares: 12,
-          liked: true,
-        },
-      ])
-    }, 1500)
-    return () => clearTimeout(timer)
-  }, [])
+          viewers: s.viewerCount || 0,
+          likes: 0,
+          comments: 0,
+          shares: 0,
+          category: s.category || 'Geral',
+        }))
+
+        setPosts(streamPosts)
+      } catch (err) {
+        console.error('Error fetching feed data:', err)
+        setPosts([])
+        setLiveStreams([])
+      } finally {
+        setPageLoaded(true)
+      }
+    }
+
+    if (isLoggedIn) {
+      fetchFeedData()
+    }
+  }, [isLoggedIn])
 
   if (isLoading) {
     return (
@@ -167,7 +185,7 @@ export default function FeedPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar userLoggedIn={true} />
+      <Navbar />
 
       {/* Main Content */}
 
@@ -341,6 +359,20 @@ export default function FeedPage() {
                       </div>
                     ))}
                   </div>
+                ) : posts.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 border border-white/10 flex items-center justify-center mb-6">
+                      <Radio className="h-10 w-10 text-primary/60" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">Nenhuma live agora</h3>
+                    <p className="text-muted-foreground text-sm mb-6 max-w-sm">
+                      Ainda não há streams ao vivo. Sê o primeiro a transmitir para a comunidade angolana! 🇦🇴
+                    </p>
+                    <Button className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-bold gap-2 shadow-lg shadow-primary/20">
+                      <Video className="h-4 w-4" />
+                      Começar uma Live
+                    </Button>
+                  </div>
                 ) : (
                   <div className="space-y-6">
                     {posts.map((post) => (
@@ -437,32 +469,32 @@ export default function FeedPage() {
             {/* Active Lives */}
             <div className="space-y-4 p-4 rounded-lg bg-gradient-to-br from-primary/5 to-secondary/5 border border-white/10">
               <h3 className="font-bold flex items-center gap-2 text-lg">
-                <Flame className="h-5 w-5 text-primary animate-pulse" /> 
+                <Flame className="h-5 w-5 text-primary animate-pulse" />
                 <span>Lives Agora</span>
-                <Badge className="ml-auto bg-red-500/20 text-red-300 border-red-500/30">8</Badge>
+                <Badge className="ml-auto bg-red-500/20 text-red-300 border-red-500/30">{liveStreams.length}</Badge>
               </h3>
               <div className="space-y-3">
-                {[
-                  { name: 'DJ Elite', viewers: '2.1K', title: 'Kizomba Mix' },
-                  { name: 'Gaming Pro', viewers: '850', title: 'Free Fire' },
-                  { name: 'Comedy King', viewers: '1.2K', title: 'Stand-up Show' },
-                ].map((stream) => (
-                  <div key={stream.name} className="p-2 rounded-lg hover:bg-white/10 transition-colors cursor-pointer group">
-                    <div className="flex gap-3">
-                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-secondary flex-shrink-0 relative">
-                        <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 border border-background animate-pulse" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold truncate group-hover:text-primary transition-colors">{stream.title}</p>
-                        <p className="text-[10px] text-muted-foreground truncate">{stream.name}</p>
-                        <p className="text-[10px] text-accent font-semibold">{stream.viewers} espectadores</p>
+                {liveStreams.length > 0 ? (
+                  liveStreams.slice(0, 5).map((stream) => (
+                    <div key={stream.id} className="p-2 rounded-lg hover:bg-white/10 transition-colors cursor-pointer group">
+                      <div className="flex gap-3">
+                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-secondary flex-shrink-0 relative">
+                          <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 border border-background animate-pulse" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold truncate group-hover:text-primary transition-colors">{stream.title}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{stream.streamer?.displayName || stream.streamer?.username || 'Streamer'}</p>
+                          <p className="text-[10px] text-accent font-semibold">{stream.viewerCount} espectadores</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center py-4">Nenhuma live no momento</p>
+                )}
               </div>
               <Button variant="outline" size="sm" className="w-full text-xs border-white/10 bg-transparent">
-                Ver todas as 8 lives
+                Ver todas as lives
               </Button>
             </div>
 

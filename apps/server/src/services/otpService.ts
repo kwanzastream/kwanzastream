@@ -1,11 +1,12 @@
 import prisma from '../config/prisma';
 import redis from '../config/redis';
+import { randomInt } from 'crypto';
 
 const OTP_EXPIRES_MINUTES = parseInt(process.env.OTP_EXPIRES_IN_MINUTES || '5');
 const OTP_MAX_ATTEMPTS = parseInt(process.env.OTP_MAX_ATTEMPTS || '3');
 
 export const generateOtp = (): string => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    return randomInt(100000, 999999).toString();
 };
 
 export const createOtp = async (phone: string, userId?: string): Promise<string> => {

@@ -33,7 +33,7 @@ const config = {
     auth: {
         play: false,
         publish: true,
-        secret: process.env.RTMP_SECRET || 'kwanza-rtmp-secret',
+        secret: process.env.RTMP_SECRET || '',
     },
 };
 
@@ -51,7 +51,7 @@ export const startMediaServer = () => {
 
         if (!streamKey) {
             console.log('[RTMP] No stream key provided, rejecting');
-            const session = nms?.getSession(id);
+            const session = (nms as any)?.getSession(id);
             session?.reject();
             return;
         }
@@ -63,7 +63,7 @@ export const startMediaServer = () => {
 
         if (!user) {
             console.log('[RTMP] Invalid stream key, rejecting');
-            const session = nms?.getSession(id);
+            const session = (nms as any)?.getSession(id);
             session?.reject();
             return;
         }

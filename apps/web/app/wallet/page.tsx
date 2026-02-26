@@ -1,394 +1,416 @@
-"use client"
+'use client'
 
-import * as React from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import * as React from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Wallet,
-  ArrowUpRight,
   ArrowDownLeft,
+  ArrowUpRight,
+  Plus,
+  Minus,
   TrendingUp,
-  Gift,
-  Users,
-  Download,
-  Calendar,
-  CreditCard,
-  AlertCircle,
-  CheckCircle2,
+  TrendingDown,
   Clock,
-} from "lucide-react"
-import { Navbar } from "@/components/navbar"
-import Link from "next/link"
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  ArrowLeft,
+  CreditCard,
+  Smartphone,
+  Building2,
+  Gift,
+  AlertCircle,
+} from 'lucide-react'
+import { useAuth } from '@/lib/auth-context'
+import { walletService } from '@/lib/services'
 
-const transactionHistory = [
-  { id: "TRX001", type: "gift", from: "Sandra Gomes", amount: 5000, date: "2024-03-15", status: "completed" },
-  { id: "TRX002", type: "subscription", from: "Sistema", amount: 12000, date: "2024-03-14", status: "completed" },
-  {
-    id: "TRX003",
-    type: "withdrawal",
-    from: "Multicaixa Express",
-    amount: -50000,
-    date: "2024-03-12",
-    status: "completed",
-  },
-  { id: "TRX004", type: "gift", from: "João Pedro", amount: 1000, date: "2024-03-10", status: "completed" },
-  { id: "TRX005", type: "gift", from: "Maria Silva", amount: 2500, date: "2024-03-08", status: "completed" },
-  {
-    id: "TRX006",
-    type: "withdrawal",
-    from: "Multicaixa Express",
-    amount: -25000,
-    date: "2024-03-05",
-    status: "pending",
-  },
-]
+interface WalletData {
+  balance: number
+  stats: { totalEarned: number; totalSpent: number }
+  recentTransactions: Transaction[]
+}
+
+interface Transaction {
+  id: string
+  amount: number
+  type: string
+  status: string
+  description?: string
+  reference?: string
+  createdAt: string
+}
 
 export default function WalletPage() {
-  const [withdrawAmount, setWithdrawAmount] = React.useState("")
+  const { isLoggedIn, isLoading: authLoading } = useAuth()
+  const router = useRouter()
+
+  const [wallet, setWallet] = React.useState<WalletData | null>(null)
+  const [transactions, setTransactions] = React.useState<Transaction[]>([])
+  const [loading, setLoading] = React.useState(true)
+  const [activeTab, setActiveTab] = React.useState<'overview' | 'deposit' | 'withdraw' | 'history'>('overview')
+
+  // Deposit state
+  const [depositAmount, setDepositAmount] = React.useState('')
+  const [depositMethod, setDepositMethod] = React.useState<'multicaixa' | 'unitel_money' | 'bank_transfer'>('multicaixa')
+  const [isDepositing, setIsDepositing] = React.useState(false)
+  const [depositSuccess, setDepositSuccess] = React.useState('')
+
+  // Withdraw state
+  const [withdrawAmount, setWithdrawAmount] = React.useState('')
+  const [bankName, setBankName] = React.useState('')
+  const [accountNumber, setAccountNumber] = React.useState('')
+  const [accountName, setAccountName] = React.useState('')
+  const [isWithdrawing, setIsWithdrawing] = React.useState(false)
+  const [withdrawSuccess, setWithdrawSuccess] = React.useState('')
+
+  const [error, setError] = React.useState('')
+
+  React.useEffect(() => {
+    if (!authLoading && !isLoggedIn) router.push('/auth')
+  }, [authLoading, isLoggedIn, router])
+
+  React.useEffect(() => {
+    if (isLoggedIn) fetchWallet()
+  }, [isLoggedIn])
+
+  const fetchWallet = async () => {
+    try {
+      const [walletRes, txRes] = await Promise.all([
+        walletService.getWallet(),
+        walletService.getTransactions(1, 20),
+      ])
+      setWallet(walletRes.data)
+      setTransactions(txRes.data.transactions || [])
+    } catch (err) {
+      console.error('Wallet fetch error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeposit = async () => {
+    const amount = Number(depositAmount)
+    if (amount < 100 || amount > 1000000) {
+      setError('Montante deve ser entre 100 e 1.000.000 Kz')
+      return
+    }
+    setIsDepositing(true)
+    setError('')
+    try {
+      await walletService.deposit({ amount, paymentMethod: depositMethod })
+      setDepositSuccess(`${amount.toLocaleString()} Kz depositado com sucesso!`)
+      setDepositAmount('')
+      fetchWallet()
+      setTimeout(() => setDepositSuccess(''), 4000)
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Erro ao depositar')
+    } finally {
+      setIsDepositing(false)
+    }
+  }
+
+  const handleWithdraw = async () => {
+    const amount = Number(withdrawAmount)
+    if (amount < 1000 || amount > 500000) {
+      setError('Montante deve ser entre 1.000 e 500.000 Kz')
+      return
+    }
+    if (!bankName || !accountNumber || !accountName) {
+      setError('Preenche todos os dados bancários')
+      return
+    }
+    setIsWithdrawing(true)
+    setError('')
+    try {
+      await walletService.withdraw({
+        amount,
+        bankAccount: { bank: bankName, accountNumber, accountName },
+      })
+      setWithdrawSuccess('Pedido de saque submetido! Processamento em 1-3 dias úteis.')
+      setWithdrawAmount('')
+      setBankName('')
+      setAccountNumber('')
+      setAccountName('')
+      fetchWallet()
+      setTimeout(() => setWithdrawSuccess(''), 5000)
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Erro ao sacar')
+    } finally {
+      setIsWithdrawing(false)
+    }
+  }
+
+  const statusIcon = (status: string) => {
+    switch (status) {
+      case 'COMPLETED': return <CheckCircle2 className="h-4 w-4 text-green-400" />
+      case 'PENDING': return <Clock className="h-4 w-4 text-yellow-400" />
+      case 'FAILED': return <XCircle className="h-4 w-4 text-red-400" />
+      default: return <Clock className="h-4 w-4 text-muted-foreground" />
+    }
+  }
+
+  const typeIcon = (type: string) => {
+    switch (type) {
+      case 'DEPOSIT': return <ArrowDownLeft className="h-4 w-4 text-green-400" />
+      case 'WITHDRAWAL': return <ArrowUpRight className="h-4 w-4 text-red-400" />
+      case 'DONATION_SENT': return <Gift className="h-4 w-4 text-orange-400" />
+      case 'DONATION_RECEIVED': return <Gift className="h-4 w-4 text-green-400" />
+      default: return <Wallet className="h-4 w-4 text-muted-foreground" />
+    }
+  }
+
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-[#050505] text-white p-6 max-w-4xl mx-auto space-y-6">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-48 w-full rounded-2xl" />
+        <div className="grid grid-cols-2 gap-4">
+          {[1, 2].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
+        </div>
+      </div>
+    )
+  }
+
+  const paymentMethods = [
+    { id: 'multicaixa' as const, name: 'Multicaixa Express', icon: <CreditCard className="h-5 w-5" />, color: 'text-blue-400' },
+    { id: 'unitel_money' as const, name: 'Unitel Money', icon: <Smartphone className="h-5 w-5" />, color: 'text-orange-400' },
+    { id: 'bank_transfer' as const, name: 'Transferência Bancária', icon: <Building2 className="h-5 w-5" />, color: 'text-green-400' },
+  ]
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar userLoggedIn={true} />
-
-      <main className="max-w-7xl mx-auto px-4 md:px-8 py-8 space-y-8">
-        {/* Page Header */}
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-[#050505] text-white">
+      <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => router.push('/feed')} className="text-muted-foreground hover:text-white">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
           <div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tighter">Minha Carteira</h1>
-            <p className="text-muted-foreground mt-1">Gere os teus ganhos e levanta o dinheiro com segurança.</p>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Wallet className="h-6 w-6 text-primary" /> Carteira
+            </h1>
+            <p className="text-sm text-muted-foreground">Gere o teu saldo e transações</p>
           </div>
-          <Link href="/dashboard">
-            <Button variant="outline" className="border-white/10 bg-white/5 font-bold">
-              Ver Dashboard
-            </Button>
-          </Link>
         </div>
 
-        {/* Balance Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-primary/20 bg-linear-to-br from-primary/10 to-transparent backdrop-blur-xl col-span-1 md:col-span-2 relative overflow-hidden group">
-            <div className="absolute -right-8 -top-8 opacity-10 group-hover:scale-110 transition-transform">
-              <Wallet className="w-40 h-40" />
-            </div>
-            <CardHeader>
-              <CardDescription className="uppercase tracking-widest font-bold text-xs">
-                Saldo Disponível
-              </CardDescription>
-              <CardTitle className="text-5xl md:text-6xl font-black mt-2">
-                125,000 <span className="text-primary text-3xl">Kz</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center gap-2 text-sm">
-                <div className="flex items-center gap-1 text-green-500 font-bold">
-                  <TrendingUp className="h-4 w-4" />
-                  +18% vs mês passado
-                </div>
-              </div>
-
-              <Separator className="bg-white/10" />
-
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold flex items-center gap-1">
-                    <Gift className="h-3 w-3" /> Gifts Recebidos
-                  </p>
-                  <p className="text-2xl font-black">45,200 Kz</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold flex items-center gap-1">
-                    <Users className="h-3 w-3" /> Subscrições
-                  </p>
-                  <p className="text-2xl font-black">79,800 Kz</p>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <Button className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold h-12 shadow-lg shadow-primary/20">
-                  <ArrowUpRight className="mr-2 h-4 w-4" /> Levantar Dinheiro
-                </Button>
-                <Button variant="outline" className="border-white/10 bg-white/5 font-bold h-12">
-                  <Download className="mr-2 h-4 w-4" /> Extrato
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-white/10 bg-white/5 backdrop-blur-xl">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-secondary" /> Este Mês
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Total Recebido</span>
-                  <span className="text-lg font-bold text-green-500">+85,400 Kz</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Total Levantado</span>
-                  <span className="text-lg font-bold text-red-500">-75,000 Kz</span>
-                </div>
-                <Separator className="bg-white/10" />
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold">Lucro Líquido</span>
-                  <span className="text-xl font-black text-primary">+10,400 Kz</span>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-secondary/10 border border-secondary/20">
-                <p className="text-xs text-muted-foreground mb-1 uppercase font-bold">Próximo Pagamento</p>
-                <p className="text-lg font-bold">1º Abril 2024</p>
-                <p className="text-xs text-muted-foreground mt-2">Pagamento automático via Multicaixa Express</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Withdrawal Section & Transaction History */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Withdrawal Form */}
-          <Card className="border-white/10 bg-white/5 backdrop-blur-xl lg:col-span-1">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ArrowUpRight className="h-5 w-5 text-primary" /> Levantar Dinheiro
-              </CardTitle>
-              <CardDescription>Transfere os teus ganhos para a tua conta Multicaixa</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="amount">Montante a Levantar</Label>
-                <div className="relative">
-                  <Input
-                    id="amount"
-                    type="number"
-                    placeholder="5000"
-                    value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                    className="pl-16 h-12 bg-white/5 border-white/10 text-lg font-bold"
-                  />
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">Kz</div>
-                </div>
-                <p className="text-xs text-muted-foreground">Mínimo: 5,000 Kz • Taxa: 2%</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="method">Método de Pagamento</Label>
-                <Select defaultValue="multicaixa">
-                  <SelectTrigger className="h-12 bg-white/5 border-white/10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="multicaixa">Multicaixa Express</SelectItem>
-                    <SelectItem value="reference">Referência Multicaixa</SelectItem>
-                    <SelectItem value="bank">Transferência Bancária</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="account">Número de Conta</Label>
-                <Input
-                  id="account"
-                  placeholder="00XX XXXX XXXX XXXX"
-                  className="h-12 bg-white/5 border-white/10 font-mono"
-                />
-              </div>
-
-              <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex gap-3">
-                <AlertCircle className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="text-sm font-bold text-yellow-500">Processamento em 24-48h</p>
-                  <p className="text-xs text-muted-foreground">
-                    Levantamentos são processados de segunda a sexta, entre 8h-17h.
-                  </p>
-                </div>
-              </div>
-
-              <Button className="w-full bg-primary hover:bg-primary/90 text-white font-black h-12">
-                Confirmar Levantamento
+        {/* Balance Card */}
+        <Card className="border-white/10 bg-gradient-to-br from-primary/20 via-secondary/10 to-transparent overflow-hidden">
+          <CardContent className="p-8">
+            <p className="text-sm text-muted-foreground font-medium mb-1">Saldo Disponível</p>
+            <p className="text-5xl font-black tracking-tight">
+              {(wallet?.balance || 0).toLocaleString()} <span className="text-2xl text-muted-foreground font-normal">Kz</span>
+            </p>
+            <div className="flex gap-3 mt-6">
+              <Button onClick={() => setActiveTab('deposit')} className="bg-green-600 hover:bg-green-700 gap-2 font-bold">
+                <Plus className="h-4 w-4" /> Depositar
               </Button>
-            </CardContent>
-          </Card>
-
-          {/* Transaction History */}
-          <Card className="border-white/10 bg-white/5 backdrop-blur-xl lg:col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Histórico de Transações</CardTitle>
-                <CardDescription>Visualiza todas as tuas movimentações financeiras</CardDescription>
-              </div>
-              <Button variant="ghost" size="sm" className="text-primary font-bold">
-                Ver Tudo
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="all" className="w-full">
-                <TabsList className="mb-6">
-                  <TabsTrigger value="all">Todas</TabsTrigger>
-                  <TabsTrigger value="income">Recebidas</TabsTrigger>
-                  <TabsTrigger value="withdrawals">Levantamentos</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="all" className="space-y-4 mt-0">
-                  {transactionHistory.map((tx) => (
-                    <div
-                      key={tx.id}
-                      className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors group"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                            tx.type === "withdrawal"
-                              ? "bg-red-500/10 text-red-500"
-                              : tx.type === "gift"
-                                ? "bg-secondary/10 text-secondary"
-                                : "bg-primary/10 text-primary"
-                          }`}
-                        >
-                          {tx.type === "withdrawal" ? (
-                            <ArrowDownLeft className="h-5 w-5" />
-                          ) : tx.type === "gift" ? (
-                            <Gift className="h-5 w-5" />
-                          ) : (
-                            <Users className="h-5 w-5" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold group-hover:text-primary transition-colors">
-                            {tx.type === "withdrawal"
-                              ? "Levantamento"
-                              : tx.type === "gift"
-                                ? "Presente Recebido"
-                                : "Subscrição"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">{tx.from}</p>
-                        </div>
-                      </div>
-
-                      <div className="text-right flex items-center gap-4">
-                        <div>
-                          <p className={`text-lg font-black ${tx.amount > 0 ? "text-green-500" : "text-red-500"}`}>
-                            {tx.amount > 0 ? "+" : ""}
-                            {tx.amount.toLocaleString()} Kz
-                          </p>
-                          <p className="text-xs text-muted-foreground">{tx.date}</p>
-                        </div>
-                        {tx.status === "completed" ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-500" />
-                        ) : (
-                          <Clock className="h-5 w-5 text-yellow-500" />
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </TabsContent>
-
-                <TabsContent value="income" className="space-y-4 mt-0">
-                  {transactionHistory
-                    .filter((tx) => tx.amount > 0)
-                    .map((tx) => (
-                      <div
-                        key={tx.id}
-                        className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                              tx.type === "gift" ? "bg-secondary/10 text-secondary" : "bg-primary/10 text-primary"
-                            }`}
-                          >
-                            {tx.type === "gift" ? <Gift className="h-5 w-5" /> : <Users className="h-5 w-5" />}
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold">{tx.type === "gift" ? "Presente" : "Subscrição"}</p>
-                            <p className="text-xs text-muted-foreground">{tx.from}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-black text-green-500">+{tx.amount.toLocaleString()} Kz</p>
-                          <p className="text-xs text-muted-foreground">{tx.date}</p>
-                        </div>
-                      </div>
-                    ))}
-                </TabsContent>
-
-                <TabsContent value="withdrawals" className="space-y-4 mt-0">
-                  {transactionHistory
-                    .filter((tx) => tx.amount < 0)
-                    .map((tx) => (
-                      <div
-                        key={tx.id}
-                        className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-red-500/10 text-red-500">
-                            <ArrowDownLeft className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold">Levantamento</p>
-                            <p className="text-xs text-muted-foreground">{tx.from}</p>
-                          </div>
-                        </div>
-                        <div className="text-right flex items-center gap-4">
-                          <div>
-                            <p className="text-lg font-black text-red-500">{tx.amount.toLocaleString()} Kz</p>
-                            <p className="text-xs text-muted-foreground">{tx.date}</p>
-                          </div>
-                          {tx.status === "completed" ? (
-                            <CheckCircle2 className="h-5 w-5 text-green-500" />
-                          ) : (
-                            <Clock className="h-5 w-5 text-yellow-500" />
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Payment Methods Section */}
-        <Card className="border-white/10 bg-white/5 backdrop-blur-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5" /> Métodos de Pagamento
-            </CardTitle>
-            <CardDescription>Gere as tuas contas bancárias e métodos de levantamento</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between group hover:border-primary/50 transition-all cursor-pointer">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Wallet className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold">Multicaixa Express</p>
-                    <p className="text-xs text-muted-foreground">•••• •••• 1234</p>
-                  </div>
-                </div>
-                <Badge className="bg-primary/10 text-primary border-none">Ativo</Badge>
-              </div>
-
-              <Button
-                variant="outline"
-                className="h-full min-h-[80px] border-white/10 border-dashed bg-transparent hover:border-primary hover:bg-white/5 font-bold"
-              >
-                + Adicionar Método
+              <Button onClick={() => setActiveTab('withdraw')} variant="outline" className="border-white/20 bg-transparent gap-2 font-bold">
+                <Minus className="h-4 w-4" /> Sacar
               </Button>
             </div>
           </CardContent>
         </Card>
-      </main>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-4">
+          <Card className="border-white/10 bg-card/50">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-green-400" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Ganho</p>
+                <p className="text-lg font-bold text-green-400">{(wallet?.stats?.totalEarned || 0).toLocaleString()} Kz</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-white/10 bg-card/50">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                <TrendingDown className="h-5 w-5 text-red-400" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Gasto</p>
+                <p className="text-lg font-bold text-red-400">{(wallet?.stats?.totalSpent || 0).toLocaleString()} Kz</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1 p-1 bg-white/5 rounded-lg">
+          {(['overview', 'deposit', 'withdraw', 'history'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => { setActiveTab(tab); setError('') }}
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-bold transition-all ${activeTab === tab ? 'bg-primary text-white' : 'text-muted-foreground hover:text-white'
+                }`}
+            >
+              {tab === 'overview' ? 'Resumo' : tab === 'deposit' ? 'Depositar' : tab === 'withdraw' ? 'Sacar' : 'Histórico'}
+            </button>
+          ))}
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+            <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
+            <p className="text-sm text-red-300">{error}</p>
+            <Button variant="ghost" size="sm" onClick={() => setError('')} className="ml-auto text-red-400 h-6 px-2">✕</Button>
+          </div>
+        )}
+
+        {/* Deposit Tab */}
+        {activeTab === 'deposit' && (
+          <Card className="border-white/10 bg-card/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Plus className="h-5 w-5 text-green-400" /> Depositar Fundos</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-bold">Método de Pagamento</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {paymentMethods.map(pm => (
+                    <button
+                      key={pm.id}
+                      onClick={() => setDepositMethod(pm.id)}
+                      className={`p-3 rounded-lg border text-center transition-all ${depositMethod === pm.id
+                          ? 'border-primary bg-primary/10'
+                          : 'border-white/10 hover:border-white/30'
+                        }`}
+                    >
+                      <div className={`mx-auto mb-1 ${pm.color}`}>{pm.icon}</div>
+                      <p className="text-xs font-bold">{pm.name}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold">Montante (Kz)</label>
+                <Input
+                  type="number"
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(e.target.value)}
+                  placeholder="Ex: 5000"
+                  className="bg-white/5 border-white/10 h-12 text-lg font-bold"
+                  min={100}
+                  max={1000000}
+                />
+                <div className="flex gap-2">
+                  {[500, 1000, 5000, 10000].map(v => (
+                    <Button key={v} variant="outline" size="sm" onClick={() => setDepositAmount(String(v))} className="border-white/10 bg-transparent text-xs flex-1">
+                      {v.toLocaleString()} Kz
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              {depositSuccess && (
+                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-center">
+                  <p className="text-sm font-bold text-green-300">{depositSuccess}</p>
+                </div>
+              )}
+              <Button onClick={handleDeposit} disabled={isDepositing || !depositAmount} className="w-full h-12 bg-green-600 hover:bg-green-700 font-bold text-base gap-2">
+                {isDepositing ? <><Loader2 className="h-4 w-4 animate-spin" /> A processar...</> : <><Plus className="h-4 w-4" /> Depositar {depositAmount ? `${Number(depositAmount).toLocaleString()} Kz` : ''}</>}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Withdraw Tab */}
+        {activeTab === 'withdraw' && (
+          <Card className="border-white/10 bg-card/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Minus className="h-5 w-5 text-red-400" /> Sacar Fundos</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-bold">Montante (Kz)</label>
+                <Input
+                  type="number"
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  placeholder="Ex: 10000"
+                  className="bg-white/5 border-white/10 h-12 text-lg font-bold"
+                  min={1000}
+                  max={500000}
+                />
+              </div>
+              <Separator className="bg-white/10" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold">Banco</label>
+                  <Input value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="BFA, BAI, BIC..." className="bg-white/5 border-white/10" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold">Nº da Conta</label>
+                  <Input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} placeholder="000-000-000-000" className="bg-white/5 border-white/10" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold">Titular</label>
+                  <Input value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="Nome completo" className="bg-white/5 border-white/10" />
+                </div>
+              </div>
+              {withdrawSuccess && (
+                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-center">
+                  <p className="text-sm font-bold text-green-300">{withdrawSuccess}</p>
+                </div>
+              )}
+              <Button onClick={handleWithdraw} disabled={isWithdrawing || !withdrawAmount} className="w-full h-12 bg-red-600 hover:bg-red-700 font-bold text-base gap-2">
+                {isWithdrawing ? <><Loader2 className="h-4 w-4 animate-spin" /> A processar...</> : <><Minus className="h-4 w-4" /> Sacar {withdrawAmount ? `${Number(withdrawAmount).toLocaleString()} Kz` : ''}</>}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Overview / History Tab */}
+        {(activeTab === 'overview' || activeTab === 'history') && (
+          <Card className="border-white/10 bg-card/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-muted-foreground" />
+                {activeTab === 'overview' ? 'Transações Recentes' : 'Todas as Transações'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {(activeTab === 'overview' ? (wallet?.recentTransactions || []) : transactions).length === 0 ? (
+                <div className="text-center py-8">
+                  <Wallet className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">Sem transações ainda</p>
+                  <p className="text-xs text-muted-foreground mt-1">Faz um depósito para começar!</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {(activeTab === 'overview' ? (wallet?.recentTransactions || []) : transactions).map(tx => (
+                    <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                      <div className="flex items-center gap-3">
+                        {typeIcon(tx.type)}
+                        <div>
+                          <p className="text-sm font-medium">{tx.description || tx.type}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(tx.createdAt).toLocaleDateString('pt-AO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`font-bold text-sm ${tx.amount >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {tx.amount >= 0 ? '+' : ''}{tx.amount.toLocaleString()} Kz
+                        </span>
+                        {statusIcon(tx.status)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   )
 }

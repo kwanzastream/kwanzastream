@@ -8,7 +8,7 @@ import { Navbar } from "@/components/navbar"
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar userLoggedIn={false} />
+      <Navbar />
 
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto px-4 md:px-6 py-12 space-y-8">

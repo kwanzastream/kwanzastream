@@ -2,8 +2,9 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import prisma from '../config/prisma';
 
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'dev-access-secret';
-const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret';
+// JWT secrets — validated at startup (index.ts fail-fast), no fallbacks
+const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET!;
+const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!;
 const ACCESS_EXPIRES = process.env.JWT_ACCESS_EXPIRES_IN || '15m';
 const REFRESH_EXPIRES = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 

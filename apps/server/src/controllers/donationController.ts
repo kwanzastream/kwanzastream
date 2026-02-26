@@ -3,16 +3,28 @@ import { z } from 'zod';
 import prisma from '../config/prisma';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 
-// Salo types with their values in Kwanzas
+// ============== Constants ==============
+
+// Salo types with their values in centimos (1 Kz = 100 centimos)
 const SALO_TYPES = {
-    bronze: { price: 100, name: 'Salo Bronze', emoji: '🥉' },
-    silver: { price: 500, name: 'Salo Prata', emoji: '🥈' },
-    gold: { price: 1000, name: 'Salo Ouro', emoji: '🥇' },
-    diamond: { price: 5000, name: 'Salo Diamante', emoji: '💎' },
-    legendary: { price: 10000, name: 'Salo Lendário', emoji: '👑' },
+    bronze: { price: 10000n, name: 'Salo Bronze', emoji: '🥉' },    // 100 Kz
+    silver: { price: 50000n, name: 'Salo Prata', emoji: '🥈' },    // 500 Kz
+    gold: { price: 100000n, name: 'Salo Ouro', emoji: '🥇' },    // 1000 Kz
+    diamond: { price: 500000n, name: 'Salo Diamante', emoji: '💎' },    // 5000 Kz
+    legendary: { price: 1000000n, name: 'Salo Lendário', emoji: '👑' },    // 10000 Kz
 } as const;
 
-// Validation schemas
+type SaloType = keyof typeof SALO_TYPES;
+
+// Platform fee: 20% (calculated as integer division to avoid float)
+const PLATFORM_FEE_PERCENT = 20n;
+const calcReceiverAmount = (amount: bigint): bigint => amount - (amount * PLATFORM_FEE_PERCENT / 100n);
+
+/** Convert centimos (BigInt) to Kz for API responses */
+const toKz = (centimos: bigint): number => Number(centimos) / 100;
+
+// ============== Validation schemas ==============
+
 const sendDonationSchema = z.object({
     receiverId: z.string().uuid(),
     saloType: z.enum(['bronze', 'silver', 'gold', 'diamond', 'legendary']),
@@ -25,7 +37,9 @@ const paginationSchema = z.object({
     limit: z.coerce.number().min(1).max(50).default(20),
 });
 
-// Send a Salo donation
+// ============== Controllers ==============
+
+// Send a Salo donation — ATOMIC: no double-spend possible
 export const sendDonation = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const senderId = req.user?.userId;
@@ -40,77 +54,83 @@ export const sendDonation = async (req: AuthenticatedRequest, res: Response) => 
         }
 
         const salo = SALO_TYPES[saloType];
-        const amount = salo.price;
+        const amountCentimos = salo.price;
+        const receiverAmount = calcReceiverAmount(amountCentimos);
 
-        // Get sender and check balance
-        const sender = await prisma.user.findUnique({
-            where: { id: senderId },
-        });
-
-        if (!sender) {
-            return res.status(404).json({ error: 'Sender not found' });
-        }
-
-        if (sender.balance < amount) {
-            return res.status(400).json({
-                error: 'Insufficient balance',
-                required: amount,
-                current: sender.balance,
-            });
-        }
-
-        // Check receiver exists
+        // Check receiver exists before entering the transaction
         const receiver = await prisma.user.findUnique({
             where: { id: receiverId },
+            select: { id: true, displayName: true, username: true },
         });
 
         if (!receiver) {
             return res.status(404).json({ error: 'Receiver not found' });
         }
 
-        // Perform transaction atomically
-        const [donation] = await prisma.$transaction([
-            // Create donation record
-            prisma.donation.create({
+        // ATOMIC transaction: check-and-deduct sender, credit receiver, create records
+        const donation = await prisma.$transaction(async (tx) => {
+            // Step 1: Atomic conditional deduct from sender
+            // This UPDATE only succeeds if balance >= amountCentimos
+            const senderUpdated = await tx.$executeRaw`
+                UPDATE "User"
+                SET "balance" = "balance" - ${amountCentimos}::bigint,
+                    "updatedAt" = NOW()
+                WHERE "id" = ${senderId}
+                AND "balance" >= ${amountCentimos}::bigint
+            `;
+
+            if (senderUpdated === 0) {
+                throw new Error('INSUFFICIENT_BALANCE');
+            }
+
+            // Step 2: Credit receiver (platform takes 20% fee)
+            await tx.$executeRaw`
+                UPDATE "User"
+                SET "balance" = "balance" + ${receiverAmount}::bigint,
+                    "updatedAt" = NOW()
+                WHERE "id" = ${receiverId}
+            `;
+
+            // Step 3: Get sender info for transaction description
+            const sender = await tx.user.findUnique({
+                where: { id: senderId },
+                select: { displayName: true, username: true },
+            });
+
+            // Step 4: Create donation record
+            const don = await tx.donation.create({
                 data: {
                     senderId,
                     receiverId,
-                    amount,
+                    amount: amountCentimos,
                     saloType,
                     message,
                     streamId,
                 },
-            }),
-            // Deduct from sender
-            prisma.user.update({
-                where: { id: senderId },
-                data: { balance: { decrement: amount } },
-            }),
-            // Add to receiver (platform takes 20% fee)
-            prisma.user.update({
-                where: { id: receiverId },
-                data: { balance: { increment: amount * 0.8 } },
-            }),
-            // Create transaction records
-            prisma.transaction.create({
-                data: {
-                    userId: senderId,
-                    amount: -amount,
-                    type: 'DONATION_SENT',
-                    status: 'COMPLETED',
-                    description: `${salo.name} para ${receiver.displayName || receiver.username || 'usuário'}`,
-                },
-            }),
-            prisma.transaction.create({
-                data: {
-                    userId: receiverId,
-                    amount: amount * 0.8,
-                    type: 'DONATION_RECEIVED',
-                    status: 'COMPLETED',
-                    description: `${salo.name} de ${sender.displayName || sender.username || 'usuário'}`,
-                },
-            }),
-        ]);
+            });
+
+            // Step 5: Create transaction records for both parties
+            await tx.transaction.createMany({
+                data: [
+                    {
+                        userId: senderId,
+                        amount: -amountCentimos,
+                        type: 'DONATION_SENT',
+                        status: 'COMPLETED',
+                        description: `${salo.name} para ${receiver.displayName || receiver.username || 'usuário'}`,
+                    },
+                    {
+                        userId: receiverId,
+                        amount: receiverAmount,
+                        type: 'DONATION_RECEIVED',
+                        status: 'COMPLETED',
+                        description: `${salo.name} de ${sender?.displayName || sender?.username || 'usuário'}`,
+                    },
+                ],
+            });
+
+            return don;
+        });
 
         res.json({
             success: true,
@@ -119,7 +139,7 @@ export const sendDonation = async (req: AuthenticatedRequest, res: Response) => 
                 saloType,
                 saloName: salo.name,
                 saloEmoji: salo.emoji,
-                amount,
+                amount: toKz(amountCentimos),
                 message,
                 receiver: {
                     id: receiver.id,
@@ -132,17 +152,27 @@ export const sendDonation = async (req: AuthenticatedRequest, res: Response) => 
         if (error instanceof z.ZodError) {
             return res.status(400).json({ error: 'Validation error', details: error.errors });
         }
+        if (error instanceof Error && error.message === 'INSUFFICIENT_BALANCE') {
+            return res.status(400).json({ error: 'Insufficient balance' });
+        }
         console.error('Send donation error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
 
-// Get Salo types and prices
+// Get Salo types and prices (returned in Kz for API consumers)
 export const getSaloTypes = async (req: Request, res: Response) => {
-    res.json({ saloTypes: SALO_TYPES });
+    const types = Object.fromEntries(
+        Object.entries(SALO_TYPES).map(([key, val]) => [
+            key,
+            { price: toKz(val.price), name: val.name, emoji: val.emoji },
+        ])
+    );
+    res.json({ saloTypes: types });
 };
 
 // Get donation leaderboard for a stream or user
+// FIX: Eliminated N+1 query pattern — uses single IN query instead of N individual lookups
 export const getLeaderboard = async (req: Request, res: Response) => {
     try {
         const { streamId, receiverId } = req.query;
@@ -160,25 +190,25 @@ export const getLeaderboard = async (req: Request, res: Response) => {
             take: limit,
         });
 
-        // Get user details for each donor
-        const donorsWithDetails = await Promise.all(
-            topDonors.map(async (donor, index) => {
-                const user = await prisma.user.findUnique({
-                    where: { id: donor.senderId },
-                    select: {
-                        id: true,
-                        username: true,
-                        displayName: true,
-                        avatarUrl: true,
-                    },
-                });
-                return {
-                    rank: index + 1,
-                    user,
-                    totalAmount: donor._sum.amount || 0,
-                };
-            })
-        );
+        // FIX N+1: Single query to get all donor details at once
+        const senderIds = topDonors.map((d) => d.senderId);
+        const users = await prisma.user.findMany({
+            where: { id: { in: senderIds } },
+            select: {
+                id: true,
+                username: true,
+                displayName: true,
+                avatarUrl: true,
+            },
+        });
+
+        const userMap = new Map(users.map((u) => [u.id, u]));
+
+        const donorsWithDetails = topDonors.map((donor, index) => ({
+            rank: index + 1,
+            user: userMap.get(donor.senderId) || null,
+            totalAmount: toKz(donor._sum.amount ?? 0n),
+        }));
 
         res.json({ leaderboard: donorsWithDetails });
     } catch (error) {
@@ -225,7 +255,14 @@ export const getDonationHistory = async (req: AuthenticatedRequest, res: Respons
         res.json({
             donations: donations.map((d) => ({
                 ...d,
-                saloInfo: SALO_TYPES[d.saloType as keyof typeof SALO_TYPES],
+                amount: toKz(d.amount),
+                saloInfo: SALO_TYPES[d.saloType as SaloType]
+                    ? {
+                        price: toKz(SALO_TYPES[d.saloType as SaloType].price),
+                        name: SALO_TYPES[d.saloType as SaloType].name,
+                        emoji: SALO_TYPES[d.saloType as SaloType].emoji,
+                    }
+                    : undefined,
             })),
             pagination: {
                 page,

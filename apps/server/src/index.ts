@@ -4,9 +4,36 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import rateLimit from 'express-rate-limit';
 
-// Load env vars
+// Load env vars FIRST
 dotenv.config();
+
+// ============== ENV VALIDATION (fail-fast) ==============
+const REQUIRED_ENVS = [
+    'DATABASE_URL',
+    'JWT_ACCESS_SECRET',
+    'JWT_REFRESH_SECRET',
+];
+
+const RECOMMENDED_ENVS = [
+    'FRONTEND_URL',
+    'RTMP_SECRET',
+];
+
+for (const envName of REQUIRED_ENVS) {
+    if (!process.env[envName]) {
+        console.error(`\n❌ FATAL: Missing required environment variable: ${envName}`);
+        console.error(`   Please set it in your .env file or environment.\n`);
+        process.exit(1);
+    }
+}
+
+for (const envName of RECOMMENDED_ENVS) {
+    if (!process.env[envName]) {
+        console.warn(`⚠️  WARNING: Missing recommended env var: ${envName} (using fallback)`);
+    }
+}
 
 // Import configs
 import prisma from './config/prisma';
@@ -33,15 +60,46 @@ const io = new Server(httpServer, {
     },
 });
 
-// Middleware
+// ============== SECURITY MIDDLEWARE ==============
 app.use(helmet());
 app.use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
-// Health check
+// ============== RATE LIMITING ==============
+// Strict limit for auth endpoints (OTP brute-force protection)
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10,                   // 10 requests per window
+    message: { error: 'Too many authentication attempts. Please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Moderate limit for financial endpoints (wallet, donations)
+const financialLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 30,                  // 30 requests per minute
+    message: { error: 'Too many financial requests. Please slow down.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// General API limit
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 200,                  // 200 requests per window
+    message: { error: 'Too many requests. Please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Apply general limiter to all API routes
+app.use('/api/', generalLimiter);
+
+// ============== HEALTH CHECKS ==============
 app.get('/', (req, res) => {
     res.json({
         message: 'Kwanza Stream API is running 🚀',
@@ -59,20 +117,20 @@ app.get('/health', async (req, res) => {
     }
 });
 
-// API Routes
-app.use('/api/auth', authRoutes);
+// ============== API ROUTES (with rate limiters) ==============
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/donations', donationRoutes);
-app.use('/api/wallet', walletRoutes);
+app.use('/api/donations', financialLimiter, donationRoutes);
+app.use('/api/wallet', financialLimiter, walletRoutes);
 app.use('/api/streams', streamRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/webhooks', webhookRoutes);
+app.use('/api/webhooks', webhookRoutes); // Webhooks have their own HMAC auth
 
 // Import streaming services
 import { startMediaServer } from './streaming/mediaServer';
 import { setupChatService } from './streaming/chatService';
 
-// Setup chat service (replaces basic socket handlers)
+// Setup chat service
 setupChatService(io);
 
 // Error handling middleware
@@ -95,13 +153,13 @@ const startServer = async () => {
 
         // Verify database connection
         await prisma.$connect();
-        console.log('Database connected');
+        console.log('✅ Database connected');
 
         // Start RTMP media server (optional, may fail if ffmpeg not installed)
         try {
             startMediaServer();
         } catch (err) {
-            console.warn('RTMP server failed to start (FFmpeg may not be installed)');
+            console.warn('⚠️  RTMP server failed to start (FFmpeg may not be installed)');
         }
 
         httpServer.listen(PORT, () => {
@@ -110,9 +168,8 @@ const startServer = async () => {
 📡 Port: ${PORT}
 🌍 Environment: ${process.env.NODE_ENV || 'development'}
 📊 Health: http://localhost:${PORT}/health
-🔐 Auth: http://localhost:${PORT}/api/auth
-👥 Users: http://localhost:${PORT}/api/users
-💰 Wallet: http://localhost:${PORT}/api/wallet
+🔐 Auth: http://localhost:${PORT}/api/auth (rate limited: 10/15min)
+💰 Wallet: http://localhost:${PORT}/api/wallet (rate limited: 30/min)
 🎬 Streams: http://localhost:${PORT}/api/streams
       `);
         });

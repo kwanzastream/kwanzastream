@@ -3,6 +3,9 @@ import { z } from 'zod';
 import prisma from '../config/prisma';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 
+/** Convert centimos (BigInt) to Kz for API responses */
+const toKz = (centimos: bigint): number => Number(centimos) / 100;
+
 const paginationSchema = z.object({
     page: z.coerce.number().min(1).default(1),
     limit: z.coerce.number().min(1).max(100).default(20),
@@ -33,14 +36,15 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
         ]);
 
         // Revenue calculation (platform takes 20% of donations)
-        const platformRevenue = (totalDonations._sum.amount || 0) * 0.2;
+        const totalDonationsAmount = totalDonations._sum.amount ?? 0n;
+        const platformRevenue = Number(totalDonationsAmount) / 100 * 0.2;
 
         res.json({
             stats: {
                 totalUsers,
                 totalStreamers,
                 activeStreams,
-                totalDonationsAmount: totalDonations._sum.amount || 0,
+                totalDonationsAmount: toKz(totalDonations._sum.amount ?? 0n),
                 platformRevenue,
                 newUsersThisWeek: recentUsers,
             },
@@ -99,8 +103,11 @@ export const listUsers = async (req: Request, res: Response) => {
             prisma.user.count({ where }),
         ]);
 
+        // Serialize BigInt balance for JSON
+        const serializedUsers = users.map((u) => ({ ...u, balance: toKz(u.balance) }));
+
         res.json({
-            users,
+            users: serializedUsers,
             pagination: { page, limit, total, pages: Math.ceil(total / limit) },
         });
     } catch (error) {
@@ -113,12 +120,13 @@ export const listUsers = async (req: Request, res: Response) => {
 export const updateUser = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { role, isVerified, balance } = req.body;
+        const { role, isVerified } = req.body;
 
+        // NOTE: Direct balance setting removed for security (F-010).
+        // Use a separate audit-logged endpoint for balance adjustments.
         const updateData: any = {};
         if (role) updateData.role = role;
         if (isVerified !== undefined) updateData.isVerified = isVerified;
-        if (balance !== undefined) updateData.balance = balance;
 
         const user = await prisma.user.update({
             where: { id },
@@ -133,7 +141,7 @@ export const updateUser = async (req: Request, res: Response) => {
             },
         });
 
-        res.json({ user });
+        res.json({ user: { ...user, balance: toKz(user.balance) } });
     } catch (error) {
         console.error('Update user error:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -328,7 +336,7 @@ export const rejectWithdrawal = async (req: Request, res: Response) => {
             }),
             prisma.user.update({
                 where: { id: transaction.userId },
-                data: { balance: { increment: Math.abs(transaction.amount) } },
+                data: { balance: { increment: transaction.amount < 0n ? -transaction.amount : transaction.amount } },
             }),
         ]);
 

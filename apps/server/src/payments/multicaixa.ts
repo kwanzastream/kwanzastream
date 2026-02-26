@@ -1,11 +1,11 @@
 /**
  * Multicaixa Express Payment Service
  * 
- * This is a mock implementation for development.
- * In production, replace with actual Multicaixa API integration.
+ * Mock implementation for development, real API integration scaffolded.
  * 
- * Multicaixa Express API Documentation:
- * https://developer.multicaixa.co.ao/
+ * Changes from audit:
+ * - F-009: Added idempotency check in processWebhook to prevent double-crediting
+ * - Amounts are now in centimos (BigInt) after schema migration
  */
 
 import { v4 as uuidv4 } from 'uuid';
@@ -17,7 +17,7 @@ const MULTICAIXA_API_KEY = process.env.MULTICAIXA_API_KEY || '';
 const IS_MOCK = process.env.NODE_ENV === 'development' || !MULTICAIXA_API_KEY;
 
 export interface PaymentRequest {
-    amount: number;
+    amount: number;       // In Kz (API-facing)
     reference: string;
     description: string;
     phoneNumber?: string;
@@ -52,7 +52,6 @@ export const createPayment = async (request: PaymentRequest): Promise<PaymentRes
     if (IS_MOCK) {
         console.log('[Multicaixa MOCK] Creating payment:', request);
 
-        // Simulate payment creation
         const transactionId = `MCX-${uuidv4().slice(0, 8).toUpperCase()}`;
 
         return {
@@ -151,7 +150,6 @@ export const createWithdrawal = async (request: WithdrawalRequest): Promise<With
 // Verify payment status
 export const verifyPayment = async (transactionId: string): Promise<{ status: string; paid: boolean }> => {
     if (IS_MOCK) {
-        // Mock: consider all payments as successful after creation
         return { status: 'COMPLETED', paid: true };
     }
 
@@ -175,7 +173,13 @@ export const verifyPayment = async (transactionId: string): Promise<{ status: st
     }
 };
 
-// Process webhook from Multicaixa
+/**
+ * Process webhook from Multicaixa — IDEMPOTENT (F-009 fix)
+ * 
+ * This function is safe to call multiple times with the same payload.
+ * If a transaction is already COMPLETED, it will return true without
+ * re-crediting the user's balance.
+ */
 export const processWebhook = async (payload: any): Promise<boolean> => {
     const { transaction_id, status, reference, amount } = payload;
 
@@ -191,19 +195,33 @@ export const processWebhook = async (payload: any): Promise<boolean> => {
         return false;
     }
 
+    // IDEMPOTENCY CHECK (F-009): If already processed, don't double-credit
+    if (transaction.status === 'COMPLETED') {
+        console.log('[Multicaixa] Transaction already completed (idempotent skip):', reference);
+        return true;
+    }
+
+    if (transaction.status === 'FAILED' || transaction.status === 'CANCELLED') {
+        console.log('[Multicaixa] Transaction already in terminal state:', transaction.status);
+        return true;
+    }
+
     if (status === 'COMPLETED' || status === 'PAID') {
-        // Update transaction status and credit user balance
+        // Update transaction status and credit user balance ATOMICALLY
+        // Using the absolute value of amount since deposits are stored as positive
+        const creditAmount = transaction.amount < 0n ? -transaction.amount : transaction.amount;
+
         await prisma.$transaction([
             prisma.transaction.update({
                 where: { id: transaction.id },
                 data: {
                     status: 'COMPLETED',
-                    metadata: { ...transaction.metadata as object, multicaixa_id: transaction_id },
+                    metadata: { ...(transaction.metadata as object || {}), multicaixa_id: transaction_id },
                 },
             }),
             prisma.user.update({
                 where: { id: transaction.userId },
-                data: { balance: { increment: Math.abs(transaction.amount) } },
+                data: { balance: { increment: creditAmount } },
             }),
         ]);
 

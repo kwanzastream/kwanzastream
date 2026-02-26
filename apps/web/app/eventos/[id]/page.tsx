@@ -6,12 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  Users, 
-  Gift, 
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  Users,
+  Gift,
   Share2,
   CheckCircle2,
   Video,
@@ -60,14 +60,14 @@ export default function EventPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar userLoggedIn={true} />
+      <Navbar />
 
       <main className="flex-1 overflow-y-auto">
         {/* Banner */}
         <div className="relative h-[400px] md:h-[500px] bg-gradient-to-br from-primary/20 to-secondary/20">
           <div className="absolute inset-0 bg-black/40" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-          
+
           <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-6 h-full flex flex-col justify-end pb-8">
             <Link href="/eventos">
               <Button variant="ghost" size="sm" className="gap-2 mb-4 text-white hover:text-white hover:bg-white/10">

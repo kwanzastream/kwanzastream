@@ -23,7 +23,7 @@ import { Navbar } from "@/components/navbar"
 export default function InstitutionalPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar userLoggedIn={false} />
+      <Navbar />
 
       <main className="flex-1 overflow-y-auto">
         {/* Hero Section */}
