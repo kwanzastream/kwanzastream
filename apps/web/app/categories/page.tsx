@@ -62,7 +62,7 @@ function CategoriesContent() {
           </Link>
           <div className="flex items-center gap-4">
             <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 text-white shadow-2xl">
-              {React.cloneElement(activeCat.icon as React.ReactElement, { className: "w-10 h-10" })}
+              {React.cloneElement(activeCat.icon as React.ReactElement<any>, { className: "w-10 h-10" })}
             </div>
             <div className="space-y-1">
               <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white uppercase">
@@ -196,7 +196,7 @@ function CategoriesContent() {
               className={`flex flex-col items-center gap-1 min-w-[60px] ${activeCat.id === cat.id ? "text-primary" : "text-muted-foreground"}`}
             >
               <div className={`p-2 rounded-xl ${activeCat.id === cat.id ? "bg-primary/20" : "bg-white/5"}`}>
-                {React.cloneElement(cat.icon as React.ReactElement, { className: "w-5 h-5" })}
+                {React.cloneElement(cat.icon as React.ReactElement<any>, { className: "w-5 h-5" })}
               </div>
               <span className="text-[10px] font-bold">{cat.name}</span>
             </button>

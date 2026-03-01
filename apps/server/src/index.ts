@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
@@ -61,12 +62,29 @@ const io = new Server(httpServer, {
 });
 
 // ============== SECURITY MIDDLEWARE ==============
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"], // Required for inline styles in UI components
+            imgSrc: ["'self'", "data:", "blob:", "https:"],
+            connectSrc: ["'self'", process.env.FRONTEND_URL || 'http://localhost:3000'],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            mediaSrc: ["'self'", "blob:"],
+            objectSrc: ["'none'"],
+            frameAncestors: ["'none'"],
+            upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null,
+        },
+    },
+    crossOriginEmbedderPolicy: false, // Required for cross-origin media loading
+}));
 app.use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
 }));
 app.use(express.json({ limit: '1mb' }));
+app.use(cookieParser());
 
 // ============== RATE LIMITING ==============
 // Strict limit for auth endpoints (OTP brute-force protection)

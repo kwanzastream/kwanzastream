@@ -112,49 +112,50 @@ export default function ManageLivesPage() {
                 </Card>
               ) : (
                 activeLives.map((live) => (
-                <Card key={live.id} className="overflow-hidden">
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <div className="w-full md:w-64 h-48 bg-muted flex-shrink-0 relative">
-                      <Badge className="absolute top-2 left-2 bg-red-600">
-                        <span className="flex h-2 w-2 rounded-full bg-white animate-pulse mr-2" />
-                        AO VIVO
-                      </Badge>
-                    </div>
-                    <CardContent className="p-6 flex-1">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <h3 className="text-xl font-bold mb-2">{live.title}</h3>
-                          <Badge variant="outline" className="mb-2">{live.category}</Badge>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
-                            <div className="flex items-center gap-1">
-                              <Eye className="w-4 h-4" />
-                              {live.viewers.toLocaleString()} espectadores
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Gift className="w-4 h-4" />
-                              {live.salos.toLocaleString()} Kz
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" />
-                              {live.started}
+                  <Card key={live.id} className="overflow-hidden">
+                    <div className="flex flex-col md:flex-row gap-4">
+                      <div className="w-full md:w-64 h-48 bg-muted flex-shrink-0 relative">
+                        <Badge className="absolute top-2 left-2 bg-red-600">
+                          <span className="flex h-2 w-2 rounded-full bg-white animate-pulse mr-2" />
+                          AO VIVO
+                        </Badge>
+                      </div>
+                      <CardContent className="p-6 flex-1">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <h3 className="text-xl font-bold mb-2">{live.title}</h3>
+                            <Badge variant="outline" className="mb-2">{live.category}</Badge>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
+                              <div className="flex items-center gap-1">
+                                <Eye className="w-4 h-4" />
+                                {live.viewers.toLocaleString()} espectadores
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Gift className="w-4 h-4" />
+                                {live.salos.toLocaleString()} Kz
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Clock className="w-4 h-4" />
+                                {live.started}
+                              </div>
                             </div>
                           </div>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="w-5 h-5" />
+                          </Button>
                         </div>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="w-5 h-5" />
-                        </Button>
-                      </div>
-                      <div className="flex gap-2">
-                        <Link href={`/stream/${live.id}`}>
-                          <Button>Ver Live</Button>
-                        </Link>
-                        <Button variant="outline">Gerir</Button>
-                        <Button variant="outline">Terminar</Button>
-                      </div>
-                    </CardContent>
-                  </div>
-                </Card>
-              )))
+                        <div className="flex gap-2">
+                          <Link href={`/stream/${live.id}`}>
+                            <Button>Ver Live</Button>
+                          </Link>
+                          <Button variant="outline">Gerir</Button>
+                          <Button variant="outline">Terminar</Button>
+                        </div>
+                      </CardContent>
+                    </div>
+                  </Card>
+                ))
+              )}
             </TabsContent>
 
             <TabsContent value="scheduled" className="space-y-4">

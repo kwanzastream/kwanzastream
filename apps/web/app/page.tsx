@@ -192,7 +192,7 @@ export default function LandingPage() {
 
       {/* Salo System Showcase */}
       <section className="py-20 px-6 max-w-7xl mx-auto">
-        <SaloSystem />
+        <SaloSystem receiverId="" />
       </section>
 
       {/* CTA Section */}

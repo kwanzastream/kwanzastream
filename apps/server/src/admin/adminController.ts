@@ -4,7 +4,34 @@ import prisma from '../config/prisma';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 
 /** Convert centimos (BigInt) to Kz for API responses */
-const toKz = (centimos: bigint): number => Number(centimos) / 100;
+const toKz = (centimos: bigint | number): number => Number(centimos) / 100;
+
+/** Create an audit log entry for admin operations */
+const createAuditLog = async (opts: {
+    adminId: string;
+    action: string;
+    targetId: string;
+    targetType: string;
+    details?: Record<string, any>;
+    ipAddress?: string;
+}) => {
+    try {
+        await prisma.auditLog.create({
+            data: {
+                adminId: opts.adminId,
+                action: opts.action as any,
+                targetId: opts.targetId,
+                targetType: opts.targetType,
+                details: opts.details ? JSON.parse(JSON.stringify(opts.details)) : undefined,
+                ipAddress: opts.ipAddress,
+            },
+        });
+    } catch (error) {
+        // Audit log failure should not break the operation
+        console.error('Failed to create audit log:', error);
+    }
+};
+
 
 const paginationSchema = z.object({
     page: z.coerce.number().min(1).default(1),
@@ -142,6 +169,19 @@ export const updateUser = async (req: Request, res: Response) => {
         });
 
         res.json({ user: { ...user, balance: toKz(user.balance) } });
+
+        // Audit log (fire-and-forget)
+        const adminId = (req as AuthenticatedRequest).user?.userId;
+        if (adminId && role) {
+            createAuditLog({
+                adminId,
+                action: 'UPDATE_USER_ROLE',
+                targetId: id,
+                targetType: 'User',
+                details: { newRole: role, isVerified },
+                ipAddress: req.ip,
+            });
+        }
     } catch (error) {
         console.error('Update user error:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -168,6 +208,19 @@ export const banUser = async (req: Request, res: Response) => {
         });
 
         res.json({ success: true, message: 'User banned', reason });
+
+        // Audit log (fire-and-forget)
+        const adminId = (req as AuthenticatedRequest).user?.userId;
+        if (adminId) {
+            createAuditLog({
+                adminId,
+                action: 'BAN_USER',
+                targetId: id,
+                targetType: 'User',
+                details: { reason },
+                ipAddress: req.ip,
+            });
+        }
     } catch (error) {
         console.error('Ban user error:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -278,30 +331,51 @@ export const listTransactions = async (req: Request, res: Response) => {
     }
 };
 
-// Approve pending withdrawal
+// Approve pending withdrawal — ATOMIC: prevents double-approval race condition
 export const approveWithdrawal = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
-        const transaction = await prisma.transaction.findUnique({
-            where: { id },
-        });
+        // ATOMIC: check-and-update in a single transaction
+        await prisma.$transaction(async (tx) => {
+            const transaction = await tx.transaction.findUnique({
+                where: { id },
+            });
 
-        if (!transaction) {
-            return res.status(404).json({ error: 'Transaction not found' });
-        }
+            if (!transaction) {
+                throw new Error('NOT_FOUND');
+            }
 
-        if (transaction.type !== 'WITHDRAWAL' || transaction.status !== 'PENDING') {
-            return res.status(400).json({ error: 'Invalid transaction' });
-        }
+            if (transaction.type !== 'WITHDRAWAL' || transaction.status !== 'PENDING') {
+                throw new Error('INVALID_STATE');
+            }
 
-        await prisma.transaction.update({
-            where: { id },
-            data: { status: 'COMPLETED' },
+            await tx.transaction.update({
+                where: { id },
+                data: { status: 'COMPLETED' },
+            });
         });
 
         res.json({ success: true, message: 'Withdrawal approved' });
+
+        // Audit log (fire-and-forget)
+        const adminId = (req as AuthenticatedRequest).user?.userId;
+        if (adminId) {
+            createAuditLog({
+                adminId,
+                action: 'APPROVE_WITHDRAWAL',
+                targetId: id,
+                targetType: 'Transaction',
+                ipAddress: req.ip,
+            });
+        }
     } catch (error) {
+        if (error instanceof Error && error.message === 'NOT_FOUND') {
+            return res.status(404).json({ error: 'Transaction not found' });
+        }
+        if (error instanceof Error && error.message === 'INVALID_STATE') {
+            return res.status(400).json({ error: 'Invalid transaction or already processed' });
+        }
         console.error('Approve withdrawal error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
@@ -341,6 +415,19 @@ export const rejectWithdrawal = async (req: Request, res: Response) => {
         ]);
 
         res.json({ success: true, message: 'Withdrawal rejected, funds refunded' });
+
+        // Audit log (fire-and-forget)
+        const adminId = (req as AuthenticatedRequest).user?.userId;
+        if (adminId) {
+            createAuditLog({
+                adminId,
+                action: 'REJECT_WITHDRAWAL',
+                targetId: id,
+                targetType: 'Transaction',
+                details: { reason, refundAmount: Number(transaction.amount) },
+                ipAddress: req.ip,
+            });
+        }
     } catch (error) {
         console.error('Reject withdrawal error:', error);
         res.status(500).json({ error: 'Internal server error' });

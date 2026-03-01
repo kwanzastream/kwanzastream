@@ -5,6 +5,31 @@ import { createOtp, verifyOtp, incrementOtpAttempts } from '../services/otpServi
 import { sendOtpSms } from '../services/smsService';
 import { generateTokenPair, verifyRefreshToken, revokeRefreshToken, revokeAllUserTokens } from '../services/jwtService';
 
+// ============== Cookie Configuration ==============
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
+const setAuthCookies = (res: Response, accessToken: string, refreshToken: string) => {
+    res.cookie('access_token', accessToken, {
+        httpOnly: true,
+        secure: IS_PRODUCTION,
+        sameSite: 'lax',
+        maxAge: 15 * 60 * 1000, // 15 minutes
+        path: '/',
+    });
+    res.cookie('refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: IS_PRODUCTION,
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/api/auth', // Only sent to auth endpoints
+    });
+};
+
+const clearAuthCookies = (res: Response) => {
+    res.clearCookie('access_token', { path: '/' });
+    res.clearCookie('refresh_token', { path: '/api/auth' });
+};
+
 // Validation schemas
 const requestOtpSchema = z.object({
     phone: z.string().min(9).max(15).regex(/^\+?[0-9]+$/, 'Invalid phone number'),
@@ -94,6 +119,9 @@ export const verifyOtpAndLogin = async (req: Request, res: Response) => {
         // Generate tokens
         const tokens = await generateTokenPair(user.id, user.role);
 
+        // Set httpOnly cookies (tokens NEVER exposed to JavaScript)
+        setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+
         res.json({
             success: true,
             user: {
@@ -107,7 +135,7 @@ export const verifyOtpAndLogin = async (req: Request, res: Response) => {
                 isVerified: user.isVerified,
                 balance: user.balance,
             },
-            ...tokens,
+            // Tokens are in httpOnly cookies, not in response body
         });
     } catch (error) {
         if (error instanceof z.ZodError) {
@@ -120,29 +148,36 @@ export const verifyOtpAndLogin = async (req: Request, res: Response) => {
 
 export const refreshAccessToken = async (req: Request, res: Response) => {
     try {
-        const { refreshToken } = refreshTokenSchema.parse(req.body);
+        // Read refresh token from cookie (fallback to body for backward compat)
+        const refreshToken = req.cookies?.refresh_token || req.body?.refreshToken;
+
+        if (!refreshToken) {
+            return res.status(401).json({ error: 'No refresh token provided' });
+        }
 
         const userId = await verifyRefreshToken(refreshToken);
 
         if (!userId) {
+            clearAuthCookies(res);
             return res.status(401).json({ error: 'Invalid or expired refresh token' });
         }
 
         const user = await prisma.user.findUnique({ where: { id: userId } });
 
         if (!user) {
+            clearAuthCookies(res);
             return res.status(401).json({ error: 'User not found' });
         }
 
         // Revoke old refresh token
         await revokeRefreshToken(refreshToken);
 
-        // Generate new token pair
+        // Generate new token pair and set cookies
         const tokens = await generateTokenPair(user.id, user.role);
+        setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 
         res.json({
             success: true,
-            ...tokens,
         });
     } catch (error) {
         if (error instanceof z.ZodError) {
@@ -155,12 +190,14 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
 
 export const logout = async (req: Request, res: Response) => {
     try {
-        const { refreshToken } = req.body;
+        // Read refresh token from cookie (fallback to body)
+        const refreshToken = req.cookies?.refresh_token || req.body?.refreshToken;
 
         if (refreshToken) {
             await revokeRefreshToken(refreshToken);
         }
 
+        clearAuthCookies(res);
         res.json({ success: true, message: 'Logged out successfully' });
     } catch (error) {
         console.error('Logout error:', error);
@@ -177,6 +214,7 @@ export const logoutAll = async (req: Request, res: Response) => {
         }
 
         await revokeAllUserTokens(userId);
+        clearAuthCookies(res);
 
         res.json({ success: true, message: 'Logged out from all devices' });
     } catch (error) {

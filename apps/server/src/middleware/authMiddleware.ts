@@ -6,13 +6,22 @@ export interface AuthenticatedRequest extends Request {
 }
 
 export const authMiddleware = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    const authHeader = req.headers.authorization;
+    // Read token from httpOnly cookie first, then Authorization header (for API clients/mobile)
+    let token: string | undefined;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (req.cookies?.access_token) {
+        token = req.cookies.access_token;
+    } else {
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            token = authHeader.split(' ')[1];
+        }
+    }
+
+    if (!token) {
         return res.status(401).json({ error: 'No token provided' });
     }
 
-    const token = authHeader.split(' ')[1];
     const payload = verifyAccessToken(token);
 
     if (!payload) {
@@ -24,10 +33,18 @@ export const authMiddleware = (req: AuthenticatedRequest, res: Response, next: N
 };
 
 export const optionalAuthMiddleware = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    const authHeader = req.headers.authorization;
+    let token: string | undefined;
 
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.split(' ')[1];
+    if (req.cookies?.access_token) {
+        token = req.cookies.access_token;
+    } else {
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            token = authHeader.split(' ')[1];
+        }
+    }
+
+    if (token) {
         const payload = verifyAccessToken(token);
         if (payload) {
             req.user = payload;

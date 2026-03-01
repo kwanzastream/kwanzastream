@@ -1,5 +1,4 @@
 import { io, Socket } from 'socket.io-client';
-import { getAccessToken } from './api';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -9,9 +8,8 @@ export const getSocket = (): Socket => {
     if (!socket) {
         socket = io(SOCKET_URL, {
             autoConnect: false,
-            auth: {
-                token: getAccessToken(),
-            },
+            // Use cookies for auth — httpOnly cookies are sent automatically
+            withCredentials: true,
             transports: ['websocket', 'polling'],
         });
     }
@@ -20,8 +18,6 @@ export const getSocket = (): Socket => {
 
 export const connectSocket = (): Socket => {
     const s = getSocket();
-    // Update auth token before connecting
-    s.auth = { token: getAccessToken() };
     if (!s.connected) {
         s.connect();
     }

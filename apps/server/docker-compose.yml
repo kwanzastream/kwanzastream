@@ -4,9 +4,9 @@ services:
     container_name: kwanza-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: kwanza
-      POSTGRES_PASSWORD: kwanza_secret_2024
-      POSTGRES_DB: kwanza_stream
+      POSTGRES_USER: ${POSTGRES_USER:-kwanza}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-kwanza_stream}
     ports:
       - "5432:5432"
     volumes:

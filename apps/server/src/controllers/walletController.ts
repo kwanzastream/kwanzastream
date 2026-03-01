@@ -27,6 +27,7 @@ const serializeUser = (user: any) => ({
 const depositSchema = z.object({
     amount: z.number().min(100).max(1000000), // Min 100 Kz, Max 1M Kz
     paymentMethod: z.enum(['multicaixa', 'unitel_money', 'bank_transfer']),
+    idempotencyKey: z.string().uuid().optional(), // Prevents double-credit on retry
 });
 
 const withdrawSchema = z.object({
@@ -101,7 +102,22 @@ export const requestDeposit = async (req: AuthenticatedRequest, res: Response) =
             return res.status(401).json({ error: 'Authentication required' });
         }
 
-        const { amount, paymentMethod } = depositSchema.parse(req.body);
+        const { amount, paymentMethod, idempotencyKey } = depositSchema.parse(req.body);
+
+        // IDEMPOTENCY CHECK: if key provided, return existing transaction if found
+        if (idempotencyKey) {
+            const existing = await prisma.transaction.findUnique({
+                where: { idempotencyKey },
+            });
+            if (existing) {
+                return res.json({
+                    success: true,
+                    message: 'Deposit already processed (idempotent)',
+                    transaction: serializeTransaction(existing),
+                });
+            }
+        }
+
         const amountCentimos = toCentimos(amount);
         const reference = `DEP-${uuidv4().slice(0, 8).toUpperCase()}`;
 
@@ -112,6 +128,7 @@ export const requestDeposit = async (req: AuthenticatedRequest, res: Response) =
                 type: 'DEPOSIT',
                 status: 'PENDING',
                 reference,
+                idempotencyKey,
                 description: `Depósito via ${paymentMethod}`,
                 metadata: { paymentMethod },
             },

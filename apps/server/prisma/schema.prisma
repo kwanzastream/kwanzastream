@@ -68,6 +68,7 @@ model User {
   transactions      Transaction[]
   followers         Follow[]       @relation("Following")
   following         Follow[]       @relation("Followers")
+  auditLogs         AuditLog[]     @relation("AuditLogs")
   
   @@index([phone])
   @@index([email])
@@ -181,4 +182,34 @@ model Follow {
   @@unique([followerId, followingId])
   @@index([followerId])
   @@index([followingId])
+}
+
+// ============== AUDIT LOG ==============
+
+enum AdminAction {
+  APPROVE_WITHDRAWAL
+  REJECT_WITHDRAWAL
+  BAN_USER
+  UNBAN_USER
+  UPDATE_USER_ROLE
+  END_STREAM
+  DELETE_CONTENT
+}
+
+model AuditLog {
+  id          String      @id @default(uuid())
+  createdAt   DateTime    @default(now())
+  
+  adminId     String
+  admin       User        @relation("AuditLogs", fields: [adminId], references: [id])
+  
+  action      AdminAction
+  targetId    String      // ID of the affected resource (userId, transactionId, etc.)
+  targetType  String      // "User", "Transaction", "Stream", etc.
+  details     Json?       // Additional context (e.g., old/new values)
+  ipAddress   String?
+  
+  @@index([adminId])
+  @@index([action])
+  @@index([createdAt])
 }

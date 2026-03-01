@@ -150,9 +150,9 @@ export default function ConvitesPage() {
                                     <TableCell>{invite.date}</TableCell>
                                     <TableCell>
                                         <Badge variant={
-                                            invite.status === "Aceito" ? "success" :
+                                            invite.status === "Aceito" ? "default" :
                                                 invite.status === "Pendente" ? "outline" : "destructive"
-                                        }>
+                                        } className={invite.status === "Aceito" ? "bg-emerald-500 hover:bg-emerald-600" : ""}>
                                             {invite.status === "Aceito" && <CheckCircle2 className="h-3 w-3 mr-1" />}
                                             {invite.status === "Pendente" && <Mail className="h-3 w-3 mr-1" />}
                                             {invite.status === "Expirado" && <AlertCircle className="h-3 w-3 mr-1" />}

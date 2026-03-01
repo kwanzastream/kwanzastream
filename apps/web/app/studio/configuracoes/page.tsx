@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowLeft, Image, Link as LinkIcon, MessageSquare, Shield, Upload, Trash2 } from "lucide-react"
@@ -19,7 +20,7 @@ export default function ChannelSettingsPage() {
   const [channelDescription, setChannelDescription] = React.useState("Descrição do canal...")
   const [bannerUrl, setBannerUrl] = React.useState("")
   const [avatarUrl, setAvatarUrl] = React.useState("/abstract-profile.png")
-  
+
   const [externalLinks, setExternalLinks] = React.useState([
     { id: "1", label: "Website", url: "https://exemplo.com" },
     { id: "2", label: "Instagram", url: "https://instagram.com/exemplo" }

@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
-import api, { setTokens, clearTokens, getAccessToken } from "./api"
+import api from "./api"
 
 interface User {
   id: string
@@ -11,12 +11,18 @@ interface User {
   username?: string
   displayName?: string
   avatarUrl?: string
+  avatar?: string
   bio?: string
   role: string
   isVerified: boolean
   balance: number
   streamKey?: string
   createdAt: string
+  // Extended fields populated by profile/dashboard endpoints
+  followers?: number
+  following?: number
+  location?: string
+  telefone?: string
 }
 
 interface AuthContextType {
@@ -36,21 +42,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Fetch current user from API
+  // Fetch current user from API (uses httpOnly cookie automatically)
   const refreshUser = useCallback(async () => {
     try {
-      const token = getAccessToken()
-      if (!token) {
-        setUser(null)
-        return
-      }
-
       const response = await api.get('/api/auth/me')
       setUser(response.data.user)
     } catch (error) {
-      console.error('Failed to fetch user:', error)
+      // 401 = not authenticated or expired cookie
       setUser(null)
-      clearTokens()
     }
   }, [])
 
@@ -73,23 +72,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Verify OTP and login
+  // Verify OTP and login — server sets httpOnly cookies automatically
   const verifyOtp = async (phone: string, code: string) => {
     const response = await api.post('/api/auth/verify-otp', { phone, code })
-
-    const { accessToken, refreshToken, user: userData } = response.data
-    setTokens(accessToken, refreshToken)
-    setUser(userData)
+    // No need to store tokens — httpOnly cookies are set by the server
+    setUser(response.data.user)
   }
 
-  // Logout
+  // Logout — server clears httpOnly cookies
   const logout = async () => {
     try {
       await api.post('/api/auth/logout')
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
-      clearTokens()
       setUser(null)
     }
   }
