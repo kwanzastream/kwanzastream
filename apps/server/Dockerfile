@@ -3,9 +3,9 @@ FROM node:20-alpine AS base
 WORKDIR /app
 
 # Install deps
-COPY package.json package-lock.json* ./
+COPY package.json ./
 COPY prisma ./prisma/
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 # Generate Prisma client
 RUN npx prisma generate
