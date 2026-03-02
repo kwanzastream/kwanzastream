@@ -58,7 +58,22 @@ export default function WatchPage() {
     const [isFollowing, setIsFollowing] = React.useState(false);
     const [showSalo, setShowSalo] = React.useState(false);
     const [donationAnim, setDonationAnim] = React.useState<{ emoji: string; name: string; amount: number } | null>(null);
+    const [copied, setCopied] = React.useState(false);
     const chatEndRef = React.useRef<HTMLDivElement>(null);
+
+    const handleShare = async () => {
+        const url = `${window.location.origin}/watch/${streamId}`;
+        const title = stream?.title || 'Kwanza Stream';
+        if (navigator.share) {
+            try {
+                await navigator.share({ title, url });
+            } catch { /* user cancelled */ }
+        } else {
+            await navigator.clipboard.writeText(url);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
 
     const { messages, viewerCount, isConnected, sendMessage } = useChat({
         streamId,
@@ -213,7 +228,7 @@ export default function WatchPage() {
                             <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-red-400">
                                 <Heart className="h-5 w-5" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
+                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white" onClick={handleShare}>
                                 <Share2 className="h-5 w-5" />
                             </Button>
                         </div>
@@ -350,6 +365,13 @@ export default function WatchPage() {
                     )}
                 </div>
             </aside>
+
+            {/* Copied Toast */}
+            {copied && (
+                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-green-500 text-white text-sm font-bold px-4 py-2 rounded-full shadow-lg z-50 animate-in fade-in slide-in-from-bottom-2">
+                    ✓ Link copiado!
+                </div>
+            )}
         </div>
     );
 }

@@ -10,11 +10,14 @@
   --card-foreground: oklch(0.98 0 0);
   --popover: oklch(0.12 0 0);
   --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.65 0.28 25); /* Vibrant Red - Angola flag inspired */
+  --primary: oklch(0.65 0.28 25);
+  /* Vibrant Red - Angola flag inspired */
   --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.88 0.22 85); /* Golden Yellow - Angola flag inspired */
+  --secondary: oklch(0.88 0.22 85);
+  /* Golden Yellow - Angola flag inspired */
   --secondary-foreground: oklch(0.08 0 0);
-  --accent: oklch(0.55 0.25 140); /* Bright Cyan/Teal accent */
+  --accent: oklch(0.55 0.25 140);
+  /* Bright Cyan/Teal accent */
   --accent-foreground: oklch(0.98 0 0);
   --muted: oklch(0.3 0 0);
   --muted-foreground: oklch(0.65 0 0);
@@ -125,6 +128,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -137,4 +141,150 @@
 
 .text-gradient {
   @apply bg-clip-text text-transparent bg-linear-to-r from-primary via-secondary to-primary;
+}
+
+/* ============== Mobile Utilities ============== */
+
+/* Remove tap highlight on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Safe area padding for iPhones with notch/dynamic island */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Mobile bottom nav spacer — add to pages that need it */
+.pb-mobile-nav {
+  padding-bottom: 3.5rem;
+  /* 56px = nav height */
+}
+
+@media (min-width: 768px) {
+  .pb-mobile-nav {
+    padding-bottom: 0;
+  }
+}
+
+/* Horizontal scroll tabs without scrollbar */
+.scroll-tabs {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scroll-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-tabs>* {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* Prevent iOS zoom on inputs (font-size must be ≥ 16px) */
+@media screen and (max-width: 767px) {
+
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============== Microinterações ============== */
+
+/* Button press feedback */
+button:active:not(:disabled),
+[role="button"]:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 0.1s ease;
+}
+
+/* Smooth defaults for all transitions */
+a,
+button,
+input,
+[role="button"] {
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Card hover lift (desktop only) */
+@media (hover: hover) {
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Skeleton shimmer animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.03) 25%,
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(255, 255, 255, 0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Slide up animation for bottom sheets */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Fade in */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
 }

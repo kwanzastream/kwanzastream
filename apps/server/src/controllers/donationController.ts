@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import prisma from '../config/prisma';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
+import { io } from '../index';
 
 // ============== Constants ==============
 
@@ -131,6 +132,26 @@ export const sendDonation = async (req: AuthenticatedRequest, res: Response) => 
 
             return don;
         });
+
+        // Emit real-time donation alert to streamer via Socket.io
+        const senderInfo = await prisma.user.findUnique({
+            where: { id: senderId },
+            select: { displayName: true, username: true, avatarUrl: true },
+        });
+
+        const alertPayload = {
+            senderName: senderInfo?.displayName || senderInfo?.username || 'Anónimo',
+            senderAvatar: senderInfo?.avatarUrl || null,
+            saloEmoji: salo.emoji,
+            saloName: salo.name,
+            amount: toKz(amountCentimos),
+            message: message || null,
+        };
+
+        if (streamId) {
+            io.to(`stream:${streamId}`).emit('donation:received', alertPayload);
+        }
+        io.to(`user:${receiverId}`).emit('donation:received', alertPayload);
 
         res.json({
             success: true,

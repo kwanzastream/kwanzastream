@@ -5,11 +5,36 @@ import { randomInt } from 'crypto';
 const OTP_EXPIRES_MINUTES = parseInt(process.env.OTP_EXPIRES_IN_MINUTES || '5');
 const OTP_MAX_ATTEMPTS = parseInt(process.env.OTP_MAX_ATTEMPTS || '3');
 
+// Custom error for OTP cooldown enforcement
+export class OtpCooldownError extends Error {
+    public remainingSeconds: number;
+    constructor(remainingSeconds: number) {
+        super(`OTP cooldown active. Try again in ${remainingSeconds} seconds.`);
+        this.name = 'OtpCooldownError';
+        this.remainingSeconds = remainingSeconds;
+    }
+}
+
 export const generateOtp = (): string => {
     return randomInt(100000, 999999).toString();
 };
 
 export const createOtp = async (phone: string, userId?: string): Promise<string> => {
+    // ===== OTP COOLDOWN (60 seconds) =====
+    const lastOtp = await prisma.otpCode.findFirst({
+        where: { phone },
+        orderBy: { createdAt: 'desc' },
+    });
+
+    if (lastOtp) {
+        const secondsSinceLastOtp = Math.floor((Date.now() - lastOtp.createdAt.getTime()) / 1000);
+        const OTP_COOLDOWN_SECONDS = parseInt(process.env.OTP_COOLDOWN_SECONDS || '60');
+        if (secondsSinceLastOtp < OTP_COOLDOWN_SECONDS) {
+            const remaining = OTP_COOLDOWN_SECONDS - secondsSinceLastOtp;
+            throw new OtpCooldownError(remaining);
+        }
+    }
+
     // Invalidate any existing OTPs for this phone
     await prisma.otpCode.updateMany({
         where: { phone, used: false },

@@ -15,6 +15,10 @@ interface User {
   bio?: string
   role: string
   isVerified: boolean
+  isBanned?: boolean
+  banReason?: string
+  emailVerified?: boolean
+  onboardingCompleted?: boolean
   balance: number
   streamKey?: string
   createdAt: string
@@ -29,7 +33,7 @@ interface AuthContextType {
   user: User | null
   isLoggedIn: boolean
   isLoading: boolean
-  requestOtp: (phone: string) => Promise<{ isNewUser: boolean; code?: string }>
+  requestOtp: (phone: string, termsAccepted?: boolean, ageConfirmed?: boolean) => Promise<{ isNewUser: boolean; code?: string }>
   verifyOtp: (phone: string, code: string) => Promise<void>
   logout: () => Promise<void>
   updateProfile: (data: Partial<User>) => Promise<void>
@@ -64,8 +68,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refreshUser])
 
   // Request OTP
-  const requestOtp = async (phone: string) => {
-    const response = await api.post('/api/auth/request-otp', { phone })
+  const requestOtp = async (phone: string, termsAccepted?: boolean, ageConfirmed?: boolean) => {
+    const response = await api.post('/api/auth/request-otp', { phone, termsAccepted, ageConfirmed })
     return {
       isNewUser: response.data.isNewUser,
       code: response.data.code, // Only in development

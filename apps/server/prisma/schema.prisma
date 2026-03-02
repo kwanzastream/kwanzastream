@@ -30,6 +30,13 @@ enum TransactionStatus {
   CANCELLED
 }
 
+enum NotificationType {
+  LIVE_STARTED
+  DONATION_RECEIVED
+  NEW_FOLLOWER
+  SYSTEM
+}
+
 enum StreamStatus {
   OFFLINE
   LIVE
@@ -46,13 +53,33 @@ model User {
   username      String?  @unique
   displayName   String?
   avatarUrl     String?
+  bannerUrl     String?
   bio           String?
   role          Role     @default(USER)
   isVerified    Boolean  @default(false)
   streamKey     String?  @unique
+  interests     String[] @default([])
+  onboardingCompleted Boolean @default(false)
   
   // Wallet (stored in centimos: 1 Kz = 100 centimos)
   balance       BigInt   @default(0)
+  
+  // Ban system
+  isBanned      Boolean  @default(false)
+  banReason     String?
+  bannedAt      DateTime?
+  
+  // Email verification
+  emailVerified    Boolean  @default(false)
+  emailVerifyToken String?
+  
+  // Password recovery
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+  
+  // Legal compliance
+  termsAcceptedAt    DateTime?
+  minAgeConfirmedAt  DateTime?
   
   // Timestamps
   createdAt     DateTime @default(now())
@@ -69,10 +96,30 @@ model User {
   followers         Follow[]       @relation("Following")
   following         Follow[]       @relation("Followers")
   auditLogs         AuditLog[]     @relation("AuditLogs")
+  watchHistory      WatchHistory[]
+  notifications     Notification[]
+  favoriteCreators  FavoriteCreator[] @relation("UserFavoriteCreators")
+  favoriteStreams   FavoriteStream[]  @relation("UserFavoriteStreams")
+  reports           Report[]          @relation("UserReports")
   
   @@index([phone])
   @@index([email])
   @@index([username])
+}
+
+model WatchHistory {
+  id        String   @id @default(uuid())
+  watchedAt DateTime @default(now())
+  duration  Int      @default(0) // seconds watched
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  streamId  String
+  stream    Stream   @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, streamId])
+  @@index([userId])
+  @@index([streamId])
 }
 
 model OtpCode {
@@ -124,9 +171,12 @@ model Stream {
   streamerId   String
   streamer     User         @relation(fields: [streamerId], references: [id], onDelete: Cascade)
   donations    Donation[]
+  watchHistory WatchHistory[]
   
   @@index([streamerId])
   @@index([status])
+  @@index([streamerId, status])  // Feed filter: streams by creator + live status
+  @@index([category])            // Search by category
 }
 
 model Donation {
@@ -168,6 +218,7 @@ model Transaction {
   @@index([userId])
   @@index([type])
   @@index([status])
+  @@index([userId, createdAt])   // Transaction history ordered by date
 }
 
 model Follow {
@@ -212,4 +263,82 @@ model AuditLog {
   @@index([adminId])
   @@index([action])
   @@index([createdAt])
+}
+
+// ============== PHASE 2: NOTIFICATIONS ==============
+
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  title     String
+  body      String
+  imageUrl  String?
+  linkUrl   String?          // deep link, e.g. "/stream/{id}"
+  read      Boolean          @default(false)
+  eventId   String?          @unique  // idempotency key — prevents duplicates on retry/failure
+  createdAt DateTime         @default(now())
+
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
+}
+
+// ============== PHASE 2: FAVORITES ==============
+
+model FavoriteCreator {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation("UserFavoriteCreators", fields: [userId], references: [id], onDelete: Cascade)
+  creatorId String
+
+  @@unique([userId, creatorId])
+  @@index([userId])
+}
+
+model FavoriteStream {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation("UserFavoriteStreams", fields: [userId], references: [id], onDelete: Cascade)
+  streamId  String
+
+  @@unique([userId, streamId])
+  @@index([userId])
+}
+
+// ============== PHASE 5: REPORTS ==============
+
+enum ReportTargetType {
+  USER
+  STREAM
+  MESSAGE
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
+}
+
+model Report {
+  id          String           @id @default(uuid())
+  reason      String
+  details     String?
+  targetId    String?
+  targetType  ReportTargetType @default(USER)
+  status      ReportStatus     @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  reporterId  String
+  reporter    User             @relation("UserReports", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId])
+  @@index([status])
+  @@index([createdAt])           // Admin ordering
 }

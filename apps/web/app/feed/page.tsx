@@ -43,6 +43,7 @@ import { LiveFeed } from '@/components/live-feed'
 import { SaloSystem } from '@/components/salo-system'
 import { WalletSection } from '@/components/wallet-section'
 import { streamService } from '@/lib/services'
+import { NotificationBell } from '@/components/notification-bell'
 
 interface Post {
   id: string
@@ -101,6 +102,7 @@ export default function FeedPage() {
   const [liveStreams, setLiveStreams] = React.useState<LiveStream[]>([])
   const [postContent, setPostContent] = React.useState('')
   const [activeTab, setActiveTab] = React.useState('para-ti')
+  const [feedFilter, setFeedFilter] = React.useState<'all' | 'following'>('all')
 
   React.useEffect(() => {
     if (!isLoading && !isLoggedIn) {
@@ -113,7 +115,7 @@ export default function FeedPage() {
     const fetchFeedData = async () => {
       try {
         // Fetch live streams from the real API
-        const liveRes = await streamService.getLive(1, 20)
+        const liveRes = await streamService.getLive(1, 20, undefined, feedFilter === 'following' ? 'following' : undefined)
         const streams: LiveStream[] = liveRes.data.streams || []
         setLiveStreams(streams)
 
@@ -147,7 +149,7 @@ export default function FeedPage() {
     if (isLoggedIn) {
       fetchFeedData()
     }
-  }, [isLoggedIn])
+  }, [isLoggedIn, feedFilter])
 
   if (isLoading) {
     return (
@@ -197,43 +199,45 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-dvh bg-background flex flex-col pb-mobile-nav">
       <Navbar />
 
       {/* Main Content */}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <div className="sticky top-0 bg-background/80 backdrop-blur z-50 border-b border-white/10">
-          <div className="max-w-7xl mx-auto px-6 py-4">
-            <div className="flex items-center justify-between mb-4">
+        <div className="sticky top-14 md:top-16 bg-background/80 backdrop-blur z-40 border-b border-white/10">
+          <div className="max-w-7xl mx-auto px-3 md:px-6 py-2 md:py-4">
+            <div className="flex items-center justify-between mb-2 md:mb-4">
               <div>
-                <h1 className="text-3xl font-bold">Feed Kwanza</h1>
-                <p className="text-sm text-muted-foreground">A tua comunidade criativa angolana</p>
+                <h1 className="text-xl md:text-3xl font-bold">Feed Kwanza</h1>
+                <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">A tua comunidade criativa angolana</p>
               </div>
-              <div className="hidden md:flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
-                <Search className="w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Procurar..."
-                  className="bg-transparent outline-none text-sm w-40 placeholder:text-muted-foreground"
-                />
+              <div className="hidden md:flex items-center gap-2">
+                <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+                  <Search className="w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Procurar..."
+                    className="bg-transparent outline-none text-sm w-40 placeholder:text-muted-foreground"
+                  />
+                </div>
               </div>
             </div>
-            <TabsList className="w-full justify-start bg-transparent border-b border-white/10 rounded-none h-auto p-0">
-              <TabsTrigger value="para-ti" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
-                <Home className="w-4 h-4 mr-2" />
+            <TabsList className="scroll-tabs w-full justify-start bg-transparent border-b border-white/10 rounded-none h-auto p-0 gap-0">
+              <TabsTrigger value="para-ti" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-xs md:text-sm px-3 md:px-4">
+                <Home className="w-4 h-4 mr-1 md:mr-2" />
                 Para Ti
               </TabsTrigger>
-              <TabsTrigger value="lives" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
-                <Flame className="w-4 h-4 mr-2" />
-                Lives Agora
+              <TabsTrigger value="lives" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-xs md:text-sm px-3 md:px-4">
+                <Flame className="w-4 h-4 mr-1 md:mr-2" />
+                Lives
               </TabsTrigger>
-              <TabsTrigger value="salos" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
-                <Gift className="w-4 h-4 mr-2" />
-                Sistema Salo
+              <TabsTrigger value="salos" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-xs md:text-sm px-3 md:px-4">
+                <Gift className="w-4 h-4 mr-1 md:mr-2" />
+                Salo
               </TabsTrigger>
-              <TabsTrigger value="wallet" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
-                <Wallet className="w-4 h-4 mr-2" />
+              <TabsTrigger value="wallet" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-xs md:text-sm px-3 md:px-4">
+                <Wallet className="w-4 h-4 mr-1 md:mr-2" />
                 Wallet
               </TabsTrigger>
             </TabsList>
@@ -310,7 +314,29 @@ export default function FeedPage() {
           {/* Center Feed */}
           <main className="flex-1 overflow-y-auto scroll-area-viewport border-r border-white/10">
             <TabsContent value="para-ti" className="mt-0 space-y-0">
-              <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-6">
+              <div className="max-w-3xl mx-auto p-3 md:p-6 space-y-4 md:space-y-6">
+                {/* Feed filter: Todos / Seguindo */}
+                <div className="flex gap-2 mb-4">
+                  <button
+                    onClick={() => setFeedFilter('all')}
+                    className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors ${feedFilter === 'all'
+                      ? 'bg-primary text-white'
+                      : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                      }`}
+                  >
+                    Todos
+                  </button>
+                  <button
+                    onClick={() => setFeedFilter('following')}
+                    className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors ${feedFilter === 'following'
+                      ? 'bg-primary text-white'
+                      : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                      }`}
+                  >
+                    <Users className="w-3 h-3 inline mr-1" />
+                    Seguindo
+                  </button>
+                </div>
                 {/* Post Composer */}
                 <div className="sticky top-0 p-4 rounded-lg bg-gradient-to-b from-background via-background/80 to-transparent border-b border-white/10 space-y-4 z-40">
                   <div className="flex gap-3">

@@ -13,13 +13,17 @@ RUN npx prisma generate
 # Copy source
 COPY . .
 
-# Build
-RUN npm run build 2>/dev/null || true
+# Build TypeScript (fail on errors — do NOT silence)
+RUN npm run build
 
 EXPOSE 5000
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:5000/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:5000/api/health || exit 1
 
-CMD ["node", "dist/index.js"]
+# Use start.sh for auto-migration on deploy
+COPY start.sh ./start.sh
+RUN chmod +x ./start.sh
+
+CMD ["./start.sh"]

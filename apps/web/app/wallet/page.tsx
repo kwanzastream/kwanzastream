@@ -281,8 +281,8 @@ export default function WalletPage() {
                       key={pm.id}
                       onClick={() => setDepositMethod(pm.id)}
                       className={`p-3 rounded-lg border text-center transition-all ${depositMethod === pm.id
-                          ? 'border-primary bg-primary/10'
-                          : 'border-white/10 hover:border-white/30'
+                        ? 'border-primary bg-primary/10'
+                        : 'border-white/10 hover:border-white/30'
                         }`}
                     >
                       <div className={`mx-auto mb-1 ${pm.color}`}>{pm.icon}</div>
@@ -309,6 +309,22 @@ export default function WalletPage() {
                     </Button>
                   ))}
                 </div>
+                {depositAmount && Number(depositAmount) >= 100 && (
+                  <div className="p-3 rounded-lg bg-white/5 border border-white/10 space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Montante</span>
+                      <span>{Number(depositAmount).toLocaleString()} Kz</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Taxa plataforma (0%)</span>
+                      <span className="text-green-400">Grátis</span>
+                    </div>
+                    <div className="border-t border-white/10 pt-1 flex justify-between text-sm font-bold">
+                      <span>Total creditado</span>
+                      <span className="text-green-400">{Number(depositAmount).toLocaleString()} Kz</span>
+                    </div>
+                  </div>
+                )}
               </div>
               {depositSuccess && (
                 <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-center">
@@ -349,7 +365,8 @@ export default function WalletPage() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold">Nº da Conta</label>
-                  <Input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} placeholder="000-000-000-000" className="bg-white/5 border-white/10" />
+                  <Input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} placeholder="AO06 0000 0000 0000 0000 0000 0" className="bg-white/5 border-white/10" />
+                  <p className="text-[10px] text-muted-foreground">Formato IBAN angolano: AO06 seguido de 21 dígitos</p>
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold">Titular</label>

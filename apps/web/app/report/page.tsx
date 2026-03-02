@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { ShieldAlert, ChevronLeft, CheckCircle2, ShieldCheck, Upload, HelpCircle } from "lucide-react"
+import { ShieldAlert, ChevronLeft, CheckCircle2, ShieldCheck, Upload, HelpCircle, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { reportService } from "@/lib/services"
 
 const reportReasons = [
   { id: "spam", label: "Spam ou publicidade enganosa" },
@@ -28,12 +29,29 @@ const reportReasons = [
 export default function ReportPage() {
   const [step, setStep] = React.useState(1)
   const [reason, setReason] = React.useState("")
+  const [details, setDetails] = React.useState("")
   const [submitted, setSubmitted] = React.useState(false)
+  const [submitting, setSubmitting] = React.useState(false)
+  const [refNumber, setRefNumber] = React.useState("")
+  const [submitError, setSubmitError] = React.useState("")
 
   const handleNext = () => setStep(step + 1)
   const handleBack = () => setStep(step - 1)
-  const handleSubmit = () => {
-    setSubmitted(true)
+  const handleSubmit = async () => {
+    setSubmitting(true)
+    setSubmitError("")
+    try {
+      const { data } = await reportService.create({
+        reason,
+        details: details.trim() || undefined,
+      })
+      setRefNumber(data.report.referenceNumber)
+      setSubmitted(true)
+    } catch (err: any) {
+      setSubmitError(err.response?.data?.error || "Erro ao enviar denúncia. Tenta novamente.")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   if (submitted) {
@@ -53,7 +71,7 @@ export default function ReportPage() {
             </div>
             <div className="p-4 rounded-xl bg-white/5 border border-white/10">
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Número de Referência</p>
-              <p className="text-lg font-black text-primary">#KS-849201</p>
+              <p className="text-lg font-black text-primary">{refNumber || "#KS-000000"}</p>
             </div>
           </CardContent>
           <CardFooter className="flex justify-center">
@@ -134,8 +152,11 @@ export default function ReportPage() {
                   </Label>
                   <textarea
                     id="details"
+                    value={details}
+                    onChange={(e) => setDetails(e.target.value)}
                     className="min-h-[120px] w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                     placeholder="Diz-nos mais sobre o que aconteceu..."
+                    maxLength={2000}
                   />
                 </div>
 
@@ -219,12 +240,18 @@ export default function ReportPage() {
                 Continuar
               </Button>
             ) : (
-              <Button
-                onClick={handleSubmit}
-                className="flex-[2] bg-primary hover:bg-primary/90 text-white font-black h-12 rounded-xl shadow-lg shadow-primary/20"
-              >
-                Enviar Denúncia
-              </Button>
+              <>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="flex-[2] bg-primary hover:bg-primary/90 text-white font-black h-12 rounded-xl shadow-lg shadow-primary/20"
+                >
+                  {submitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> A enviar...</> : 'Enviar Denúncia'}
+                </Button>
+                {submitError && (
+                  <p className="text-xs text-red-400 text-center w-full">{submitError}</p>
+                )}
+              </>
             )}
           </CardFooter>
         </Card>

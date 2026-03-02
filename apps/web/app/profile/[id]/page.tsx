@@ -24,6 +24,7 @@ import {
     Wallet,
     Gift,
     Loader2,
+    Camera,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { userService, streamService } from '@/lib/services'
@@ -34,6 +35,7 @@ interface UserProfile {
     displayName?: string
     bio?: string
     avatarUrl?: string
+    bannerUrl?: string
     isVerified?: boolean
     role?: string
     createdAt: string
@@ -66,6 +68,10 @@ export default function ProfilePage() {
     const [editName, setEditName] = React.useState('')
     const [editBio, setEditBio] = React.useState('')
     const [isSaving, setIsSaving] = React.useState(false)
+    const [avatarUploading, setAvatarUploading] = React.useState(false)
+    const [bannerUploading, setBannerUploading] = React.useState(false)
+    const avatarInputRef = React.useRef<HTMLInputElement>(null)
+    const bannerInputRef = React.useRef<HTMLInputElement>(null)
 
     const isOwnProfile = currentUser?.id === userId
 
@@ -131,6 +137,36 @@ export default function ProfilePage() {
         }
     }
 
+    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        setAvatarUploading(true)
+        try {
+            const { data } = await userService.uploadAvatar(file)
+            setProfile(prev => prev ? { ...prev, avatarUrl: data.avatarUrl } : null)
+        } catch (err) {
+            console.error('Avatar upload error:', err)
+        } finally {
+            setAvatarUploading(false)
+            if (avatarInputRef.current) avatarInputRef.current.value = ''
+        }
+    }
+
+    const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        setBannerUploading(true)
+        try {
+            const { data } = await userService.uploadBanner(file)
+            setProfile(prev => prev ? { ...prev, bannerUrl: data.bannerUrl } : null)
+        } catch (err) {
+            console.error('Banner upload error:', err)
+        } finally {
+            setBannerUploading(false)
+            if (bannerInputRef.current) bannerInputRef.current.value = ''
+        }
+    }
+
     if (loading) {
         return (
             <div className="min-h-screen bg-[#050505] text-white max-w-3xl mx-auto p-6 space-y-6">
@@ -167,10 +203,28 @@ export default function ProfilePage() {
     return (
         <div className="min-h-screen bg-[#050505] text-white">
             {/* Hero */}
-            <div className="relative h-48 bg-gradient-to-br from-primary/30 via-secondary/20 to-transparent">
+            <div
+                className={`relative h-48 bg-gradient-to-br from-primary/30 via-secondary/20 to-transparent bg-cover bg-center group ${isOwnProfile ? 'cursor-pointer' : ''}`}
+                style={profile.bannerUrl ? { backgroundImage: `url(${profile.bannerUrl})` } : undefined}
+                onClick={() => isOwnProfile && bannerInputRef.current?.click()}
+            >
                 <div className="absolute inset-0 bg-black/20" />
-                <div className="absolute top-4 left-4">
-                    <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-white/70 hover:text-white bg-black/30 backdrop-blur">
+                {isOwnProfile && (
+                    <>
+                        <input ref={bannerInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleBannerUpload} />
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+                            {bannerUploading ? (
+                                <Loader2 className="h-8 w-8 text-white animate-spin" />
+                            ) : (
+                                <div className="flex items-center gap-2 text-white/90 text-sm font-medium">
+                                    <Camera className="h-5 w-5" /> Alterar capa
+                                </div>
+                            )}
+                        </div>
+                    </>
+                )}
+                <div className="absolute top-4 left-4 z-10">
+                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); router.back() }} className="text-white/70 hover:text-white bg-black/30 backdrop-blur">
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
                 </div>
@@ -179,12 +233,29 @@ export default function ProfilePage() {
             <div className="max-w-3xl mx-auto px-4 md:px-6 -mt-16 relative z-10">
                 {/* Profile Header */}
                 <div className="flex flex-col md:flex-row items-start gap-6 mb-8">
-                    <Avatar className="h-28 w-28 ring-4 ring-[#050505] shadow-2xl">
-                        <AvatarImage src={profile.avatarUrl || '/abstract-profile.png'} />
-                        <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-3xl font-bold">
-                            {(profile.displayName || profile.username || 'U')[0]}
-                        </AvatarFallback>
-                    </Avatar>
+                    <div className="relative group">
+                        <Avatar className="h-28 w-28 ring-4 ring-[#050505] shadow-2xl">
+                            <AvatarImage src={profile.avatarUrl || '/abstract-profile.png'} />
+                            <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-3xl font-bold">
+                                {(profile.displayName || profile.username || 'U')[0]}
+                            </AvatarFallback>
+                        </Avatar>
+                        {isOwnProfile && (
+                            <>
+                                <input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleAvatarUpload} />
+                                <button
+                                    onClick={() => avatarInputRef.current?.click()}
+                                    className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50"
+                                >
+                                    {avatarUploading ? (
+                                        <Loader2 className="h-6 w-6 text-white animate-spin" />
+                                    ) : (
+                                        <Camera className="h-6 w-6 text-white" />
+                                    )}
+                                </button>
+                            </>
+                        )}
+                    </div>
 
                     <div className="flex-1 space-y-3">
                         {isEditing ? (
@@ -333,8 +404,8 @@ export default function ProfilePage() {
                                     <CardContent className="p-4 flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${s.status === 'LIVE'
-                                                    ? 'bg-red-500/20 text-red-400'
-                                                    : 'bg-white/5 text-muted-foreground'
+                                                ? 'bg-red-500/20 text-red-400'
+                                                : 'bg-white/5 text-muted-foreground'
                                                 }`}>
                                                 {s.status === 'LIVE' ? <Radio className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                                             </div>

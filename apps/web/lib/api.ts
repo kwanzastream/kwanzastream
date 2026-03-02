@@ -69,8 +69,8 @@ api.interceptors.response.use(
                 return api(originalRequest);
             } catch (refreshError) {
                 processQueue(refreshError);
-                // Redirect to auth page on refresh failure
-                if (typeof window !== 'undefined') {
+                // Redirect to auth page on refresh failure — but NOT if already there (avoids infinite loop)
+                if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
                     window.location.href = '/auth';
                 }
                 return Promise.reject(refreshError);

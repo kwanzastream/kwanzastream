@@ -11,6 +11,14 @@ const updateProfileSchema = z.object({
     email: z.string().email().optional(),
     bio: z.string().max(500).optional(),
     avatarUrl: z.string().url().optional(),
+    bannerUrl: z.string().url().optional().nullable(),
+});
+
+const onboardingSchema = z.object({
+    displayName: z.string().min(1).max(50),
+    username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/, 'Username deve conter apenas letras, números e _'),
+    bio: z.string().max(500).optional().default(''),
+    interests: z.array(z.string()).min(1).max(20),
 });
 
 const paginationSchema = z.object({
@@ -36,9 +44,11 @@ export const getUserProfile = async (req: Request, res: Response) => {
                 username: true,
                 displayName: true,
                 avatarUrl: true,
+                bannerUrl: true,
                 bio: true,
                 role: true,
                 isVerified: true,
+                interests: true,
                 createdAt: true,
                 _count: {
                     select: {
@@ -125,10 +135,12 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response) =>
                 username: true,
                 displayName: true,
                 avatarUrl: true,
+                bannerUrl: true,
                 bio: true,
                 role: true,
                 isVerified: true,
                 balance: true,
+                interests: true,
             },
         });
 
@@ -338,6 +350,89 @@ export const generateStreamKey = async (req: AuthenticatedRequest, res: Response
         res.json({ streamKey });
     } catch (error) {
         console.error('Generate stream key error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+// ============== Phase 1: Onboarding Persistence ==============
+
+// Complete onboarding (persists profile + interests)
+export const completeOnboarding = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        const data = onboardingSchema.parse(req.body);
+
+        // Check username availability
+        const existingUser = await prisma.user.findUnique({
+            where: { username: data.username },
+        });
+        if (existingUser && existingUser.id !== userId) {
+            return res.status(400).json({ error: 'Username já está em uso.' });
+        }
+
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data: {
+                displayName: data.displayName,
+                username: data.username,
+                bio: data.bio || '',
+                interests: data.interests,
+                onboardingCompleted: true,
+            },
+            select: {
+                id: true,
+                username: true,
+                displayName: true,
+                bio: true,
+                interests: true,
+                onboardingCompleted: true,
+                avatarUrl: true,
+            },
+        });
+
+        res.json({ success: true, user });
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ error: 'Validation error', details: error.errors });
+        }
+        console.error('Complete onboarding error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+// Check username availability (real-time)
+export const checkUsername = async (req: Request, res: Response) => {
+    try {
+        const { username } = req.params;
+
+        if (!username || username.length < 3) {
+            return res.json({ available: false, reason: 'Username deve ter pelo menos 3 caracteres.' });
+        }
+
+        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+            return res.json({ available: false, reason: 'Username deve conter apenas letras, números e _.' });
+        }
+
+        const existing = await prisma.user.findUnique({
+            where: { username: username.toLowerCase() },
+        });
+
+        // Optionally check current user (skip if it's their own username)
+        const currentUserId = (req as AuthenticatedRequest).user?.userId;
+        if (existing && existing.id === currentUserId) {
+            return res.json({ available: true });
+        }
+
+        res.json({
+            available: !existing,
+            reason: existing ? 'Username já está em uso.' : undefined,
+        });
+    } catch (error) {
+        console.error('Check username error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };

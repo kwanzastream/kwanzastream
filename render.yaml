@@ -1,0 +1,63 @@
+# ============================================================
+# Kwanza Stream — Render Blueprint (Infrastructure as Code)
+# ============================================================
+# Deploy: https://render.com/deploy?repo=...
+# This creates: API server + Postgres + Redis for staging
+
+services:
+  # ============== API Server ==============
+  - type: web
+    name: kwanza-stream-api
+    runtime: docker
+    dockerfilePath: apps/server/Dockerfile
+    dockerContext: apps/server
+    plan: starter
+    region: frankfurt
+    branch: main
+    envVars:
+      - key: NODE_ENV
+        value: staging
+      - key: PORT
+        value: "5000"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kwanza-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: kwanza-redis
+          type: redis
+          property: connectionString
+      - key: FRONTEND_URL
+        value: https://kwanza-stream-staging.vercel.app
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: RTMP_SECRET
+        generateValue: true
+      - key: MULTICAIXA_WEBHOOK_SECRET
+        generateValue: true
+      - key: SENTRY_DSN
+        sync: false
+      - key: SMS_PROVIDER
+        value: mock
+    healthCheckPath: /api/health
+    autoDeploy: true
+
+  # ============== Redis ==============
+  - type: redis
+    name: kwanza-redis
+    plan: starter
+    region: frankfurt
+    ipAllowList: []
+    maxmemoryPolicy: allkeys-lru
+
+# ============== Postgres ==============
+databases:
+  - name: kwanza-db
+    plan: starter
+    region: frankfurt
+    databaseName: kwanza_staging
+    user: kwanza_staging
+    postgresMajorVersion: "15"

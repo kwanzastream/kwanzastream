@@ -3,15 +3,17 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Search, Bell, Radio, Wallet, LogOut, User, Settings } from "lucide-react"
+import { Search, Bell, Radio, Wallet, LogOut, User, Settings, X } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
+import { NotificationBell } from "@/components/notification-bell"
 
 export function Navbar() {
   const { user, isLoggedIn, isLoading, logout } = useAuth()
   const router = useRouter()
   const [showMenu, setShowMenu] = React.useState(false)
+  const [showSearch, setShowSearch] = React.useState(false)
   const menuRef = React.useRef<HTMLDivElement>(null)
 
   // Close menu when clicking outside
@@ -33,44 +35,81 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-background/80 backdrop-blur-md">
-      <div className="flex h-16 items-center justify-between px-4 md:px-6">
-        <div className="flex items-center gap-2">
-          <Link
-            href={isLoggedIn ? "/feed" : "/"}
-            className="flex items-center gap-2 group transition-transform hover:scale-105"
-          >
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center font-bold text-lg shadow-lg border border-white/10 text-white">
-              K
-            </div>
-            <span className="font-bold text-xl tracking-tighter hidden md:block uppercase">
-              KWANZA <span className="text-secondary">STREAM</span>
-            </span>
-          </Link>
-        </div>
-
-        {isLoggedIn && (
-          <div className="flex-1 max-w-md mx-4">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Pesquisar creators, lives ou hashtags..."
-                className="w-full bg-white/5 border-white/10 pl-9 focus-visible:ring-primary h-9"
-              />
-            </div>
+      <div className="flex h-14 md:h-16 items-center justify-between px-3 md:px-6">
+        {/* Logo — always visible */}
+        {!showSearch && (
+          <div className="flex items-center gap-2">
+            <Link
+              href={isLoggedIn ? "/feed" : "/"}
+              className="flex items-center gap-2 group transition-transform hover:scale-105"
+            >
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center font-bold text-lg shadow-lg border border-white/10 text-white">
+                K
+              </div>
+              <span className="font-bold text-xl tracking-tighter hidden md:block uppercase">
+                KWANZA <span className="text-secondary">STREAM</span>
+              </span>
+            </Link>
           </div>
         )}
 
-        <div className="flex items-center gap-2">
+        {/* Search — full bar on desktop, expandable on mobile */}
+        {isLoggedIn && (
+          <>
+            {/* Desktop search */}
+            <div className="hidden md:block flex-1 max-w-md mx-4">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Pesquisar creators, lives ou hashtags..."
+                  className="w-full bg-white/5 border-white/10 pl-9 focus-visible:ring-primary h-9"
+                />
+              </div>
+            </div>
+
+            {/* Mobile expanded search */}
+            {showSearch && (
+              <div className="flex-1 flex items-center gap-2 md:hidden">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Pesquisar..."
+                    className="w-full bg-white/5 border-white/10 pl-9 focus-visible:ring-primary h-9 text-base"
+                    autoFocus
+                  />
+                </div>
+                <button onClick={() => setShowSearch(false)} className="p-2 text-muted-foreground">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        <div className="flex items-center gap-1 md:gap-2">
           {isLoggedIn && user ? (
             <>
+              {/* Mobile search toggle */}
+              {!showSearch && (
+                <button onClick={() => setShowSearch(true)} className="p-2 text-muted-foreground hover:text-foreground md:hidden">
+                  <Search className="w-5 h-5" />
+                </button>
+              )}
+
+              {/* Notification bell — desktop only (mobile uses bottom nav) */}
+              <div className="hidden md:block">
+                <NotificationBell />
+              </div>
+
               <Button asChild variant="ghost" className="hidden md:flex gap-2 font-bold text-primary h-9">
                 <Link href="/wallet">
                   <Wallet className="h-4 w-4" />
                   {(user.balance || 0).toLocaleString()} Kz
                 </Link>
               </Button>
-              <Button asChild variant="ghost" size="sm" className="hidden sm:flex font-bold text-primary">
+              <Button asChild variant="ghost" size="sm" className="hidden md:flex font-bold text-primary">
                 <Link href="/stream">
                   <Radio className="mr-2 h-4 w-4" /> Go Live
                 </Link>

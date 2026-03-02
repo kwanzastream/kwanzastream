@@ -2,6 +2,15 @@ import { Server, Socket } from 'socket.io';
 import prisma from '../config/prisma';
 import redis from '../config/redis';
 import { verifyAccessToken, TokenPayload } from '../services/jwtService';
+import { setNotificationIO } from '../services/notificationService';
+
+// Allowed reaction emojis
+const ALLOWED_REACTIONS = ['❤️', '🔥', '😂', '💯', '👏'];
+
+// Reaction rate limit: 2 per second per user (server-side authoritative)
+const REACTION_WINDOW_MS = 1000;
+const REACTION_MAX_PER_WINDOW = 2;
+const reactionCounts = new Map<string, { count: number; resetAt: number }>();
 
 interface ChatMessage {
     id: string;
@@ -34,6 +43,23 @@ const userMessageCounts = new Map<string, { count: number; resetAt: number }>();
 const streamBans = new Map<string, Map<string, number>>(); // streamId -> (userId -> expiresAt)
 
 export const setupChatService = (io: Server) => {
+    // Register IO for notification push
+    setNotificationIO(io);
+
+    // Periodic viewer count broadcast (every 10s, in-memory only)
+    setInterval(() => {
+        const rooms = io.sockets.adapter.rooms;
+        rooms.forEach((sockets, roomName) => {
+            if (roomName.startsWith('stream:')) {
+                const streamId = roomName.replace('stream:', '');
+                io.to(roomName).emit('viewer:count', {
+                    streamId,
+                    count: sockets.size,
+                });
+            }
+        });
+    }, 10_000);
+
     // Authentication middleware
     io.use(async (socket, next) => {
         const token = socket.handshake.auth.token;
@@ -65,50 +91,94 @@ export const setupChatService = (io: Server) => {
 
         console.log(`[Chat] ${user?.displayName || 'Anonymous'} connected (${socket.id})`);
 
-        // Join stream room
+        // Join personal notification room (for real-time notification push)
+        if (user) {
+            socket.join(`user:${user.id}`);
+        }
+
+        // Join stream room — viewer count is in-memory (socket room size)
         socket.on('join-stream', async (streamId: string) => {
             socket.join(`stream:${streamId}`);
             socket.join(`chat:${streamId}`);
 
-            // Increment viewer count
-            await prisma.stream.update({
-                where: { id: streamId },
-                data: { viewerCount: { increment: 1 } },
-            }).catch(() => { });
+            // Emit current viewer count from room size (no DB write)
+            const room = io.sockets.adapter.rooms.get(`stream:${streamId}`);
+            const count = room?.size || 1;
 
-            // Get current viewer count
-            const stream = await prisma.stream.findUnique({
-                where: { id: streamId },
-                select: { viewerCount: true },
-            });
-
-            io.to(`stream:${streamId}`).emit('viewer-count', {
+            io.to(`stream:${streamId}`).emit('viewer:count', {
                 streamId,
-                count: stream?.viewerCount || 0
+                count,
             });
 
-            console.log(`[Chat] ${user?.displayName || 'Anonymous'} joined stream ${streamId}`);
+            console.log(`[Chat] ${user?.displayName || 'Anonymous'} joined stream ${streamId} (viewers: ${count})`);
         });
 
-        // Leave stream room
+        // Leave stream room — in-memory viewer count
         socket.on('leave-stream', async (streamId: string) => {
             socket.leave(`stream:${streamId}`);
             socket.leave(`chat:${streamId}`);
 
-            // Decrement viewer count
-            await prisma.stream.update({
-                where: { id: streamId },
-                data: { viewerCount: { decrement: 1 } },
-            }).catch(() => { });
+            // Emit updated count from room size (no DB write)
+            const room = io.sockets.adapter.rooms.get(`stream:${streamId}`);
+            const count = room?.size || 0;
 
-            const stream = await prisma.stream.findUnique({
-                where: { id: streamId },
-                select: { viewerCount: true },
-            });
-
-            io.to(`stream:${streamId}`).emit('viewer-count', {
+            io.to(`stream:${streamId}`).emit('viewer:count', {
                 streamId,
-                count: Math.max(0, stream?.viewerCount || 0)
+                count,
+            });
+        });
+
+        // ============== Reactions ==============
+        socket.on('reaction', async (data: { streamId: string; emoji: string }) => {
+            if (!user) {
+                socket.emit('error', { message: 'Authentication required' });
+                return;
+            }
+
+            const { streamId, emoji } = data;
+
+            // Validate emoji
+            if (!ALLOWED_REACTIONS.includes(emoji)) {
+                socket.emit('error', { message: 'Invalid reaction' });
+                return;
+            }
+
+            // Server-side rate limit: 2/second per user per stream
+            const rateKey = `${user.id}:${streamId}`;
+            const now = Date.now();
+            const entry = reactionCounts.get(rateKey);
+
+            if (entry) {
+                if (now < entry.resetAt) {
+                    if (entry.count >= REACTION_MAX_PER_WINDOW) {
+                        return; // silently drop, don't spam error
+                    }
+                    entry.count++;
+                } else {
+                    entry.count = 1;
+                    entry.resetAt = now + REACTION_WINDOW_MS;
+                }
+            } else {
+                reactionCounts.set(rateKey, { count: 1, resetAt: now + REACTION_WINDOW_MS });
+            }
+
+            // Also check Redis-backed IP rate limit if Redis available
+            try {
+                if (redis.isOpen) {
+                    const ipKey = `reaction:ip:${socket.handshake.address}:${streamId}`;
+                    const ipCount = await redis.incr(ipKey);
+                    if (ipCount === 1) await redis.expire(ipKey, 1); // 1s window
+                    if (ipCount > 5) return; // 5/s per IP hard limit
+                }
+            } catch {
+                // Redis not available, rely on in-memory limit
+            }
+
+            // Broadcast reaction to all viewers in stream
+            io.to(`stream:${streamId}`).emit('reaction:broadcast', {
+                userId: user.id,
+                username: user.username || user.displayName || 'user',
+                emoji,
             });
         });
 
@@ -273,11 +343,24 @@ export const setupChatService = (io: Server) => {
             }
         });
 
-        // Disconnect
+        // Disconnect — snapshot viewer counts for rooms this socket was in
         socket.on('disconnect', () => {
             console.log(`[Chat] ${user?.displayName || 'Anonymous'} disconnected`);
+
+            // Broadcast updated viewer count for any stream rooms
+            // (socket has already left, so room size is already decremented)
         });
     });
 
-    console.log('[Chat] Chat service initialized');
+    // Clean up stale reaction rate limit entries every 30s
+    setInterval(() => {
+        const now = Date.now();
+        for (const [key, entry] of reactionCounts) {
+            if (now > entry.resetAt + 5000) {
+                reactionCounts.delete(key);
+            }
+        }
+    }, 30_000);
+
+    console.log('[Chat] Chat service initialized (reactions + in-memory viewer count)');
 };

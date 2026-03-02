@@ -33,6 +33,7 @@ import {
 import { useAuth } from "@/lib/auth-context"
 import { streamService, userService } from "@/lib/services"
 import { useChat, type ChatMessage } from "@/hooks/use-chat"
+import { DonationAlertOverlay } from "@/components/donation-alert-overlay"
 
 export default function StreamPage() {
   const { user, isLoggedIn, isLoading: authLoading } = useAuth()
@@ -49,6 +50,8 @@ export default function StreamPage() {
   const [copied, setCopied] = React.useState(false)
   const [isStarting, setIsStarting] = React.useState(false)
   const [elapsed, setElapsed] = React.useState(0)
+  const [showMobileChat, setShowMobileChat] = React.useState(false)
+  const [showMobileSettings, setShowMobileSettings] = React.useState(true)
   const chatEndRef = React.useRef<HTMLDivElement>(null)
 
   const { messages, viewerCount, isConnected, sendMessage } = useChat({
@@ -146,41 +149,49 @@ export default function StreamPage() {
   if (authLoading) return null
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white flex flex-col overflow-hidden">
+    <div className="min-h-dvh bg-[#050505] text-white flex flex-col overflow-hidden">
       {/* Top Status Bar */}
-      <header className="h-14 border-b border-white/10 flex items-center justify-between px-4 bg-black/40 backdrop-blur-md">
-        <div className="flex items-center gap-4">
+      <header className="h-12 md:h-14 border-b border-white/10 flex items-center justify-between px-3 md:px-4 bg-black/40 backdrop-blur-md">
+        <div className="flex items-center gap-2 md:gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center font-bold">K</div>
-            <span className="font-bold tracking-tighter hidden sm:block">STUDIO</span>
+            <div className="w-7 h-7 md:w-8 md:h-8 bg-primary rounded-lg flex items-center justify-center font-bold text-sm md:text-base">K</div>
+            <span className="font-bold tracking-tighter hidden sm:block text-sm">STUDIO</span>
           </div>
-          <Separator orientation="vertical" className="h-6 bg-white/10" />
-          <div className="flex items-center gap-3">
+          <Separator orientation="vertical" className="h-5 md:h-6 bg-white/10" />
+          <div className="flex items-center gap-2">
             {isLive ? (
-              <Badge variant="destructive" className="bg-red-600 animate-pulse border-none font-bold">
-                <Circle className="w-2 h-2 fill-current mr-1.5" /> AO VIVO
+              <Badge variant="destructive" className="bg-red-600 animate-pulse border-none font-bold text-[10px] md:text-xs">
+                <Circle className="w-2 h-2 fill-current mr-1" /> AO VIVO
               </Badge>
             ) : (
-              <Badge variant="outline" className="border-white/20 text-muted-foreground font-bold">
+              <Badge variant="outline" className="border-white/20 text-muted-foreground font-bold text-[10px] md:text-xs">
                 PRÉVIA
               </Badge>
             )}
-            <span className="text-xs font-medium text-muted-foreground">{formatTime(elapsed)}</span>
+            <span className="text-[10px] md:text-xs font-medium text-muted-foreground">{formatTime(elapsed)}</span>
           </div>
-        </div>
-
-        <div className="flex items-center gap-6">
           {isLive && (
-            <div className="hidden md:flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-bold">{viewerCount}</span>
+            <div className="flex items-center gap-1">
+              <Users className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
+              <span className="text-xs font-bold">{viewerCount}</span>
             </div>
           )}
-          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
-            <Settings className="h-5 w-5" />
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Mobile chat toggle */}
+          <Button
+            variant="ghost" size="icon"
+            className="lg:hidden text-muted-foreground hover:text-white h-9 w-9"
+            onClick={() => setShowMobileChat(!showMobileChat)}
+          >
+            <MessageCircle className={`h-5 w-5 ${showMobileChat ? 'text-primary' : ''}`} />
           </Button>
-          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-red-500" onClick={() => router.push("/feed")}>
-            <X className="h-5 w-5" />
+          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white h-9 w-9">
+            <Settings className="h-4 w-4 md:h-5 md:w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-red-500 h-9 w-9" onClick={() => router.push("/feed")}>
+            <X className="h-4 w-4 md:h-5 md:w-5" />
           </Button>
         </div>
       </header>
@@ -298,87 +309,151 @@ export default function StreamPage() {
                 <Badge className="bg-primary border-none text-white text-xs px-3 py-1 font-bold">AO VIVO</Badge>
               </div>
             )}
+
+            {/* Donation Alert Overlay */}
+            {isLive && streamId && (
+              <DonationAlertOverlay streamId={streamId} />
+            )}
           </div>
 
           {/* Bottom Control Bar */}
-          <div className="h-20 border-t border-white/10 flex items-center justify-between px-6 bg-black/60 backdrop-blur-xl z-20">
-            <div className="flex items-center gap-3">
+          <div className="h-16 md:h-20 border-t border-white/10 flex items-center justify-between px-3 md:px-6 bg-black/60 backdrop-blur-xl z-20">
+            <div className="flex items-center gap-2 md:gap-3">
               <Button
                 size="icon"
                 variant={cameraOn ? "secondary" : "destructive"}
                 onClick={() => setCameraOn(!cameraOn)}
-                className="rounded-full w-12 h-12"
+                className="rounded-full w-10 h-10 md:w-12 md:h-12"
               >
-                {cameraOn ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
+                {cameraOn ? <Video className="h-4 w-4 md:h-5 md:w-5" /> : <VideoOff className="h-4 w-4 md:h-5 md:w-5" />}
               </Button>
               <Button
                 size="icon"
                 variant={isMuted ? "destructive" : "secondary"}
                 onClick={() => setIsMuted(!isMuted)}
-                className="rounded-full w-12 h-12"
+                className="rounded-full w-10 h-10 md:w-12 md:h-12"
               >
-                {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                {isMuted ? <MicOff className="h-4 w-4 md:h-5 md:w-5" /> : <Mic className="h-4 w-4 md:h-5 md:w-5" />}
               </Button>
-              <Button size="icon" variant="ghost" className="rounded-full w-12 h-12 text-muted-foreground">
-                <Monitor className="h-5 w-5" />
+              <Button size="icon" variant="ghost" className="rounded-full w-10 h-10 md:w-12 md:h-12 text-muted-foreground hidden sm:flex">
+                <Monitor className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               {isLive ? (
                 <Button
                   size="lg"
                   onClick={handleEndStream}
-                  className="rounded-full px-10 font-black text-lg h-14 shadow-2xl bg-red-600 hover:bg-red-700 text-white"
+                  className="rounded-full px-5 md:px-10 font-black text-sm md:text-lg h-11 md:h-14 shadow-2xl bg-red-600 hover:bg-red-700 text-white"
                 >
-                  Terminar Live
+                  <span className="hidden sm:inline">Terminar Live</span>
+                  <span className="sm:hidden">Parar</span>
                 </Button>
               ) : (
                 <Button
                   size="lg"
                   onClick={handleGoLive}
                   disabled={!title.trim() || isStarting || !streamKey}
-                  className="rounded-full px-10 font-black text-lg h-14 shadow-2xl bg-primary hover:bg-primary/90 text-white shadow-primary/20 disabled:opacity-50"
+                  className="rounded-full px-5 md:px-10 font-black text-sm md:text-lg h-11 md:h-14 shadow-2xl bg-primary hover:bg-primary/90 text-white shadow-primary/20 disabled:opacity-50"
                 >
                   {isStarting ? (
                     <>
-                      <Loader2 className="h-5 w-5 mr-2 animate-spin" /> A preparar...
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" /> <span className="hidden sm:inline">A preparar...</span><span className="sm:hidden">...</span>
                     </>
                   ) : (
-                    "Ir ao Vivo"
+                    <><span className="hidden sm:inline">Ir ao Vivo</span><span className="sm:hidden">Go Live</span></>
                   )}
                 </Button>
               )}
             </div>
 
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" className="text-muted-foreground">
-                <Share2 className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-muted-foreground">
-                <MessageCircle className="h-5 w-5" />
+            <div className="flex items-center gap-1 md:gap-3">
+              <Button variant="ghost" size="icon" className="text-muted-foreground h-9 w-9">
+                <Share2 className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
             </div>
           </div>
+
+          {/* Mobile stream settings (before going live) */}
+          {!isLive && showMobileSettings && (
+            <div className="lg:hidden absolute inset-0 bg-black/90 backdrop-blur-md z-30 p-4 overflow-y-auto">
+              <div className="max-w-md mx-auto space-y-6 pt-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Configurar Live</h3>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowMobileSettings(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold">Título da tua Live</label>
+                  <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Ex: Noite de Kuduro"
+                    className="bg-white/5 border-white/10 h-11 text-base focus-visible:ring-primary"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold">Categoria</label>
+                  <Input
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="bg-white/5 border-white/10 h-11 text-base"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold">Servidor RTMP</label>
+                  <Input value="rtmp://localhost:1935/live" readOnly className="bg-white/5 border-white/10 h-10 text-xs font-mono" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold">Chave de Stream</label>
+                  <div className="flex gap-2">
+                    <Input value={streamKey || "..."} readOnly className="bg-white/5 border-white/10 h-10 text-xs font-mono" type="password" />
+                    <Button size="sm" variant="outline" className="border-white/10 bg-transparent h-10" onClick={handleCopyKey} disabled={!streamKey}>
+                      {copied ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
+                    </Button>
+                  </div>
+                </div>
+                <Button
+                  className="w-full h-12 bg-primary hover:bg-primary/90 font-bold text-base"
+                  onClick={() => { setShowMobileSettings(false); handleGoLive() }}
+                  disabled={!title.trim() || isStarting || !streamKey}
+                >
+                  {isStarting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> A preparar...</> : 'Ir ao Vivo'}
+                </Button>
+              </div>
+            </div>
+          )}
         </main>
 
-        {/* Right Side - Chat Interface */}
-        <aside className="w-full lg:w-80 border-l border-white/10 flex flex-col bg-black/20">
-          <div className="h-14 border-b border-white/10 flex items-center justify-between px-4">
-            <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+        {/* Right Side - Chat Interface (desktop always visible, mobile overlay) */}
+        <aside className={`
+          ${showMobileChat ? 'fixed inset-x-0 bottom-0 h-[60vh] z-50 rounded-t-2xl border-t-2 border-white/10 shadow-2xl animate-slide-up' : 'hidden'}
+          lg:relative lg:block lg:w-80 lg:h-auto lg:rounded-none lg:border-l lg:border-t-0
+          border-white/10 flex flex-col bg-black/95 lg:bg-black/20 backdrop-blur-xl lg:backdrop-blur-none
+        `}>
+          <div className="h-12 md:h-14 border-b border-white/10 flex items-center justify-between px-4">
+            <h3 className="text-xs md:text-sm font-black uppercase tracking-widest flex items-center gap-2">
               <MessageCircle className="h-4 w-4 text-primary" /> Chat da Live
             </h3>
-            {isLive && (
-              <div className="flex items-center gap-1.5">
-                <div className={`w-2 h-2 rounded-full ${isConnected ? "bg-green-500" : "bg-red-500"}`} />
-                <span className="text-[10px] text-muted-foreground">
-                  {isConnected ? "Conectado" : "..."}
-                </span>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {isLive && (
+                <div className="flex items-center gap-1.5">
+                  <div className={`w-2 h-2 rounded-full ${isConnected ? "bg-green-500" : "bg-red-500"}`} />
+                  <span className="text-[10px] text-muted-foreground">
+                    {isConnected ? "Conectado" : "..."}
+                  </span>
+                </div>
+              )}
+              {/* Mobile close */}
+              <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8" onClick={() => setShowMobileChat(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
-          <ScrollArea className="flex-1 p-4">
+          <ScrollArea className="flex-1 p-3 md:p-4">
             <div className="space-y-3">
               {!isLive && messages.length === 0 && (
                 <div className="text-center py-8">
@@ -410,7 +485,7 @@ export default function StreamPage() {
             </div>
           </ScrollArea>
 
-          <div className="p-4 border-t border-white/10 bg-black/40">
+          <div className="p-3 md:p-4 border-t border-white/10 bg-black/40 safe-area-bottom">
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Input
@@ -440,8 +515,8 @@ export default function StreamPage() {
               </Button>
             </div>
           </div>
-        </aside>
-      </div>
-    </div>
+        </aside >
+      </div >
+    </div >
   )
 }

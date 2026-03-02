@@ -19,14 +19,29 @@ const paginationSchema = z.object({
     limit: z.coerce.number().min(1).max(50).default(20),
 });
 
-// Get live streams
+// Get live streams — supports ?filter=following for logged-in users
 export const getLiveStreams = async (req: Request, res: Response) => {
     try {
         const { page, limit } = paginationSchema.parse(req.query);
-        const { category } = req.query;
+        const { category, filter } = req.query;
 
         const where: any = { status: 'LIVE' };
         if (category) where.category = category;
+
+        // Filter by followed creators if requested
+        if (filter === 'following') {
+            const userId = (req as any).user?.userId;
+            if (!userId) {
+                return res.status(401).json({ error: 'Authentication required for following filter' });
+            }
+
+            const follows = await prisma.follow.findMany({
+                where: { followerId: userId },
+                select: { followingId: true },
+            });
+
+            where.streamerId = { in: follows.map(f => f.followingId) };
+        }
 
         const [streams, total] = await Promise.all([
             prisma.stream.findMany({

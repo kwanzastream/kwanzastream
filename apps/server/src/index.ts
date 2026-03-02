@@ -1,3 +1,6 @@
+// ============== SENTRY (must be first) ==============
+import * as Sentry from '@sentry/node';
+
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -52,6 +55,19 @@ import webhookRoutes from './payments/webhookRoutes';
 const app = express();
 const httpServer = createServer(app);
 
+// ============== SENTRY INIT ==============
+if (process.env.SENTRY_DSN) {
+    Sentry.init({
+        dsn: process.env.SENTRY_DSN,
+        environment: process.env.NODE_ENV || 'development',
+        tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
+        release: `kwanza-stream@${process.env.npm_package_version || '1.0.0'}`,
+    });
+    console.log('✅ Sentry initialized');
+} else {
+    console.warn('⚠️  SENTRY_DSN not set — error tracking disabled');
+}
+
 // Socket.io setup
 const io = new Server(httpServer, {
     cors: {
@@ -86,14 +102,24 @@ app.use(cors({
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
+// XSS protection — strip HTML from all inputs
+import { sanitizeMiddleware } from './middleware/sanitizeMiddleware';
+app.use(sanitizeMiddleware);
+
 // ============== RATE LIMITING ==============
-// Strict limit for auth endpoints (OTP brute-force protection)
+// Auth endpoints: strict limit to prevent OTP/login brute-force
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 10,                   // 10 requests per window
-    message: { error: 'Too many authentication attempts. Please try again later.' },
+    max: 10,                   // 10 attempts per 15 min
+    message: { error: 'Muitas tentativas. Aguarda 15 minutos.' },
     standardHeaders: true,
     legacyHeaders: false,
+    keyGenerator: (req) => {
+        // Combine IP + userId (if present) for shared networks
+        const ip = req.ip || req.socket.remoteAddress || 'unknown';
+        const userId = (req.body as any)?.phone || (req.body as any)?.identifier || '';
+        return `${ip}:${userId}`;
+    },
 });
 
 // Moderate limit for financial endpoints (wallet, donations)
@@ -105,11 +131,38 @@ const financialLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-// General API limit
+// Reports: anti-spam
+const reportLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 5,
+    message: { error: 'Muitos relatórios. Aguarda 1 minuto.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Search: anti-scraping
+const searchLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 30,
+    message: { error: 'Muitas pesquisas. Aguarda um momento.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Stream creation
+const streamCreateLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 20,
+    message: { error: 'Too many stream requests.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// General API limit — 100 req/min per IP
 const generalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 200,                  // 200 requests per window
-    message: { error: 'Too many requests. Please try again later.' },
+    windowMs: 1 * 60 * 1000,
+    max: 100,
+    message: { error: 'Demasiados pedidos. Tenta novamente em breve.' },
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -126,23 +179,44 @@ app.get('/', (req, res) => {
     });
 });
 
-app.get('/health', async (req, res) => {
-    try {
-        await prisma.$queryRaw`SELECT 1`;
-        res.json({ status: 'healthy', database: 'connected' });
-    } catch (error) {
-        res.status(500).json({ status: 'unhealthy', database: 'disconnected' });
-    }
-});
+// Detailed health endpoint
+import healthRoutes from './routes/healthRoutes';
+app.use('/api/health', healthRoutes);
 
-// ============== API ROUTES (with rate limiters) ==============
+// ============== API ROUTES ==============
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/donations', financialLimiter, donationRoutes);
 app.use('/api/wallet', financialLimiter, walletRoutes);
-app.use('/api/streams', streamRoutes);
+app.use('/api/streams', streamCreateLimiter, streamRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/webhooks', webhookRoutes); // Webhooks have their own HMAC auth
+
+// Phase 1: Upload routes + static file serving
+import uploadRoutes from './routes/uploadRoutes';
+app.use('/api/upload', uploadRoutes);
+app.use('/uploads', express.static('uploads'));
+
+// Phase 2: Notification + Favorite routes
+import notificationRoutes from './routes/notificationRoutes';
+import favoriteRoutes from './routes/favoriteRoutes';
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/favorites', favoriteRoutes);
+
+// Phase 5: Report routes
+import reportRoutes from './routes/reportRoutes';
+app.use('/api/reports', reportLimiter, reportRoutes);
+
+// Phase 7: Search routes
+import searchRoutes from './routes/searchRoutes';
+app.use('/api/search', searchLimiter, searchRoutes);
+
+// Sentry test endpoint (dev/staging only)
+if (process.env.NODE_ENV !== 'production') {
+    app.get('/api/debug-sentry', (_req, _res) => {
+        throw new Error('Sentry test error — if you see this in Sentry, it works! 🎉');
+    });
+}
 
 // Import streaming services
 import { startMediaServer } from './streaming/mediaServer';
@@ -150,6 +224,11 @@ import { setupChatService } from './streaming/chatService';
 
 // Setup chat service
 setupChatService(io);
+
+// Sentry error handler — must be before custom error handler
+if (process.env.SENTRY_DSN) {
+    Sentry.setupExpressErrorHandler(app);
+}
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -198,5 +277,26 @@ const startServer = async () => {
 };
 
 startServer();
+
+// ============== GRACEFUL SHUTDOWN ==============
+const shutdown = async (signal: string) => {
+    console.log(`\n${signal} received — shutting down gracefully...`);
+    httpServer.close(() => console.log('✅ HTTP server closed'));
+    await prisma.$disconnect();
+    console.log('✅ Database disconnected');
+    process.exit(0);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('unhandledRejection', (reason) => {
+    console.error('Unhandled Rejection:', reason);
+    if (process.env.SENTRY_DSN) Sentry.captureException(reason);
+});
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    if (process.env.SENTRY_DSN) Sentry.captureException(error);
+    process.exit(1);
+});
 
 export { io };

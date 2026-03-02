@@ -15,6 +15,7 @@ import {
   Radio,
   TrendingUp,
   WifiOff,
+  Share2,
 } from 'lucide-react'
 import { streamService } from '@/lib/services'
 
@@ -188,7 +189,23 @@ export function LiveFeed() {
                     <p className="text-xs text-muted-foreground">Online agora</p>
                   </div>
                 </div>
-                <Heart className="w-4 h-4 text-muted-foreground hover:text-red-500 transition-colors cursor-pointer" />
+                <div className="flex items-center gap-1">
+                  <Heart className="w-4 h-4 text-muted-foreground hover:text-red-500 transition-colors cursor-pointer" />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      const url = `${window.location.origin}/watch/${stream.id}`
+                      if (navigator.share) {
+                        navigator.share({ title: stream.title, url }).catch(() => { })
+                      } else {
+                        navigator.clipboard.writeText(url)
+                      }
+                    }}
+                    className="p-1 rounded-full hover:bg-white/10 transition-colors"
+                  >
+                    <Share2 className="w-4 h-4 text-muted-foreground hover:text-white transition-colors" />
+                  </button>
+                </div>
               </div>
 
               {/* Title */}

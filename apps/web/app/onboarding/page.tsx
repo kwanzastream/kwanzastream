@@ -22,9 +22,17 @@ import {
   Briefcase,
   Cpu,
   Shirt,
+  Loader2,
+  Camera,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Suspense } from "react"
+import { useAuth } from "@/lib/auth-context"
+import { userService } from "@/lib/services"
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
 
 const INTERESTS = [
   { id: "music", label: "Música", icon: Music, color: "text-purple-500" },
@@ -39,19 +47,20 @@ const INTERESTS = [
   { id: "fashion", label: "Moda", icon: Shirt, color: "text-pink-500" },
 ]
 
-const CREATORS = [
-  { name: "Preto Show", handle: "@pretoshow", bio: "Rei do King", followers: "1.2M" },
-  { name: "Yola Semedo", handle: "@yolasemedo", bio: "Diva da Música Angolana", followers: "850K" },
-  { name: "Anselmo Ralph", handle: "@anselmo", bio: "O Cupido", followers: "2.1M" },
-  { name: "Sandra Gomes", handle: "@sandragomes", bio: "Content Creator | Luanda", followers: "45K" },
-]
-
 function OnboardingContent() {
   const router = useRouter()
-  const [step, setStep] = React.useState(0) // 0: Welcome, 1-4: Steps, 5: Completion
+  const { user, refreshUser } = useAuth()
+  const [step, setStep] = React.useState(0)
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [error, setError] = React.useState("")
   const [profile, setProfile] = React.useState({ name: "", username: "", bio: "" })
   const [selectedInterests, setSelectedInterests] = React.useState<string[]>([])
-  const [followed, setFollowed] = React.useState<string[]>([])
+  const [avatarFile, setAvatarFile] = React.useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = React.useState<string>("")
+
+  // Username validation state
+  const [usernameStatus, setUsernameStatus] = React.useState<"idle" | "checking" | "available" | "taken">("idle")
+  const usernameCheckTimeout = React.useRef<NodeJS.Timeout | null>(null)
 
   const progress = step === 0 ? 0 : step === 5 ? 100 : step * 25
 
@@ -62,8 +71,89 @@ function OnboardingContent() {
     setSelectedInterests((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]))
   }
 
-  const toggleFollow = (handle: string) => {
-    setFollowed((prev) => (prev.includes(handle) ? prev.filter((h) => h !== handle) : [...prev, handle]))
+  // Pre-fill from existing user data
+  React.useEffect(() => {
+    if (user) {
+      setProfile({
+        name: user.displayName || "",
+        username: user.username || "",
+        bio: user.bio || "",
+      })
+      if (user.avatarUrl) setAvatarPreview(user.avatarUrl)
+    }
+  }, [user])
+
+  // Debounced username check
+  const handleUsernameChange = (value: string) => {
+    const sanitized = value.toLowerCase().replace(/[^a-z0-9_]/g, "")
+    setProfile((prev) => ({ ...prev, username: sanitized }))
+
+    if (usernameCheckTimeout.current) clearTimeout(usernameCheckTimeout.current)
+
+    if (sanitized.length < 3) {
+      setUsernameStatus("idle")
+      return
+    }
+
+    setUsernameStatus("checking")
+    usernameCheckTimeout.current = setTimeout(async () => {
+      try {
+        const res = await userService.checkUsername(sanitized)
+        setUsernameStatus(res.data.available ? "available" : "taken")
+      } catch {
+        setUsernameStatus("idle")
+      }
+    }, 400)
+  }
+
+  // Handle avatar file selection
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 2 * 1024 * 1024) {
+      setError("A foto deve ter menos de 2MB.")
+      return
+    }
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setError("Usa uma imagem JPEG, PNG ou WebP.")
+      return
+    }
+
+    setAvatarFile(file)
+    setAvatarPreview(URL.createObjectURL(file))
+    setError("")
+  }
+
+  // Submit onboarding to backend
+  const handleComplete = async () => {
+    setIsLoading(true)
+    setError("")
+
+    try {
+      // Upload avatar if selected
+      if (avatarFile) {
+        await userService.uploadAvatar(avatarFile)
+      }
+
+      // Complete onboarding (persist profile + interests)
+      await userService.completeOnboarding({
+        displayName: profile.name,
+        username: profile.username,
+        bio: profile.bio,
+        interests: selectedInterests,
+      })
+
+      // Refresh user context
+      await refreshUser()
+
+      // Move to completion step
+      setStep(5)
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Erro ao completar onboarding")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -90,6 +180,14 @@ function OnboardingContent() {
           )}
         </div>
 
+        {/* Error banner */}
+        {error && (
+          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            {error}
+          </div>
+        )}
+
         {/* Step 0: Welcome */}
         {step === 0 && (
           <div className="text-center space-y-6">
@@ -114,13 +212,28 @@ function OnboardingContent() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex flex-col items-center gap-4">
-                <Avatar className="h-24 w-24 border-2 border-primary ring-4 ring-primary/10">
-                  <AvatarImage src="/abstract-profile.png" />
-                  <AvatarFallback className="text-2xl">EC</AvatarFallback>
-                </Avatar>
-                <Button variant="outline" size="sm" className="border-white/10 bg-transparent">
-                  Mudar Foto
-                </Button>
+                <div className="relative group">
+                  <Avatar className="h-24 w-24 border-2 border-primary ring-4 ring-primary/10">
+                    <AvatarImage src={avatarPreview || "/abstract-profile.png"} />
+                    <AvatarFallback className="text-2xl">
+                      {profile.name?.[0]?.toUpperCase() || "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <label
+                    htmlFor="avatar-upload"
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  >
+                    <Camera className="h-6 w-6 text-white" />
+                  </label>
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handleAvatarSelect}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">Clica na foto para mudar (máx 2MB)</p>
               </div>
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -130,6 +243,7 @@ function OnboardingContent() {
                     value={profile.name}
                     onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                     className="bg-white/5 border-white/10"
+                    maxLength={50}
                   />
                 </div>
                 <div className="space-y-2">
@@ -138,11 +252,27 @@ function OnboardingContent() {
                     <span className="absolute left-3 top-2.5 text-muted-foreground">@</span>
                     <Input
                       placeholder="username"
-                      className="pl-7 bg-white/5 border-white/10"
+                      className={cn(
+                        "pl-7 pr-10 bg-white/5 border-white/10",
+                        usernameStatus === "taken" && "border-red-500/50 focus-visible:ring-red-500",
+                        usernameStatus === "available" && "border-green-500/50 focus-visible:ring-green-500"
+                      )}
                       value={profile.username}
-                      onChange={(e) => setProfile({ ...profile, username: e.target.value })}
+                      onChange={(e) => handleUsernameChange(e.target.value)}
+                      maxLength={30}
                     />
+                    <div className="absolute right-3 top-2.5">
+                      {usernameStatus === "checking" && <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />}
+                      {usernameStatus === "available" && <CheckCircle2 className="h-5 w-5 text-green-500" />}
+                      {usernameStatus === "taken" && <AlertCircle className="h-5 w-5 text-red-500" />}
+                    </div>
                   </div>
+                  {usernameStatus === "taken" && (
+                    <p className="text-xs text-red-400">Username já está em uso.</p>
+                  )}
+                  {usernameStatus === "available" && (
+                    <p className="text-xs text-green-400">Username disponível!</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Bio (Opcional)</label>
@@ -151,6 +281,7 @@ function OnboardingContent() {
                     placeholder="Conta um pouco sobre ti..."
                     value={profile.bio}
                     onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                    maxLength={150}
                   />
                   <p className="text-[10px] text-right text-muted-foreground">{profile.bio.length}/150 caracteres</p>
                 </div>
@@ -160,7 +291,7 @@ function OnboardingContent() {
               <Button
                 className="w-full h-11 font-bold"
                 onClick={nextStep}
-                disabled={!profile.name || !profile.username}
+                disabled={!profile.name || !profile.username || profile.username.length < 3 || usernameStatus === "taken" || usernameStatus === "checking"}
               >
                 Próximo
               </Button>
@@ -206,58 +337,8 @@ function OnboardingContent() {
           </Card>
         )}
 
-        {/* Step 3: Follow */}
+        {/* Step 3: Choose Path */}
         {step === 3 && (
-          <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-2xl">Segue Alguns Creators</CardTitle>
-              <CardDescription>Começa a tua jornada seguindo creators populares em Angola.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {CREATORS.map((creator) => (
-                <div
-                  key={creator.handle}
-                  className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10"
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={`/.jpg?query=${creator.name}`} />
-                      <AvatarFallback>{creator.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <h4 className="text-sm font-bold truncate">{creator.name}</h4>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {creator.handle} • {creator.followers}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant={followed.includes(creator.handle) ? "outline" : "default"}
-                    size="sm"
-                    className={cn(
-                      "h-8 px-4 font-bold transition-all",
-                      followed.includes(creator.handle) && "border-primary text-primary",
-                    )}
-                    onClick={() => toggleFollow(creator.handle)}
-                  >
-                    {followed.includes(creator.handle) ? "Seguindo" : "Seguir"}
-                  </Button>
-                </div>
-              ))}
-            </CardContent>
-            <CardFooter className="flex gap-3">
-              <Button variant="outline" className="flex-1 border-white/10 bg-transparent" onClick={prevStep}>
-                Voltar
-              </Button>
-              <Button className="flex-2 font-bold" onClick={nextStep}>
-                Próximo
-              </Button>
-            </CardFooter>
-          </Card>
-        )}
-
-        {/* Step 4: Choose Path */}
-        {step === 4 && (
           <div className="space-y-6">
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-bold">Como Queres Usar Kwanza Stream?</h2>
@@ -299,6 +380,64 @@ function OnboardingContent() {
             <Button variant="ghost" className="w-full text-muted-foreground" onClick={prevStep}>
               <ChevronLeft className="h-4 w-4 mr-2" /> Voltar
             </Button>
+          </div>
+        )}
+
+        {/* Step 4: Confirmation — calls API */}
+        {step === 4 && (
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-bold">Tudo Certo?</h2>
+              <p className="text-muted-foreground">Revê o teu perfil antes de começar.</p>
+            </div>
+
+            <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
+              <CardContent className="pt-6 space-y-4">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-16 w-16 border-2 border-primary">
+                    <AvatarImage src={avatarPreview || "/abstract-profile.png"} />
+                    <AvatarFallback className="text-xl">{profile.name?.[0]?.toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="font-bold text-lg">{profile.name}</h3>
+                    <p className="text-sm text-muted-foreground">@{profile.username}</p>
+                  </div>
+                </div>
+                {profile.bio && (
+                  <p className="text-sm text-muted-foreground border-t border-white/5 pt-3">{profile.bio}</p>
+                )}
+                <div className="flex flex-wrap gap-2 border-t border-white/5 pt-3">
+                  {selectedInterests.map((id) => {
+                    const interest = INTERESTS.find((i) => i.id === id)
+                    return interest ? (
+                      <span key={id} className="text-xs bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
+                        {interest.label}
+                      </span>
+                    ) : null
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1 border-white/10 bg-transparent" onClick={prevStep}>
+                <ChevronLeft className="h-4 w-4 mr-1" /> Ajustar
+              </Button>
+              <Button
+                className="flex-2 h-12 font-bold"
+                onClick={handleComplete}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    A guardar...
+                  </>
+                ) : (
+                  "Completar Perfil"
+                )}
+              </Button>
+            </div>
           </div>
         )}
 
