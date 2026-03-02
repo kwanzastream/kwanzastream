@@ -1,14 +1,13 @@
-# ============ Stage 1: Build ============
-FROM node:20-alpine AS builder
+FROM node:20-alpine
 
 # Native build tools for bcrypt
 RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
 
+# Install ALL dependencies (including devDeps for tsc)
 COPY package.json ./
 COPY prisma ./prisma/
-# Install ALL dependencies (including devDeps like typescript)
 RUN npm install
 
 # Generate Prisma client
@@ -18,24 +17,10 @@ RUN npx prisma generate
 COPY . .
 RUN npm run build
 
-# ============ Stage 2: Production ============
-FROM node:20-alpine AS production
+# Remove devDependencies after build
+RUN npm prune --omit=dev
 
-# Native build tools for bcrypt
-RUN apk add --no-cache python3 make g++
-
-WORKDIR /app
-
-COPY package.json ./
-COPY prisma ./prisma/
-# Install ONLY production dependencies
-RUN npm install --omit=dev
-
-# Generate Prisma client for production
-RUN npx prisma generate
-
-# Copy compiled output from builder
-COPY --from=builder /app/dist ./dist
+# Copy start script
 COPY start.sh ./start.sh
 RUN chmod +x ./start.sh
 
