@@ -4,7 +4,7 @@
     "rewrites": [
         {
             "source": "/api/:path*",
-            "destination": "https://your-backend-url.railway.app/api/:path*"
+            "destination": "https://kwanza-stream-api.onrender.com/api/:path*"
         }
     ]
 }
