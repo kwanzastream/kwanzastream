@@ -1,6 +1,9 @@
 # ============ Stage 1: Build ============
 FROM node:20-alpine AS builder
 
+# Native build tools for bcrypt
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
 COPY package.json ./
@@ -17,6 +20,9 @@ RUN npm run build
 
 # ============ Stage 2: Production ============
 FROM node:20-alpine AS production
+
+# Native build tools for bcrypt
+RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
 
