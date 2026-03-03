@@ -136,7 +136,7 @@ export function Navbar() {
   )
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-background/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-background/80 backdrop-blur-md overflow-visible">
       <div className="flex h-14 md:h-16 items-center justify-between px-3 md:px-6">
         {/* Logo — always visible */}
         {!showSearch && (
