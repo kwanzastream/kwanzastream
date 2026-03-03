@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build --webpack",
+    "build": "next build",
     "dev": "next dev",
     "lint": "eslint .",
     "start": "next start"
@@ -49,6 +49,7 @@
     "hls.js": "^1.6.15",
     "input-otp": "1.4.1",
     "lightningcss": "^1.30.2",
+    "lightningcss-linux-x64-gnu": "^1.30.2",
     "lucide-react": "^0.454.0",
     "nanoid": "^5.1.6",
     "next": "16.0.10",
