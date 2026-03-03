@@ -81,12 +81,16 @@ interface LiveStream {
 
 const cn = (...classes: any[]) => classes.filter(Boolean).join(' ')
 
-function NavItem({ icon, label, active, badge }: { icon: React.ReactNode; label: string; active?: boolean; badge?: string }) {
+function NavItem({ icon, label, active, badge, href }: { icon: React.ReactNode; label: string; active?: boolean; badge?: string; href?: string }) {
+  const router = useRouter()
   return (
-    <button className={cn(
-      'flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-      active ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'
-    )}>
+    <button
+      onClick={() => href && router.push(href)}
+      className={cn(
+        'flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer',
+        active ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'
+      )}
+    >
       {icon}
       <span className="flex-1 text-left">{label}</span>
       {badge && <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">{badge}</span>}
@@ -277,13 +281,13 @@ export default function FeedPage() {
 
             {/* Navigation */}
             <nav className="space-y-2 mb-8">
-              <NavItem icon={<Home className="h-5 w-5" />} label="Início" active />
-              <NavItem icon={<Flame className="h-5 w-5" />} label="Lives" />
-              <NavItem icon={<Users className="h-5 w-5" />} label="Descobrir Creators" />
-              <NavItem icon={<TrendingUp className="h-5 w-5" />} label="Tendências" />
-              <NavItem icon={<User className="h-5 w-5" />} label="Meu Perfil" />
-              <NavItem icon={<BarChart3 className="h-5 w-5" />} label="Dashboard" />
-              <NavItem icon={<Wallet className="h-5 w-5" />} label="Carteira" badge={`${((user?.balance || 0) / 1000).toFixed(0)}K Kz`} />
+              <NavItem icon={<Home className="h-5 w-5" />} label="Início" active href="/feed" />
+              <NavItem icon={<Flame className="h-5 w-5" />} label="Lives" href="/explore" />
+              <NavItem icon={<Users className="h-5 w-5" />} label="Descobrir Creators" href="/explore" />
+              <NavItem icon={<TrendingUp className="h-5 w-5" />} label="Tendências" href="/explore" />
+              <NavItem icon={<User className="h-5 w-5" />} label="Meu Perfil" href={`/profile/${user?.id}`} />
+              <NavItem icon={<BarChart3 className="h-5 w-5" />} label="Dashboard" href="/dashboard" />
+              <NavItem icon={<Wallet className="h-5 w-5" />} label="Carteira" badge={`${((user?.balance || 0) / 1000).toFixed(0)}K Kz`} href="/wallet" />
             </nav>
 
             <Separator className="bg-white/10 mb-8" />
