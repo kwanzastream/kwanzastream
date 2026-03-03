@@ -70,7 +70,7 @@ const mockTransactions: Transaction[] = [
   },
 ]
 
-export function WalletSection({ isCreator = false }: { isCreator?: boolean }) {
+export function WalletSection({ isCreator = false, balance = 0 }: { isCreator?: boolean; balance?: number }) {
   const [showBalance, setShowBalance] = React.useState(true)
 
   return (
@@ -94,7 +94,7 @@ export function WalletSection({ isCreator = false }: { isCreator?: boolean }) {
               </div>
               <div>
                 <p className="text-4xl font-black text-primary">
-                  {showBalance ? (1_250_000).toLocaleString() : '****'}
+                  {showBalance ? balance.toLocaleString() : '****'}
                 </p>
                 <p className="text-xs text-muted-foreground pt-1">Kwanzas</p>
               </div>
@@ -248,11 +248,10 @@ export function WalletSection({ isCreator = false }: { isCreator?: boolean }) {
                 <div className="flex items-center gap-3 flex-1">
                   {/* Transaction Icon */}
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      tx.type === 'income' || tx.type === 'deposit'
+                    className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === 'income' || tx.type === 'deposit'
                         ? 'bg-green-500/20'
                         : 'bg-red-500/20'
-                    }`}
+                      }`}
                   >
                     {tx.type === 'income' || tx.type === 'deposit' ? (
                       <ArrowDownLeft className="w-5 h-5 text-green-400" />
@@ -274,22 +273,20 @@ export function WalletSection({ isCreator = false }: { isCreator?: boolean }) {
                 {/* Amount & Status */}
                 <div className="text-right">
                   <p
-                    className={`font-bold text-sm ${
-                      tx.type === 'income' || tx.type === 'deposit'
+                    className={`font-bold text-sm ${tx.type === 'income' || tx.type === 'deposit'
                         ? 'text-green-400'
                         : 'text-red-400'
-                    }`}
+                      }`}
                   >
                     {tx.type === 'income' || tx.type === 'deposit' ? '+' : '-'}
                     {tx.amount.toLocaleString()} Kz
                   </p>
                   <Badge
                     variant="outline"
-                    className={`text-xs mt-1 ${
-                      tx.status === 'completed'
+                    className={`text-xs mt-1 ${tx.status === 'completed'
                         ? 'bg-green-500/10 text-green-300 border-green-500/30'
                         : 'bg-yellow-500/10 text-yellow-300 border-yellow-500/30'
-                    }`}
+                      }`}
                   >
                     {tx.status === 'completed' ? 'Concluída' : 'Pendente'}
                   </Badge>
