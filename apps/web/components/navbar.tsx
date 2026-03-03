@@ -1,20 +1,33 @@
 "use client"
 import * as React from "react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Search, Bell, Radio, Wallet, LogOut, User, Settings, X } from "lucide-react"
+import { Search, Bell, Radio, Wallet, LogOut, User, Settings, X, CheckCircle2, Users } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { NotificationBell } from "@/components/notification-bell"
+import { searchService } from "@/lib/services"
+
+interface SearchResult {
+  users?: { id: string; username: string; displayName: string; avatarUrl?: string; isVerified: boolean; followersCount: number }[]
+  streams?: { id: string; title: string; category?: string; viewerCount: number; streamer: { id: string; displayName?: string; username?: string; avatarUrl?: string } }[]
+}
 
 export function Navbar() {
   const { user, isLoggedIn, isLoading, logout } = useAuth()
   const router = useRouter()
   const [showMenu, setShowMenu] = React.useState(false)
   const [showSearch, setShowSearch] = React.useState(false)
+  const [searchQuery, setSearchQuery] = React.useState("")
+  const [searchResults, setSearchResults] = React.useState<SearchResult | null>(null)
+  const [isSearching, setIsSearching] = React.useState(false)
+  const [showResults, setShowResults] = React.useState(false)
   const menuRef = React.useRef<HTMLDivElement>(null)
+  const searchRef = React.useRef<HTMLDivElement>(null)
+  const searchTimeout = React.useRef<NodeJS.Timeout | null>(null)
 
   // Close menu when clicking outside
   React.useEffect(() => {
@@ -22,16 +35,105 @@ export function Navbar() {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setShowMenu(false)
       }
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowResults(false)
+      }
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
+
+  // Debounced search
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
+    if (searchTimeout.current) clearTimeout(searchTimeout.current)
+    if (!value.trim()) {
+      setSearchResults(null)
+      setShowResults(false)
+      return
+    }
+    setIsSearching(true)
+    setShowResults(true)
+    searchTimeout.current = setTimeout(async () => {
+      try {
+        const res = await searchService.search(value.trim())
+        setSearchResults(res.data)
+      } catch {
+        setSearchResults(null)
+      } finally {
+        setIsSearching(false)
+      }
+    }, 300)
+  }
+
+  const navigateTo = (path: string) => {
+    setShowResults(false)
+    setSearchQuery("")
+    setShowSearch(false)
+    router.push(path)
+  }
 
   const handleLogout = async () => {
     setShowMenu(false)
     await logout()
     router.push('/')
   }
+
+  const hasResults = searchResults && ((searchResults.users?.length || 0) + (searchResults.streams?.length || 0)) > 0
+
+  const SearchDropdown = () => (
+    showResults && searchQuery.trim() ? (
+      <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 max-h-80 overflow-y-auto">
+        {isSearching ? (
+          <div className="p-4 text-center text-sm text-muted-foreground">A pesquisar...</div>
+        ) : hasResults ? (
+          <>
+            {(searchResults?.users?.length || 0) > 0 && (
+              <div>
+                <div className="px-3 py-2 text-xs font-bold text-muted-foreground uppercase tracking-wider bg-white/5">Creators</div>
+                {searchResults?.users?.map(u => (
+                  <button key={u.id} onClick={() => navigateTo(`/profile/${u.id}`)} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 transition-colors">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={u.avatarUrl || '/placeholder-user.jpg'} alt={u.displayName} />
+                      <AvatarFallback className="bg-primary/20 text-primary text-xs">{(u.displayName || u.username || '?')[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 text-left min-w-0">
+                      <p className="text-sm font-bold truncate flex items-center gap-1">
+                        {u.displayName || u.username}
+                        {u.isVerified && <CheckCircle2 className="h-3 w-3 text-primary fill-primary" />}
+                      </p>
+                      <p className="text-xs text-muted-foreground">@{u.username} · {u.followersCount} seguidores</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+            {(searchResults?.streams?.length || 0) > 0 && (
+              <div>
+                <div className="px-3 py-2 text-xs font-bold text-muted-foreground uppercase tracking-wider bg-white/5">Lives</div>
+                {searchResults?.streams?.map(s => (
+                  <button key={s.id} onClick={() => navigateTo(`/stream/${s.id}`)} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 transition-colors">
+                    <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                      <Radio className="w-4 h-4 text-red-400" />
+                    </div>
+                    <div className="flex-1 text-left min-w-0">
+                      <p className="text-sm font-bold truncate">{s.title}</p>
+                      <p className="text-xs text-muted-foreground">{s.streamer?.displayName || s.streamer?.username} · {s.viewerCount} viewers</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="p-4 text-center text-sm text-muted-foreground">
+            <Users className="w-5 h-5 mx-auto mb-2 opacity-50" />
+            Nenhum resultado para "{searchQuery}"
+          </div>
+        )}
+      </div>
+    ) : null
+  )
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-background/80 backdrop-blur-md">
@@ -43,9 +145,7 @@ export function Navbar() {
               href={isLoggedIn ? "/feed" : "/"}
               className="flex items-center gap-2 group transition-transform hover:scale-105"
             >
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center font-bold text-lg shadow-lg border border-white/10 text-white">
-                K
-              </div>
+              <Image src="/kwanza-logo.png" alt="Kwanza Stream" width={32} height={32} className="rounded-lg" />
               <span className="font-bold text-xl tracking-tighter hidden md:block uppercase">
                 KWANZA <span className="text-secondary">STREAM</span>
               </span>
@@ -57,20 +157,24 @@ export function Navbar() {
         {isLoggedIn && (
           <>
             {/* Desktop search */}
-            <div className="hidden md:block flex-1 max-w-md mx-4">
+            <div className="hidden md:block flex-1 max-w-md mx-4 relative" ref={searchRef}>
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
                   placeholder="Pesquisar creators, lives ou hashtags..."
                   className="w-full bg-white/5 border-white/10 pl-9 focus-visible:ring-primary h-9"
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  onFocus={() => searchQuery.trim() && setShowResults(true)}
                 />
               </div>
+              <SearchDropdown />
             </div>
 
             {/* Mobile expanded search */}
             {showSearch && (
-              <div className="flex-1 flex items-center gap-2 md:hidden">
+              <div className="flex-1 flex items-center gap-2 md:hidden relative" ref={searchRef}>
                 <div className="relative flex-1">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -78,11 +182,15 @@ export function Navbar() {
                     placeholder="Pesquisar..."
                     className="w-full bg-white/5 border-white/10 pl-9 focus-visible:ring-primary h-9 text-base"
                     autoFocus
+                    value={searchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    onFocus={() => searchQuery.trim() && setShowResults(true)}
                   />
                 </div>
-                <button onClick={() => setShowSearch(false)} className="p-2 text-muted-foreground">
+                <button onClick={() => { setShowSearch(false); setSearchQuery(""); setShowResults(false) }} className="p-2 text-muted-foreground">
                   <X className="w-5 h-5" />
                 </button>
+                <SearchDropdown />
               </div>
             )}
           </>
@@ -173,3 +281,4 @@ export function Navbar() {
     </header>
   )
 }
+
