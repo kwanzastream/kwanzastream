@@ -10,19 +10,27 @@ import crypto from 'crypto';
 
 // ============== Cookie Configuration ==============
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
+
+// Cross-domain deployments (Vercel frontend + Render API) require:
+// - sameSite: 'none' (allow cross-origin cookie sending)
+// - secure: true (required when sameSite is 'none')
+// In local dev, use sameSite: 'lax' + secure: false
+const COOKIE_SAME_SITE: 'lax' | 'none' = IS_DEVELOPMENT ? 'lax' : 'none';
+const COOKIE_SECURE = !IS_DEVELOPMENT; // true for staging + production
 
 const setAuthCookies = (res: Response, accessToken: string, refreshToken: string) => {
     res.cookie('access_token', accessToken, {
         httpOnly: true,
-        secure: IS_PRODUCTION,
-        sameSite: 'lax',
+        secure: COOKIE_SECURE,
+        sameSite: COOKIE_SAME_SITE,
         maxAge: 15 * 60 * 1000, // 15 minutes
         path: '/',
     });
     res.cookie('refresh_token', refreshToken, {
         httpOnly: true,
-        secure: IS_PRODUCTION,
-        sameSite: 'lax',
+        secure: COOKIE_SECURE,
+        sameSite: COOKIE_SAME_SITE,
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: '/api/auth', // Only sent to auth endpoints
     });
