@@ -153,7 +153,7 @@ export const createStream = async (req: AuthenticatedRequest, res: Response) => 
         res.status(201).json({
             stream,
             streamKey: user.streamKey,
-            rtmpUrl: 'rtmp://localhost:1935/live', // Replace with actual RTMP URL
+            rtmpUrl: process.env.RTMP_URL || 'rtmp://localhost:1935/live',
         });
     } catch (error) {
         if (error instanceof z.ZodError) {

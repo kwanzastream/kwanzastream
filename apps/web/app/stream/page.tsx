@@ -49,6 +49,7 @@ export default function StreamPage() {
   const [chatInput, setChatInput] = React.useState("")
   const [copied, setCopied] = React.useState(false)
   const [isStarting, setIsStarting] = React.useState(false)
+  const [rtmpServer, setRtmpServer] = React.useState("")
   const [elapsed, setElapsed] = React.useState(0)
   const [showMobileChat, setShowMobileChat] = React.useState(false)
   const [showMobileSettings, setShowMobileSettings] = React.useState(true)
@@ -110,7 +111,8 @@ export default function StreamPage() {
     setIsStarting(true)
     try {
       const res = await streamService.create({ title: title.trim(), category })
-      setStreamId(res.data.id)
+      setStreamId(res.data.stream?.id || res.data.id)
+      setRtmpServer(res.data.rtmpUrl || 'rtmp://localhost:1935/live')
       setIsLive(true)
     } catch (err) {
       console.error("Failed to create stream:", err)
@@ -144,7 +146,8 @@ export default function StreamPage() {
     setChatInput("")
   }
 
-  const rtmpUrl = `rtmp://localhost:1935/live/${streamKey}`
+  const displayRtmpUrl = rtmpServer || 'A configurar...'
+  const fullRtmpUrl = rtmpServer ? `${rtmpServer}/${streamKey}` : `rtmp://localhost:1935/live/${streamKey}`
 
   if (authLoading) return null
 
@@ -233,7 +236,7 @@ export default function StreamPage() {
             <div className="space-y-2">
               <label className="text-xs font-bold">Servidor RTMP</label>
               <div className="flex gap-2">
-                <Input value="rtmp://localhost:1935/live" readOnly className="bg-white/5 border-white/10 h-9 text-xs font-mono" />
+                <Input value={displayRtmpUrl} readOnly className="bg-white/5 border-white/10 h-9 text-xs font-mono" />
               </div>
             </div>
             <div className="space-y-2">
@@ -404,7 +407,7 @@ export default function StreamPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold">Servidor RTMP</label>
-                  <Input value="rtmp://localhost:1935/live" readOnly className="bg-white/5 border-white/10 h-10 text-xs font-mono" />
+                  <Input value={displayRtmpUrl} readOnly className="bg-white/5 border-white/10 h-10 text-xs font-mono" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold">Chave de Stream</label>
