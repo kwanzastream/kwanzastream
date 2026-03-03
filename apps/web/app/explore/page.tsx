@@ -35,11 +35,10 @@ export default function ExplorePage() {
                       variant={activeCategory === cat ? "default" : "outline"}
                       size="sm"
                       onClick={() => setActiveCategory(cat)}
-                      className={`rounded-full px-6 font-bold transition-all ${
-                        activeCategory === cat
+                      className={`rounded-full px-6 font-bold transition-all ${activeCategory === cat
                           ? "bg-primary text-white"
                           : "border-white/10 bg-white/5 text-muted-foreground hover:text-foreground"
-                      }`}
+                        }`}
                     >
                       {cat}
                     </Button>
@@ -112,9 +111,8 @@ export default function ExplorePage() {
                           key={prov}
                           variant={activeProvince === prov ? "default" : "outline"}
                           onClick={() => setActiveProvince(prov)}
-                          className={`cursor-pointer border-white/10 font-bold px-3 py-1 ${
-                            activeProvince === prov ? "bg-secondary text-black" : "bg-white/5 text-muted-foreground"
-                          }`}
+                          className={`cursor-pointer border-white/10 font-bold px-3 py-1 ${activeProvince === prov ? "bg-secondary text-black" : "bg-white/5 text-muted-foreground"
+                            }`}
                         >
                           {prov}
                         </Badge>
@@ -126,8 +124,8 @@ export default function ExplorePage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <LiveCard
-                  thumbnail="/recording-studio.png"
-                  avatar="/abstract-profile.png"
+                  thumbnail="/vibrant-concert-stage.png"
+                  avatar="/placeholder-user.jpg"
                   name="Anselmo Ralph"
                   title="Produção do Novo Álbum em Direto"
                   viewers="5.2K"
@@ -135,16 +133,16 @@ export default function ExplorePage() {
                   verified
                 />
                 <LiveCard
-                  thumbnail="/gaming-setup.png"
-                  avatar="/abstract-profile.png"
+                  thumbnail="/placeholder.jpg"
+                  avatar="/placeholder-user.jpg"
                   name="Ninja Angolano"
                   title="Sexta-feira de Gaming: Solo vs Squad"
                   viewers="1.8K"
                   category="Gaming"
                 />
                 <LiveCard
-                  thumbnail="/diverse-food-spread.png"
-                  avatar="/abstract-profile.png"
+                  thumbnail="/placeholder.jpg"
+                  avatar="/placeholder-user.jpg"
                   name="Tia Maria"
                   title="Segredos do Mufete de Peixe"
                   viewers="3.1K"
@@ -152,7 +150,7 @@ export default function ExplorePage() {
                 />
                 <LiveCard
                   thumbnail="/vibrant-concert-stage.png"
-                  avatar="/abstract-profile.png"
+                  avatar="/placeholder-user.jpg"
                   name="Yola Semedo"
                   title="Ensaio para a Tour 2025"
                   viewers="2.4K"
