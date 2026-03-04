@@ -1,0 +1,110 @@
+# Docker Compose — Staging Environment
+# Usage: docker compose -f docker-compose.staging.yml up -d
+
+version: '3.8'
+
+services:
+  # ============== Database ==============
+  postgres:
+    image: postgres:15-alpine
+    container_name: kwanza-db-staging
+    environment:
+      POSTGRES_DB: kwanza_staging
+      POSTGRES_USER: kwanza
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-staging-password-change-me}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kwanza"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ============== Redis ==============
+  redis:
+    image: redis:7-alpine
+    container_name: kwanza-redis-staging
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ============== API Server ==============
+  api:
+    build:
+      context: ./apps/server
+      dockerfile: Dockerfile
+    container_name: kwanza-api-staging
+    ports:
+      - "5000:5000"
+      - "1935:1935"  # RTMP
+    environment:
+      NODE_ENV: staging
+      PORT: 5000
+      DATABASE_URL: postgresql://kwanza:${POSTGRES_PASSWORD:-staging-password-change-me}@postgres:5432/kwanza_staging
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      MULTICAIXA_WEBHOOK_SECRET: ${MULTICAIXA_WEBHOOK_SECRET}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    restart: unless-stopped
+
+  # ============== Web (Next.js) ==============
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: kwanza-web-staging
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://api:5000
+      NODE_ENV: staging
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local

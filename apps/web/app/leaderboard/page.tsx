@@ -34,7 +34,7 @@ export default function LeaderboardPage() {
         const load = async () => {
             setLoading(true)
             try {
-                const { data } = await donationService.getLeaderboard({ limit: 20 })
+                const { data } = await donationService.getLeaderboard({ limit: 20, period })
                 setLeaders(data.leaderboard || [])
             } catch {
                 setLeaders([])

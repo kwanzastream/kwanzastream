@@ -1,104 +1,119 @@
-"use client";
+"use client"
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MessageCircle, Share2, MoreVertical, Play, Volume2 } from "lucide-react";
+import * as React from "react"
+import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { Play, Eye, Flame, Clock } from "lucide-react"
+import { Navbar } from "@/components/navbar"
+import { MobileNav } from "@/components/mobile-nav"
+import { clipsService } from "@/lib/services"
+
+interface ClipItem {
+    id: string; title: string; thumbnailUrl?: string; duration: number;
+    viewCount: number; createdAt: string;
+    creator: { id: string; displayName?: string; username?: string; avatarUrl?: string }
+}
 
 export default function ClipsPage() {
-    const clips = [
-        {
-            id: 1,
-            title: "Melhor jogada da partida!",
-            streamer: "GamerPro_AO",
-            views: "15k",
-            thumbnail: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80",
-            avatar: "https://github.com/shadcn.png",
-            duration: "0:30",
-        },
-        {
-            id: 2,
-            title: "React engraçado ao vivo 😂",
-            streamer: "AngolaLive",
-            views: "8.2k",
-            thumbnail: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&q=80",
-            avatar: "https://github.com/shadcn.png",
-            duration: "0:45",
-        },
-        {
-            id: 3,
-            title: "Tutorial rápido de Redstone",
-            streamer: "MineCrafter",
-            views: "22k",
-            thumbnail: "https://images.unsplash.com/photo-1574717435429-c6a8713d863c?w=800&q=80",
-            avatar: "https://github.com/shadcn.png",
-            duration: "0:59",
-        },
-        {
-            id: 4,
-            title: "Setup Tour 2026",
-            streamer: "TechMaster",
-            views: "5k",
-            thumbnail: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=800&q=80",
-            avatar: "https://github.com/shadcn.png",
-            duration: "0:15",
-        },
-    ];
+    const [clips, setClips] = React.useState<ClipItem[]>([])
+    const [loading, setLoading] = React.useState(true)
+
+    React.useEffect(() => {
+        const load = async () => {
+            try {
+                const res = await clipsService.trending(20)
+                setClips(res.data.clips || [])
+            } catch { }
+            setLoading(false)
+        }
+        load()
+    }, [])
+
+    const formatDuration = (secs: number) => {
+        const m = Math.floor(secs / 60)
+        const s = secs % 60
+        return `${m}:${s.toString().padStart(2, '0')}`
+    }
+
+    const formatViews = (n: number) => {
+        if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
+        return String(n)
+    }
 
     return (
-        <div className="container mx-auto p-4 space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold">Clips em Alta</h1>
-                <div className="flex gap-2">
-                    <Button variant="outline">Populares</Button>
-                    <Button variant="ghost">Novos</Button>
-                </div>
-            </div>
+        <div className="min-h-screen bg-background flex flex-col">
+            <Navbar />
+            <main className="flex-1 overflow-y-auto pb-20 md:pb-8">
+                <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 space-y-6">
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+                        <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-2">
+                            <Flame className="w-6 h-6 text-primary" /> Clips em Alta
+                        </h1>
+                    </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {clips.map((clip) => (
-                    <Card key={clip.id} className="overflow-hidden group cursor-pointer hover:border-primary transition-all">
-                        <div className="relative aspect-[9/16] bg-black">
-                            <img
-                                src={clip.thumbnail}
-                                alt={clip.title}
-                                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
-                                <div className="bg-primary/90 text-primary-foreground rounded-full p-3">
-                                    <Play className="h-6 w-6 fill-current" />
+                    {loading ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                                <div key={i} className="animate-pulse">
+                                    <div className="aspect-[9/16] rounded-xl bg-white/5" />
+                                    <div className="mt-2 h-3 bg-white/5 rounded w-3/4" />
                                 </div>
-                            </div>
-                            <div className="absolute top-2 right-2 bg-black/60 px-2 py-1 rounded text-xs font-medium text-white">
-                                {clip.duration}
-                            </div>
-                            <div className="absolute bottom-2 left-2 right-2">
-                                <h3 className="text-white font-bold leading-tight line-clamp-2 drop-shadow-md mb-1">{clip.title}</h3>
-                                <div className="flex items-center gap-2 text-white/90 text-sm">
-                                    <Avatar className="h-5 w-5 border border-white/20">
-                                        <AvatarImage src={clip.avatar} />
-                                        <AvatarFallback>CN</AvatarFallback>
-                                    </Avatar>
-                                    <span className="truncate">{clip.streamer}</span>
-                                </div>
-                            </div>
+                            ))}
                         </div>
-                        <CardFooter className="p-3 bg-card flex justify-between items-center text-muted-foreground">
-                            <div className="text-xs font-medium flex items-center gap-1">
-                                <Play className="h-3 w-3" /> {clip.views} visualizações
-                            </div>
-                            <div className="flex gap-3">
-                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary">
-                                    <Heart className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary">
-                                    <Share2 className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </CardFooter>
-                    </Card>
-                ))}
-            </div>
+                    ) : clips.length === 0 ? (
+                        <div className="text-center py-20">
+                            <Play className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                            <p className="font-bold text-lg">Sem clips ainda</p>
+                            <p className="text-sm text-muted-foreground mt-1">Quando os creators criarem clips, aparecerão aqui</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                            {clips.map(clip => (
+                                <div key={clip.id} className="group cursor-pointer">
+                                    <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-black border border-white/10">
+                                        {clip.thumbnailUrl ? (
+                                            <img src={clip.thumbnailUrl} alt={clip.title}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100" />
+                                        ) : (
+                                            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/10 flex items-center justify-center">
+                                                <Play className="w-10 h-10 text-white/30" />
+                                            </div>
+                                        )}
+                                        {/* Play overlay */}
+                                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
+                                            <div className="bg-primary/90 rounded-full p-3 shadow-lg shadow-primary/20">
+                                                <Play className="w-6 h-6 fill-white text-white" />
+                                            </div>
+                                        </div>
+                                        {/* Duration */}
+                                        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold text-white flex items-center gap-1">
+                                            <Clock className="w-3 h-3" /> {formatDuration(clip.duration)}
+                                        </div>
+                                        {/* Bottom info */}
+                                        <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black to-transparent">
+                                            <h3 className="text-white font-bold text-sm leading-tight line-clamp-2 drop-shadow-md">{clip.title}</h3>
+                                            <div className="flex items-center gap-2 mt-1.5">
+                                                <Avatar className="h-5 w-5 border border-white/20">
+                                                    <AvatarImage src={clip.creator?.avatarUrl} />
+                                                    <AvatarFallback className="text-[8px]">{(clip.creator?.displayName || clip.creator?.username || '?')[0]}</AvatarFallback>
+                                                </Avatar>
+                                                <span className="text-white/80 text-xs truncate">{clip.creator?.displayName || clip.creator?.username}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {/* Views */}
+                                    <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                                        <Eye className="w-3 h-3" /> {formatViews(clip.viewCount)} visualizações
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </main>
+            <MobileNav />
         </div>
-    );
+    )
 }

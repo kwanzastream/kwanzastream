@@ -23,6 +23,7 @@ import {
   Smartphone,
 } from "lucide-react"
 import Link from "next/link"
+import { useTranslation, LOCALE_NAMES, LOCALE_FLAGS, type Locale } from "@/lib/i18n"
 
 export default function SettingsPage() {
   return (
@@ -154,6 +155,13 @@ export default function SettingsPage() {
                   </div>
                 </section>
               </TabsContent>
+
+              <TabsContent value="idioma" className="mt-0 space-y-8">
+                <section className="space-y-6">
+                  <h3 className="text-2xl font-black tracking-tight">Idioma e Região</h3>
+                  <LanguageSelector />
+                </section>
+              </TabsContent>
             </div>
           </ScrollArea>
         </Tabs>
@@ -215,5 +223,34 @@ function ArrowLeft({ className }: { className?: string }) {
       <path d="m12 19-7-7 7-7" />
       <path d="M19 12H5" />
     </svg>
+  )
+}
+
+function LanguageSelector() {
+  const { locale, setLocale } = useTranslation()
+  const locales: Locale[] = ['pt-AO', 'en']
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">Escolhe o idioma da plataforma</p>
+      {locales.map(l => (
+        <button
+          key={l}
+          onClick={() => setLocale(l)}
+          className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-all ${locale === l
+              ? 'border-primary bg-primary/10 ring-1 ring-primary'
+              : 'border-white/10 bg-white/5 hover:bg-white/10'
+            }`}
+        >
+          <span className="text-2xl">{LOCALE_FLAGS[l]}</span>
+          <div className="flex-1 text-left">
+            <p className="font-bold text-sm">{LOCALE_NAMES[l]}</p>
+            <p className="text-xs text-muted-foreground">
+              {l === 'pt-AO' ? 'Idioma padrão da plataforma' : 'Platform default language'}
+            </p>
+          </div>
+          {locale === l && <span className="text-primary font-bold text-sm">✓ Activo</span>}
+        </button>
+      ))}
+    </div>
   )
 }

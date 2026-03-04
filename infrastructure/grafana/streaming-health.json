@@ -1,0 +1,115 @@
+{
+    "dashboard": {
+        "title": "Kwanza Stream — Streaming Health",
+        "uid": "kwanza-streaming-health",
+        "tags": [
+            "kwanza",
+            "streaming"
+        ],
+        "timezone": "browser",
+        "refresh": "10s",
+        "time": {
+            "from": "now-6h",
+            "to": "now"
+        },
+        "panels": [
+            {
+                "title": "Streams Live Agora",
+                "type": "stat",
+                "gridPos": {
+                    "h": 4,
+                    "w": 6,
+                    "x": 0,
+                    "y": 0
+                },
+                "targets": [
+                    {
+                        "rawSql": "SELECT COUNT(*) as value FROM \"Stream\" WHERE status = 'LIVE'",
+                        "format": "table"
+                    }
+                ]
+            },
+            {
+                "title": "Viewers Totais (todas as streams)",
+                "type": "stat",
+                "gridPos": {
+                    "h": 4,
+                    "w": 6,
+                    "x": 6,
+                    "y": 0
+                },
+                "targets": [
+                    {
+                        "rawSql": "SELECT COALESCE(SUM(\"viewerCount\"), 0) as value FROM \"Stream\" WHERE status = 'LIVE'",
+                        "format": "table"
+                    }
+                ]
+            },
+            {
+                "title": "Pico de Viewers Hoje",
+                "type": "stat",
+                "gridPos": {
+                    "h": 4,
+                    "w": 6,
+                    "x": 12,
+                    "y": 0
+                },
+                "targets": [
+                    {
+                        "rawSql": "SELECT COALESCE(MAX(\"peakViewers\"), 0) as value FROM \"Stream\" WHERE \"startedAt\" > NOW() - INTERVAL '24 hours'",
+                        "format": "table"
+                    }
+                ]
+            },
+            {
+                "title": "Streams por Hora (últimas 24h)",
+                "type": "timeseries",
+                "gridPos": {
+                    "h": 8,
+                    "w": 24,
+                    "x": 0,
+                    "y": 4
+                },
+                "targets": [
+                    {
+                        "rawSql": "SELECT DATE_TRUNC('hour', \"startedAt\") as time, COUNT(*) as streams FROM \"Stream\" WHERE \"startedAt\" > NOW() - INTERVAL '24 hours' GROUP BY 1 ORDER BY 1",
+                        "format": "time_series"
+                    }
+                ]
+            },
+            {
+                "title": "Mensagens de Chat por Hora",
+                "type": "timeseries",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 12
+                },
+                "description": "Requires chat message logging to DB (P1 feature)",
+                "targets": [
+                    {
+                        "rawSql": "SELECT NOW() as time, 0 as messages -- placeholder: wire to Redis or chat log table",
+                        "format": "time_series"
+                    }
+                ]
+            },
+            {
+                "title": "Top Categorias Live",
+                "type": "piechart",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 12,
+                    "y": 12
+                },
+                "targets": [
+                    {
+                        "rawSql": "SELECT COALESCE(category, 'Sem Categoria') as category, COUNT(*) as count FROM \"Stream\" WHERE status = 'LIVE' GROUP BY category ORDER BY count DESC LIMIT 10",
+                        "format": "table"
+                    }
+                ]
+            }
+        ]
+    }
+}

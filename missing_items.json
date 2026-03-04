@@ -1,0 +1,193 @@
+{
+    "generated": "2026-03-03T23:51:00Z",
+    "summary": "Gap analysis for Kwanza Stream → Twitch Angolana transformation",
+    "p0_critical": [
+        {
+            "id": "P0-001",
+            "category": "financial",
+            "item": "Double-entry ledger (LedgerEntry model)",
+            "status": "MISSING",
+            "risk": "Cannot reconcile or audit financial operations without paired debit/credit entries",
+            "files_affected": [
+                "prisma/schema.prisma",
+                "src/controllers/walletController.ts",
+                "src/controllers/donationController.ts"
+            ]
+        },
+        {
+            "id": "P0-002",
+            "category": "financial",
+            "item": "Multicaixa/EMIS HMAC webhook verification",
+            "status": "MISSING",
+            "risk": "Payment webhooks can be forged — anyone can fake a deposit",
+            "files_affected": [
+                "src/payments/webhookRoutes.ts"
+            ]
+        },
+        {
+            "id": "P0-003",
+            "category": "compliance",
+            "item": "KYC/AML tier enforcement",
+            "status": "MISSING",
+            "risk": "BNA regulation requires transaction limits based on identity verification level",
+            "files_affected": [
+                "prisma/schema.prisma",
+                "src/middleware/kycGate.ts"
+            ]
+        },
+        {
+            "id": "P0-004",
+            "category": "security",
+            "item": "Admin RBAC (granular roles)",
+            "status": "MISSING",
+            "risk": "All admins have full access — no separation of duties for financial vs content moderation",
+            "files_affected": [
+                "prisma/schema.prisma",
+                "src/admin/adminController.ts",
+                "src/admin/adminRoutes.ts"
+            ]
+        },
+        {
+            "id": "P0-005",
+            "category": "compliance",
+            "item": "Audit log export (CSV/JSON for BNA)",
+            "status": "MISSING",
+            "risk": "Regulator may require exportable audit trail",
+            "files_affected": [
+                "src/admin/adminController.ts"
+            ]
+        },
+        {
+            "id": "P0-006",
+            "category": "ux",
+            "item": "Mobile bottom nav badge + safe area",
+            "status": "PARTIAL",
+            "risk": "Mobile users (70%+) need polished navigation — current bottom nav lacks notification badge",
+            "files_affected": [
+                "apps/web/components/mobile-nav.tsx"
+            ]
+        },
+        {
+            "id": "P0-007",
+            "category": "feature",
+            "item": "Donation overlay wired to Socket.io",
+            "status": "PARTIAL",
+            "risk": "Core monetization loop broken if streamers can't see donations in real-time",
+            "files_affected": [
+                "apps/web/components/donation-alert-overlay.tsx",
+                "apps/server/src/streaming/chatService.ts"
+            ]
+        },
+        {
+            "id": "P0-008",
+            "category": "infra",
+            "item": "Staging environment",
+            "status": "MISSING",
+            "risk": "Cannot test with real payment provider without staging",
+            "files_affected": []
+        },
+        {
+            "id": "P0-009",
+            "category": "testing",
+            "item": "Playwright E2E for critical flows",
+            "status": "PARTIAL",
+            "risk": "Only 2 test specs exist — need 10+ covering auth, wallet, streaming, admin",
+            "files_affected": [
+                "apps/web/tests/"
+            ]
+        },
+        {
+            "id": "P0-010",
+            "category": "observability",
+            "item": "Grafana dashboards + structured logging",
+            "status": "MISSING",
+            "risk": "Cannot monitor financial operations or detect anomalies without dashboards",
+            "files_affected": []
+        }
+    ],
+    "p1_important": [
+        {
+            "id": "P1-001",
+            "item": "Clips system (model + controller + UI)",
+            "status": "MISSING"
+        },
+        {
+            "id": "P1-002",
+            "item": "Explore page trending algorithm",
+            "status": "PARTIAL"
+        },
+        {
+            "id": "P1-003",
+            "item": "Creator studio analytics",
+            "status": "PARTIAL"
+        },
+        {
+            "id": "P1-004",
+            "item": "Chat moderation UI (ban words, slow mode toggle)",
+            "status": "PARTIAL"
+        },
+        {
+            "id": "P1-005",
+            "item": "Web push notifications (service worker)",
+            "status": "MISSING"
+        },
+        {
+            "id": "P1-006",
+            "item": "Stream categories taxonomy",
+            "status": "PARTIAL"
+        },
+        {
+            "id": "P1-007",
+            "item": "OpenAPI 3.0 spec",
+            "status": "MISSING"
+        },
+        {
+            "id": "P1-008",
+            "item": "CI web build + deploy workflow",
+            "status": "MISSING"
+        }
+    ],
+    "p2_nice_to_have": [
+        {
+            "id": "P2-001",
+            "item": "Direct messaging",
+            "status": "MISSING"
+        },
+        {
+            "id": "P2-002",
+            "item": "Events/scheduling system",
+            "status": "MISSING"
+        },
+        {
+            "id": "P2-003",
+            "item": "Ads/sponsorship module",
+            "status": "MISSING"
+        },
+        {
+            "id": "P2-004",
+            "item": "Multi-language support",
+            "status": "MISSING"
+        }
+    ],
+    "present_and_working": [
+        "Authentication (OTP + password + httpOnly cookies)",
+        "Wallet atomic operations (BigInt centimos)",
+        "Donations (Salo system — 5 tiers)",
+        "Streams (RTMP → HLS via node-media-server)",
+        "Chat (Socket.io with rate limiting + reactions)",
+        "Search (users + streams fulltext)",
+        "Notifications (CRUD + cursor pagination)",
+        "Favorites (creators + streams)",
+        "Reports (user → admin)",
+        "Admin dashboard (stats, users, streams, transactions)",
+        "Audit logs (all admin actions)",
+        "PWA manifest + icons (192, 512, apple)",
+        "Rate limiting (auth 10/15min, financial 30/min, search 30/min)",
+        "Zod input validation",
+        "Helmet + CSP + CORS",
+        "XSS sanitize middleware",
+        "Graceful shutdown (SIGTERM/SIGINT)",
+        "Sentry error tracking (initialized)",
+        "GitHub Actions CI (server tests + migration check)"
+    ]
+}

@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import Image from "next/image"
 import { Wrench, Bell, Instagram, Twitter, Facebook } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 
@@ -12,7 +13,7 @@ export default function MaintenancePage() {
         {/* Logo */}
         <div className="flex flex-col items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-bold text-xl">K</div>
+            <Image src="/kwanza-logo.png" alt="Kwanza Stream" width={40} height={40} className="rounded-xl" />
             <span className="font-bold text-2xl tracking-tighter">
               KWANZA <span className="text-secondary">STREAM</span>
             </span>

@@ -1,0 +1,547 @@
+openapi: 3.0.3
+info:
+  title: Kwanza Stream API
+  description: |
+    API da plataforma Kwanza Stream — streaming social angolano.
+    Autenticação via httpOnly cookies (access_token + refresh_token).
+  version: 1.0.0
+  contact:
+    name: Kwanza Stream Team
+
+servers:
+  - url: http://localhost:5000
+    description: Development
+  - url: https://staging-api.kwanzastream.com
+    description: Staging
+  - url: https://api.kwanzastream.com
+    description: Production
+
+tags:
+  - name: Auth
+    description: Autenticação e gestão de sessão
+  - name: Users
+    description: Perfis de utilizador
+  - name: Wallet
+    description: Carteira e transações financeiras
+  - name: Donations
+    description: Sistema de Salo (doações)
+  - name: Streams
+    description: Gestão de live streams
+  - name: Notifications
+    description: Notificações do utilizador
+  - name: Favorites
+    description: Criadores e streams favoritos
+  - name: Search
+    description: Pesquisa de utilizadores e streams
+  - name: Admin
+    description: Painel de administração
+  - name: Reports
+    description: Denúncias de conteúdo
+  - name: Health
+    description: Health checks
+
+paths:
+  # ============== AUTH ==============
+  /api/auth/request-otp:
+    post:
+      tags: [Auth]
+      summary: Solicitar código OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone:
+                  type: string
+                  example: "+244923456789"
+      responses:
+        '200':
+          description: OTP enviado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  expiresIn: { type: number }
+        '429':
+          description: Rate limit excedido
+
+  /api/auth/verify-otp:
+    post:
+      tags: [Auth]
+      summary: Verificar código OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, code]
+              properties:
+                phone: { type: string }
+                code: { type: string, minLength: 6, maxLength: 6 }
+      responses:
+        '200':
+          description: OTP verificado — cookies set
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+              description: httpOnly access_token + refresh_token cookies
+
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Registar nova conta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [displayName, username, phone, email, password, termsAccepted, ageConfirmed]
+              properties:
+                displayName: { type: string }
+                username: { type: string }
+                phone: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                termsAccepted: { type: boolean }
+                ageConfirmed: { type: boolean }
+      responses:
+        '201':
+          description: Conta criada — cookies set
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login com email/username + password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifier, password]
+              properties:
+                identifier: { type: string, description: "Email, username ou telefone" }
+                password: { type: string }
+      responses:
+        '200':
+          description: Login sucesso — cookies set
+
+  /api/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Renovar access token (via refresh cookie)
+      responses:
+        '200':
+          description: Novo access_token cookie set
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Terminar sessão (limpar cookies)
+      responses:
+        '200':
+          description: Cookies limpos
+
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Obter utilizador autenticado
+      responses:
+        '200':
+          description: Dados do utilizador actual
+        '401':
+          description: Não autenticado
+
+  # ============== WALLET ==============
+  /api/wallet:
+    get:
+      tags: [Wallet]
+      summary: Obter saldo e transações recentes
+      responses:
+        '200':
+          description: Dados da wallet
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance: { type: number, description: "Saldo em Kz" }
+                  transactions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+
+  /api/wallet/deposit:
+    post:
+      tags: [Wallet]
+      summary: Solicitar depósito
+      description: |
+        Cria uma transação de depósito PENDING.
+        Headers recomendados: `Idempotency-Key` para evitar duplicados.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, paymentMethod]
+              properties:
+                amount: { type: number, minimum: 100, maximum: 1000000, description: "Valor em Kz" }
+                paymentMethod: { type: string, enum: [multicaixa, unitel_money, bank_transfer] }
+            example:
+              amount: 5000
+              paymentMethod: multicaixa
+      responses:
+        '201':
+          description: Depósito pendente criado
+        '403':
+          description: Limite KYC excedido
+
+  /api/wallet/withdraw:
+    post:
+      tags: [Wallet]
+      summary: Solicitar levantamento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, bankAccount]
+              properties:
+                amount: { type: number, minimum: 500 }
+                bankAccount:
+                  type: object
+                  required: [bank, accountNumber, accountName]
+                  properties:
+                    bank: { type: string }
+                    accountNumber: { type: string }
+                    accountName: { type: string }
+      responses:
+        '201':
+          description: Levantamento pendente (aguarda aprovação admin)
+        '403':
+          description: Saldo insuficiente ou KYC insuficiente
+
+  /api/wallet/transactions:
+    get:
+      tags: [Wallet]
+      summary: Histórico de transações (paginado)
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20, maximum: 50 }
+        - in: query
+          name: type
+          schema: { type: string, enum: [DEPOSIT, WITHDRAWAL, DONATION_SENT, DONATION_RECEIVED, REFUND] }
+      responses:
+        '200':
+          description: Lista paginada de transações
+
+  # ============== DONATIONS ==============
+  /api/donations:
+    post:
+      tags: [Donations]
+      summary: Enviar Salo (doação)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [receiverId, saloType]
+              properties:
+                receiverId: { type: string, format: uuid }
+                saloType: { type: string, enum: [bronze, silver, gold, diamond, legendary] }
+                message: { type: string, maxLength: 200 }
+                streamId: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Salo enviado com sucesso
+
+  /api/donations/salo-types:
+    get:
+      tags: [Donations]
+      summary: Listar tipos de Salo e preços
+      responses:
+        '200':
+          description: Tipos disponíveis
+
+  /api/donations/leaderboard:
+    get:
+      tags: [Donations]
+      summary: Top doadores
+      parameters:
+        - in: query
+          name: streamId
+          schema: { type: string }
+        - in: query
+          name: receiverId
+          schema: { type: string }
+      responses:
+        '200':
+          description: Leaderboard
+
+  # ============== STREAMS ==============
+  /api/streams/live:
+    get:
+      tags: [Streams]
+      summary: Listar streams em directo
+      parameters:
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: filter
+          schema: { type: string, enum: [following] }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+      responses:
+        '200':
+          description: Lista de streams live
+
+  /api/streams/{id}:
+    get:
+      tags: [Streams]
+      summary: Detalhes de uma stream
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Detalhes da stream
+        '404':
+          description: Stream não encontrada
+
+  /api/streams:
+    post:
+      tags: [Streams]
+      summary: Criar nova stream
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+                description: { type: string }
+                category: { type: string }
+      responses:
+        '201':
+          description: Stream criada
+
+  # ============== NOTIFICATIONS ==============
+  /api/notifications:
+    get:
+      tags: [Notifications]
+      summary: Listar notificações (cursor pagination)
+      parameters:
+        - in: query
+          name: cursor
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Lista de notificações
+
+  /api/notifications/unread-count:
+    get:
+      tags: [Notifications]
+      summary: Contagem de não lidas
+      responses:
+        '200':
+          description: Contagem
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count: { type: integer }
+
+  # ============== SEARCH ==============
+  /api/search:
+    get:
+      tags: [Search]
+      summary: Pesquisar utilizadores e streams
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string, minLength: 2 }
+        - in: query
+          name: type
+          schema: { type: string, enum: [all, users, streams], default: all }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+      responses:
+        '200':
+          description: Resultados de pesquisa
+
+  # ============== ADMIN ==============
+  /api/admin/stats:
+    get:
+      tags: [Admin]
+      summary: Dashboard statistics
+      responses:
+        '200':
+          description: Estatísticas gerais
+        '403':
+          description: Não autorizado (requer ADMIN role)
+
+  /api/admin/transactions/{id}/approve:
+    post:
+      tags: [Admin]
+      summary: Aprovar levantamento pendente
+      description: Requer permissão admin.transactions.approve (FINANCIAL_ADMIN ou SUPER_ADMIN)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Levantamento aprovado
+
+  /api/admin/ledger/reconcile:
+    get:
+      tags: [Admin]
+      summary: Reconciliação do ledger (P0)
+      description: |
+        Compara User.balance com saldo calculado pelo ledger.
+        Requer permissão admin.ledger.reconcile.
+      responses:
+        '200':
+          description: Resultado da reconciliação
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  discrepancies:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        accountId: { type: string }
+                        walletBalance: { type: number }
+                        ledgerBalance: { type: number }
+                        diff: { type: number }
+
+  # ============== WEBHOOKS ==============
+  /api/webhooks/multicaixa:
+    post:
+      tags: [Wallet]
+      summary: Webhook de pagamento Multicaixa/EMIS
+      description: |
+        Recebe notificações de pagamento do gateway.
+        Requer header X-Multicaixa-Signature com HMAC-SHA256 do body.
+      parameters:
+        - in: header
+          name: X-Multicaixa-Signature
+          required: true
+          schema: { type: string }
+          description: HMAC-SHA256(body, MULTICAIXA_WEBHOOK_SECRET)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id: { type: string }
+                transactionId: { type: string }
+                amount: { type: number }
+                currency: { type: string, default: AOA }
+                status: { type: string, enum: [completed, failed] }
+            example:
+              id: "evt-123"
+              transactionId: "tx-456"
+              amount: 5000
+              currency: "AOA"
+              status: "completed"
+      responses:
+        '200':
+          description: Webhook processado
+        '401':
+          description: Assinatura inválida
+
+  # ============== HEALTH ==============
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Health check básico
+      responses:
+        '200':
+          description: API operacional
+
+  /api/health/detailed:
+    get:
+      tags: [Health]
+      summary: Health check detalhado
+      responses:
+        '200':
+          description: Estado de todos os serviços
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [healthy, degraded, unhealthy] }
+                  database: { type: string }
+                  redis: { type: string }
+                  uptime: { type: string }
+
+components:
+  schemas:
+    Transaction:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        amount: { type: number, description: "Valor em Kz" }
+        type: { type: string, enum: [DEPOSIT, WITHDRAWAL, DONATION_SENT, DONATION_RECEIVED, REFUND] }
+        status: { type: string, enum: [PENDING, COMPLETED, FAILED, CANCELLED] }
+        description: { type: string }
+        reference: { type: string }
+        idempotencyKey: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        displayName: { type: string }
+        avatarUrl: { type: string }
+        bio: { type: string }
+        role: { type: string, enum: [USER, ADMIN, STREAMER] }
+        kycTier: { type: integer, enum: [0, 1, 2] }
+        isVerified: { type: boolean }
+
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+      description: httpOnly cookie set by /api/auth/login or /api/auth/verify-otp
+
+security:
+  - cookieAuth: []

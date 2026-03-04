@@ -3,6 +3,8 @@ import { z } from 'zod';
 import prisma from '../config/prisma';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 import { v4 as uuidv4 } from 'uuid';
+import { recordLedgerEntries, depositEntries, withdrawalEntries } from '../services/ledgerService';
+import { updateDailyTransacted } from '../middleware/kycGate';
 
 // ============== Helpers ==============
 /** Convert a user-facing Kz amount to centimos (BigInt) */
@@ -137,16 +139,22 @@ export const requestDeposit = async (req: AuthenticatedRequest, res: Response) =
         // In production, integrate with actual payment provider here
         // For now, simulate instant confirmation in dev mode
         if (process.env.NODE_ENV === 'development') {
-            await prisma.$transaction([
-                prisma.transaction.update({
+            await prisma.$transaction(async (tx) => {
+                await tx.transaction.update({
                     where: { id: transaction.id },
                     data: { status: 'COMPLETED' },
-                }),
-                prisma.user.update({
+                });
+                await tx.user.update({
                     where: { id: userId },
                     data: { balance: { increment: amountCentimos } },
-                }),
-            ]);
+                });
+
+                // P0: Record ledger entries (double-entry)
+                await recordLedgerEntries(tx, transaction.id, depositEntries(userId, amountCentimos));
+            });
+
+            // P0: Update daily transacted for KYC tracking
+            await updateDailyTransacted(userId, amountCentimos);
 
             return res.json({
                 success: true,
@@ -215,8 +223,14 @@ export const requestWithdrawal = async (req: AuthenticatedRequest, res: Response
                 },
             });
 
+            // P0: Record ledger entries (double-entry)
+            await recordLedgerEntries(tx, transaction.id, withdrawalEntries(userId, amountCentimos));
+
             return transaction;
         });
+
+        // P0: Update daily transacted for KYC tracking
+        await updateDailyTransacted(userId, amountCentimos);
 
         res.json({
             success: true,

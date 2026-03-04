@@ -28,6 +28,7 @@ import {
   CheckCircle2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 import { Suspense } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { userService } from "@/lib/services"
@@ -162,9 +163,7 @@ function OnboardingContent() {
         {/* Logo and Progress */}
         <div className="flex flex-col items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-bold text-xl shadow-lg shadow-primary/20">
-              K
-            </div>
+            <Image src="/kwanza-logo.png" alt="Kwanza Stream" width={40} height={40} className="rounded-xl shadow-lg shadow-primary/20" />
             <span className="font-bold text-2xl tracking-tighter">
               KWANZA <span className="text-secondary">STREAM</span>
             </span>

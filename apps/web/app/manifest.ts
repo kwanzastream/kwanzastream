@@ -13,14 +13,14 @@ export default function manifest(): MetadataRoute.Manifest {
         categories: ['entertainment', 'social'],
         icons: [
             {
-                src: '/icon-light-32x32.png',
-                sizes: '32x32',
+                src: '/kwanza-logo-192.png',
+                sizes: '192x192',
                 type: 'image/png',
             },
             {
-                src: '/icon.svg',
-                sizes: 'any',
-                type: 'image/svg+xml',
+                src: '/kwanza-logo-512.png',
+                sizes: '512x512',
+                type: 'image/png',
             },
             {
                 src: '/apple-icon.png',

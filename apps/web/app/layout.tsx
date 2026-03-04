@@ -7,6 +7,7 @@ import { AuthProvider } from "@/lib/auth-context"
 import { ToastProvider } from "@/components/error-toast"
 import { MobileNav } from "@/components/mobile-nav"
 import { OfflineBanner } from "@/components/offline-banner"
+import { I18nProvider } from "@/lib/i18n"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -25,20 +26,7 @@ export const metadata: Metadata = {
     "mobile-web-app-capable": "yes",
   },
   icons: {
-    icon: [
-      {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
-      },
-    ],
+    icon: "/kwanza-logo.png",
     apple: "/apple-icon.png",
   },
 }
@@ -60,11 +48,13 @@ export default function RootLayout({
     <html lang="pt-AO">
       <body className={`font-sans antialiased min-h-dvh`}>
         <AuthProvider>
-          <ToastProvider>
-            <OfflineBanner />
-            {children}
-            <MobileNav />
-          </ToastProvider>
+          <I18nProvider>
+            <ToastProvider>
+              <OfflineBanner />
+              {children}
+              <MobileNav />
+            </ToastProvider>
+          </I18nProvider>
           <Analytics />
         </AuthProvider>
       </body>

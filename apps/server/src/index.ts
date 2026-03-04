@@ -211,6 +211,16 @@ app.use('/api/reports', reportLimiter, reportRoutes);
 import searchRoutes from './routes/searchRoutes';
 app.use('/api/search', searchLimiter, searchRoutes);
 
+// P1: Creator Studio + Clips
+import creatorRoutes from './routes/creatorRoutes';
+import clipsRoutes from './routes/clipsRoutes';
+app.use('/api/creator', creatorRoutes);
+app.use('/api/clips', clipsRoutes);
+
+// P2: Events
+import eventsRoutes from './routes/eventsRoutes';
+app.use('/api/events', eventsRoutes);
+
 // Sentry test endpoint (dev/staging only)
 if (process.env.NODE_ENV !== 'production') {
     app.get('/api/debug-sentry', (_req, _res) => {
@@ -221,9 +231,15 @@ if (process.env.NODE_ENV !== 'production') {
 // Import streaming services
 import { startMediaServer } from './streaming/mediaServer';
 import { setupChatService } from './streaming/chatService';
+import { registerModerationHandlers } from './streaming/chatModerationController';
 
 // Setup chat service
 setupChatService(io);
+
+// P0: Register chat moderation handlers for each new connection
+io.on('connection', (socket) => {
+    registerModerationHandlers(io, socket);
+});
 
 // Sentry error handler — must be before custom error handler
 if (process.env.SENTRY_DSN) {

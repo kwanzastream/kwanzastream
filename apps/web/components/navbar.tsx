@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { NotificationBell } from "@/components/notification-bell"
 import { searchService } from "@/lib/services"
+import { LanguageSwitcher } from "@/components/language-switcher"
 
 interface SearchResult {
   users?: { id: string; username: string; displayName: string; avatarUrl?: string; isVerified: boolean; followersCount: number }[]
@@ -206,8 +207,9 @@ export function Navbar() {
                 </button>
               )}
 
-              {/* Notification bell — desktop only (mobile uses bottom nav) */}
-              <div className="hidden md:block">
+              {/* Language + Notification — desktop only */}
+              <div className="hidden md:flex items-center gap-1">
+                <LanguageSwitcher compact />
                 <NotificationBell />
               </div>
 

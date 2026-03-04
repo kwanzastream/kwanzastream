@@ -1,75 +1,122 @@
+// ============================================================
+// webhookRoutes.ts — Payment Gateway Webhook Endpoints
+// P0 Financial Safety: HMAC-verified, idempotent, ledger-integrated
+// ============================================================
+
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
 import { processWebhook, ANGOLA_BANKS } from './multicaixa';
+import { hmacVerify, logWebhookEvent, markWebhookProcessed } from '../middleware/hmacVerify';
+import { recordLedgerEntries, depositEntries } from '../services/ledgerService';
+import { updateDailyTransacted } from '../middleware/kycGate';
+import prisma from '../config/prisma';
 
 const router = Router();
 
-// Webhook secret — required for production HMAC verification
 const MULTICAIXA_WEBHOOK_SECRET = process.env.MULTICAIXA_WEBHOOK_SECRET || '';
 
 /**
- * Verify HMAC-SHA256 webhook signature.
- * ALWAYS verified, even in development (no more dev bypass — F-008 fix).
- * For local testing, use the /multicaixa/test endpoint with a known secret.
+ * Multicaixa payment webhook — HMAC verified + idempotent + ledger integrated
+ *
+ * Flow:
+ *   1. hmacVerify middleware: validates HMAC-SHA256 + checks idempotency
+ *   2. Find pending deposit by reference
+ *   3. Atomically: mark COMPLETED + credit user + create ledger entries
+ *   4. Mark webhook as processed in WebhookEventLog
+ *   5. Track daily transacted for KYC
  */
-const verifySignature = (rawBody: string, signature: string): boolean => {
-    if (!MULTICAIXA_WEBHOOK_SECRET) {
-        console.error('[Webhook] MULTICAIXA_WEBHOOK_SECRET not set — rejecting all webhooks');
-        return false;
-    }
+router.post('/multicaixa', hmacVerify('multicaixa'), async (req: Request, res: Response) => {
+    const idempotencyKey = (req as any).webhookIdempotencyKey;
 
-    if (!signature) {
-        return false;
-    }
-
-    const expectedSignature = crypto
-        .createHmac('sha256', MULTICAIXA_WEBHOOK_SECRET)
-        .update(rawBody)
-        .digest('hex');
-
-    // Constant-time comparison to prevent timing attacks
     try {
-        return crypto.timingSafeEqual(
-            Buffer.from(signature, 'utf8'),
-            Buffer.from(expectedSignature, 'utf8')
-        );
-    } catch {
-        // Buffers of different length
-        return false;
-    }
-};
+        const { status, reference, transaction_id } = req.body;
 
-// Multicaixa payment webhook — HMAC verified, idempotent
-router.post('/multicaixa', async (req: Request, res: Response) => {
-    try {
-        const signature = req.headers['x-multicaixa-signature'] as string;
-        const rawBody = JSON.stringify(req.body);
+        if (status === 'COMPLETED' || status === 'completed') {
+            // Find the pending deposit by reference
+            const pendingTx = await prisma.transaction.findFirst({
+                where: {
+                    reference: reference || transaction_id,
+                    status: 'PENDING',
+                    type: 'DEPOSIT',
+                },
+            });
 
-        // ALWAYS verify signature (F-008: removed dev bypass)
-        if (!verifySignature(rawBody, signature || '')) {
-            console.error('[Webhook] Invalid or missing signature');
-            return res.status(401).json({ error: 'Invalid signature' });
+            if (!pendingTx) {
+                await logWebhookEvent('multicaixa', 'payment.completed', req.body, null, false, 'No pending transaction found', 200);
+                return res.json({ status: 'ignored', reason: 'no_pending_tx' });
+            }
+
+            // Atomic: complete deposit + credit user + record ledger
+            await prisma.$transaction(async (tx) => {
+                await tx.transaction.update({
+                    where: { id: pendingTx.id },
+                    data: { status: 'COMPLETED' },
+                });
+
+                const absAmount = pendingTx.amount > 0n ? pendingTx.amount : -pendingTx.amount;
+
+                await tx.user.update({
+                    where: { id: pendingTx.userId },
+                    data: { balance: { increment: absAmount } },
+                });
+
+                // P0: Double-entry ledger
+                await recordLedgerEntries(tx, pendingTx.id, depositEntries(pendingTx.userId, absAmount));
+            });
+
+            // Track daily transacted for KYC
+            const absAmount = pendingTx.amount > 0n ? pendingTx.amount : -pendingTx.amount;
+            await updateDailyTransacted(pendingTx.userId, absAmount);
+
+            // Mark webhook processed
+            await markWebhookProcessed(idempotencyKey);
+
+            // Also call legacy processWebhook for backward compat
+            await processWebhook(req.body).catch(() => { });
+
+            return res.json({ status: 'completed', transactionId: pendingTx.id });
+
+        } else if (status === 'FAILED' || status === 'failed') {
+            const pendingTx = await prisma.transaction.findFirst({
+                where: {
+                    reference: reference || transaction_id,
+                    status: 'PENDING',
+                    type: 'DEPOSIT',
+                },
+            });
+
+            if (pendingTx) {
+                await prisma.transaction.update({
+                    where: { id: pendingTx.id },
+                    data: { status: 'FAILED' },
+                });
+            }
+
+            await markWebhookProcessed(idempotencyKey);
+            return res.json({ status: 'failed_recorded' });
         }
 
-        const result = await processWebhook(req.body);
+        // Unknown status — acknowledge
+        return res.json({ status: 'acknowledged', eventStatus: status });
 
-        if (result) {
-            res.json({ received: true });
-        } else {
-            res.status(400).json({ error: 'Failed to process webhook' });
-        }
     } catch (error) {
-        console.error('[Webhook] Error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('[Webhook] Multicaixa processing error:', error);
+        await logWebhookEvent('multicaixa', 'processing_error', req.body, null, false, (error as Error).message, 500);
+        return res.status(500).json({ status: 'error' });
     }
 });
 
 // Get list of supported banks
-router.get('/banks', (req: Request, res: Response) => {
+router.get('/banks', (_req: Request, res: Response) => {
     res.json({ banks: ANGOLA_BANKS });
 });
 
-// Signed test webhook for development — uses HMAC so tests validate the full flow
+// Health check for webhook endpoint (payment providers verify this)
+router.get('/health', (_req: Request, res: Response) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Signed test webhook for development
 if (process.env.NODE_ENV === 'development') {
     router.post('/multicaixa/test', async (req: Request, res: Response) => {
         const { reference, status = 'COMPLETED' } = req.body;
@@ -78,7 +125,6 @@ if (process.env.NODE_ENV === 'development') {
             return res.status(400).json({ error: 'Reference required' });
         }
 
-        // Generate a properly signed payload for testing
         const payload = {
             transaction_id: `TEST-${Date.now()}`,
             reference,
@@ -93,7 +139,6 @@ if (process.env.NODE_ENV === 'development') {
             .digest('hex');
 
         console.log('[Webhook Test] Generated signature:', signature);
-        console.log('[Webhook Test] Payload:', rawBody);
 
         const result = await processWebhook(payload);
 

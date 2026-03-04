@@ -100,8 +100,11 @@ export const donationService = {
     send: (data: { receiverId: string; saloType: string; message?: string; streamId?: string }) =>
         api.post('/api/donations', data),
 
-    getLeaderboard: (params: { streamId?: string; receiverId?: string; limit?: number }) =>
+    getLeaderboard: (params: { streamId?: string; receiverId?: string; limit?: number; period?: string }) =>
         api.get('/api/donations/leaderboard', { params }),
+
+    getTopCreators: (params: { limit?: number; period?: string }) =>
+        api.get('/api/donations/top-creators', { params }),
 
     getHistory: (page = 1, limit = 20, type?: 'sent' | 'received') =>
         api.get('/api/donations/history', { params: { page, limit, type } }),
@@ -207,3 +210,47 @@ export const searchService = {
     search: (q: string, type: 'all' | 'users' | 'streams' = 'all', page = 1, limit = 10) =>
         api.get('/api/search', { params: { q, type, page, limit } }),
 };
+
+// ============== CLIPS (P1) ==============
+export const clipsService = {
+    trending: (limit = 20) =>
+        api.get('/api/clips/trending', { params: { limit } }),
+
+    streamClips: (streamId: string, page = 1) =>
+        api.get(`/api/clips/stream/${streamId}`, { params: { page } }),
+
+    myClips: (page = 1) =>
+        api.get('/api/clips/me/clips', { params: { page } }),
+
+    create: (data: { streamId: string; title: string; startTime: number; endTime: number }) =>
+        api.post('/api/clips', data),
+
+    delete: (id: string) =>
+        api.delete(`/api/clips/${id}`),
+};
+
+// ============== EVENTS (P2) ==============
+export const eventsService = {
+    list: (params?: { page?: number; limit?: number; category?: string; status?: string }) =>
+        api.get('/api/events', { params }),
+
+    get: (id: string) =>
+        api.get(`/api/events/${id}`),
+
+    create: (data: { title: string; description?: string; coverUrl?: string; category?: string; scheduledAt: string; endsAt?: string }) =>
+        api.post('/api/events', data),
+
+    update: (id: string, data: any) =>
+        api.put(`/api/events/${id}`, data),
+
+    cancel: (id: string) =>
+        api.delete(`/api/events/${id}`),
+
+    toggleRsvp: (id: string) =>
+        api.post(`/api/events/${id}/rsvp`),
+
+    myEvents: () =>
+        api.get('/api/events/my/events'),
+};
+
+

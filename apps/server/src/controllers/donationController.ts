@@ -3,6 +3,8 @@ import { z } from 'zod';
 import prisma from '../config/prisma';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 import { io } from '../index';
+import { recordLedgerEntries, donationEntries } from '../services/ledgerService';
+import { updateDailyTransacted } from '../middleware/kycGate';
 
 // ============== Constants ==============
 
@@ -111,7 +113,7 @@ export const sendDonation = async (req: AuthenticatedRequest, res: Response) => 
             });
 
             // Step 5: Create transaction records for both parties
-            await tx.transaction.createMany({
+            const txRecords = await tx.transaction.createManyAndReturn({
                 data: [
                     {
                         userId: senderId,
@@ -130,8 +132,21 @@ export const sendDonation = async (req: AuthenticatedRequest, res: Response) => 
                 ],
             });
 
+            // P0: Record ledger entries (double-entry: sender→debit, receiver→credit, platform→fee)
+            // Use the sender's transaction ID as the ledger reference
+            if (txRecords && txRecords.length > 0) {
+                await recordLedgerEntries(
+                    tx,
+                    txRecords[0].id,
+                    donationEntries(senderId, receiverId, amountCentimos, receiverAmount)
+                );
+            }
+
             return don;
         });
+
+        // P0: Update daily transacted for KYC tracking
+        await updateDailyTransacted(senderId, amountCentimos);
 
         // Emit real-time donation alert to streamer via Socket.io
         const senderInfo = await prisma.user.findUnique({
@@ -193,47 +208,146 @@ export const getSaloTypes = async (req: Request, res: Response) => {
 };
 
 // Get donation leaderboard for a stream or user
-// FIX: Eliminated N+1 query pattern — uses single IN query instead of N individual lookups
+// P1 UPGRADE: Period filtering (all/month/week/today) + Redis caching (60s TTL)
 export const getLeaderboard = async (req: Request, res: Response) => {
     try {
-        const { streamId, receiverId } = req.query;
-        const { limit } = paginationSchema.parse(req.query);
+        const { streamId, receiverId, period } = req.query;
+        const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+
+        // Period date ranges
+        const now = new Date();
+        const periodDates: Record<string, Date | undefined> = {
+            today: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+            week: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+            month: new Date(now.getFullYear(), now.getMonth(), 1),
+            all: undefined,
+        };
+        const fromDate = periodDates[period as string] ?? undefined;
+
+        // Cache key
+        const cacheKey = `lb:donors:${streamId || 'global'}:${receiverId || 'all'}:${period || 'all'}:${limit}`;
+
+        // Try Redis cache first (60s TTL)
+        try {
+            const { redis } = await import('../config/redis');
+            if (redis.isOpen) {
+                const cached = await redis.get(cacheKey);
+                if (cached) {
+                    return res.json(JSON.parse(cached));
+                }
+            }
+        } catch { /* Redis unavailable — skip cache */ }
 
         const where: any = {};
         if (streamId) where.streamId = streamId;
         if (receiverId) where.receiverId = receiverId;
+        if (fromDate) where.createdAt = { gte: fromDate };
 
         const topDonors = await prisma.donation.groupBy({
             by: ['senderId'],
             where,
             _sum: { amount: true },
+            _count: true,
             orderBy: { _sum: { amount: 'desc' } },
             take: limit,
         });
 
-        // FIX N+1: Single query to get all donor details at once
+        // Single IN query for all donor details
         const senderIds = topDonors.map((d) => d.senderId);
         const users = await prisma.user.findMany({
             where: { id: { in: senderIds } },
-            select: {
-                id: true,
-                username: true,
-                displayName: true,
-                avatarUrl: true,
-            },
+            select: { id: true, username: true, displayName: true, avatarUrl: true },
         });
-
         const userMap = new Map(users.map((u) => [u.id, u]));
 
-        const donorsWithDetails = topDonors.map((donor, index) => ({
-            rank: index + 1,
-            user: userMap.get(donor.senderId) || null,
-            totalAmount: toKz(donor._sum.amount ?? 0n),
-        }));
+        const result = {
+            leaderboard: topDonors.map((donor, index) => ({
+                rank: index + 1,
+                user: userMap.get(donor.senderId) || null,
+                totalAmount: toKz(donor._sum.amount ?? 0n),
+                donationCount: donor._count,
+            })),
+            period: period || 'all',
+        };
 
-        res.json({ leaderboard: donorsWithDetails });
+        // Cache result (60s)
+        try {
+            const { redis } = await import('../config/redis');
+            if (redis.isOpen) {
+                await redis.setEx(cacheKey, 60, JSON.stringify(result));
+            }
+        } catch { /* skip cache write */ }
+
+        res.json(result);
     } catch (error) {
         console.error('Get leaderboard error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+// P1: Top creators (receivers) ranked by total earnings
+export const getTopCreators = async (req: Request, res: Response) => {
+    try {
+        const { period } = req.query;
+        const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+
+        const now = new Date();
+        const periodDates: Record<string, Date | undefined> = {
+            today: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+            week: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+            month: new Date(now.getFullYear(), now.getMonth(), 1),
+            all: undefined,
+        };
+        const fromDate = periodDates[period as string] ?? undefined;
+
+        const cacheKey = `lb:creators:${period || 'all'}:${limit}`;
+
+        // Try cache
+        try {
+            const { redis } = await import('../config/redis');
+            if (redis.isOpen) {
+                const cached = await redis.get(cacheKey);
+                if (cached) return res.json(JSON.parse(cached));
+            }
+        } catch { }
+
+        const where: any = {};
+        if (fromDate) where.createdAt = { gte: fromDate };
+
+        const topCreators = await prisma.donation.groupBy({
+            by: ['receiverId'],
+            where,
+            _sum: { amount: true },
+            _count: true,
+            orderBy: { _sum: { amount: 'desc' } },
+            take: limit,
+        });
+
+        const receiverIds = topCreators.map(d => d.receiverId);
+        const users = await prisma.user.findMany({
+            where: { id: { in: receiverIds } },
+            select: { id: true, username: true, displayName: true, avatarUrl: true },
+        });
+        const userMap = new Map(users.map(u => [u.id, u]));
+
+        const result = {
+            creators: topCreators.map((c, index) => ({
+                rank: index + 1,
+                user: userMap.get(c.receiverId) || null,
+                totalEarnings: toKz(c._sum.amount ?? 0n),
+                donationCount: c._count,
+            })),
+            period: period || 'all',
+        };
+
+        try {
+            const { redis } = await import('../config/redis');
+            if (redis.isOpen) await redis.setEx(cacheKey, 60, JSON.stringify(result));
+        } catch { }
+
+        res.json(result);
+    } catch (error) {
+        console.error('Get top creators error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };

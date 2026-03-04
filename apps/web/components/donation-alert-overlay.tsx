@@ -37,16 +37,20 @@ export function DonationAlertOverlay({
         audioRef.current.volume = 0.7
     }, [])
 
-    // Connect Socket.io
+    // Connect Socket.io with httpOnly cookie auth
     useEffect(() => {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
-        const socket = socketIo(apiUrl, { transports: ['websocket'] })
+        const socket = socketIo(apiUrl, {
+            withCredentials: true,
+            transports: ['websocket', 'polling'],
+        })
         socketRef.current = socket
 
         socket.on('connect', () => {
             socket.emit('join:stream', streamId)
         })
 
+        // Listen for donation alerts (matches shared-types/events.ts contract)
         socket.on('donation:received', (data: Omit<DonationAlert, 'id'>) => {
             const alert: DonationAlert = {
                 ...data,

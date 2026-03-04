@@ -15,6 +15,13 @@ enum Role {
   STREAMER
 }
 
+enum AdminRole {
+  SUPER_ADMIN
+  FINANCIAL_ADMIN
+  CONTENT_MODERATOR
+  SUPPORT_AGENT
+}
+
 enum TransactionType {
   DEPOSIT
   WITHDRAWAL
@@ -56,6 +63,7 @@ model User {
   bannerUrl     String?
   bio           String?
   role          Role     @default(USER)
+  adminRole     AdminRole?
   isVerified    Boolean  @default(false)
   streamKey     String?  @unique
   interests     String[] @default([])
@@ -81,6 +89,14 @@ model User {
   termsAcceptedAt    DateTime?
   minAgeConfirmedAt  DateTime?
   
+  // KYC/AML (P0 — BNA compliance)
+  kycTier            Int      @default(0) // 0=unverified, 1=phone+selfie, 2=full ID
+  kycSubmittedAt     DateTime?
+  kycApprovedAt      DateTime?
+  kycDocumentUrl     String?
+  dailyTransacted    BigInt   @default(0)
+  lastTransactedDate DateTime?
+  
   // Timestamps
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -101,6 +117,9 @@ model User {
   favoriteCreators  FavoriteCreator[] @relation("UserFavoriteCreators")
   favoriteStreams   FavoriteStream[]  @relation("UserFavoriteStreams")
   reports           Report[]          @relation("UserReports")
+  clips             Clip[]            @relation("UserClips")
+  events            Event[]           @relation("UserEvents")
+  eventRsvps        EventRSVP[]
   
   @@index([phone])
   @@index([email])
@@ -172,6 +191,8 @@ model Stream {
   streamer     User         @relation(fields: [streamerId], references: [id], onDelete: Cascade)
   donations    Donation[]
   watchHistory WatchHistory[]
+  clips        Clip[]
+  events       Event[]
   
   @@index([streamerId])
   @@index([status])
@@ -214,6 +235,7 @@ model Transaction {
   // Relations
   userId      String
   user        User              @relation(fields: [userId], references: [id])
+  ledgerEntries LedgerEntry[]
   
   @@index([userId])
   @@index([type])
@@ -245,6 +267,8 @@ enum AdminAction {
   UPDATE_USER_ROLE
   END_STREAM
   DELETE_CONTENT
+  CHAT_TIMEOUT
+  CHAT_BAN
 }
 
 model AuditLog {
@@ -341,4 +365,121 @@ model Report {
   @@index([reporterId])
   @@index([status])
   @@index([createdAt])           // Admin ordering
+}
+
+// ============== P0: DOUBLE-ENTRY LEDGER ==============
+
+model LedgerEntry {
+  id             String   @id @default(uuid())
+  transactionId  String
+  transaction    Transaction @relation(fields: [transactionId], references: [id])
+  accountId      String   // userId or "platform" or "escrow"
+  accountType    String   // "user" | "platform" | "escrow"
+  debit          BigInt   @default(0)
+  credit         BigInt   @default(0)
+  balance        BigInt   // running balance after this entry
+  description    String?
+  createdAt      DateTime @default(now())
+
+  @@index([accountId, createdAt])
+  @@index([transactionId])
+  @@index([accountType])
+}
+
+// ============== P0: WEBHOOK EVENT LOG ==============
+
+model WebhookEventLog {
+  id              String   @id @default(uuid())
+  provider        String   // "multicaixa" | "emis" | "unitel_money"
+  eventType       String   // "payment.completed" | "payment.failed" etc.
+  payload         Json
+  signature       String?
+  processed       Boolean  @default(false)
+  processingError String?
+  idempotencyKey  String?  @unique
+  httpStatus      Int?     // response status we returned
+  createdAt       DateTime @default(now())
+
+  @@index([provider, createdAt])
+  @@index([idempotencyKey])
+  @@index([processed])
+}
+
+// ============== P1: CLIPS SYSTEM ==============
+
+model Clip {
+  id           String   @id @default(uuid())
+  title        String
+  thumbnailUrl String?
+  duration     Int      // seconds
+  startTime    Int      // offset in seconds from stream start
+  endTime      Int      // offset in seconds from stream start
+  viewCount    Int      @default(0)
+  shareCount   Int      @default(0)
+  videoUrl     String?  // processed clip URL (Cloudflare Stream or local)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Who created the clip
+  creatorId    String
+  creator      User     @relation("UserClips", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  // Which stream was clipped
+  streamId     String
+  stream       Stream   @relation(fields: [streamId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId, createdAt])
+  @@index([streamId])
+  @@index([viewCount])  // Trending clips
+}
+
+// ============== P2: EVENTS SYSTEM ==============
+
+model Event {
+  id           String      @id @default(uuid())
+  title        String
+  description  String?
+  coverUrl     String?
+  category     String?     // "música", "gaming", "educação", etc.
+  scheduledAt  DateTime    // When the event starts
+  endsAt       DateTime?   // Optional end time
+  status       EventStatus @default(SCHEDULED) // SCHEDULED, LIVE, ENDED, CANCELLED
+  rsvpCount    Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  // Organizer
+  organizerId  String
+  organizer    User        @relation("UserEvents", fields: [organizerId], references: [id], onDelete: Cascade)
+
+  // Optional linked stream
+  streamId     String?
+  stream       Stream?     @relation(fields: [streamId], references: [id], onDelete: SetNull)
+
+  // RSVPs
+  rsvps        EventRSVP[]
+
+  @@index([organizerId, scheduledAt])
+  @@index([scheduledAt])
+  @@index([status])
+}
+
+model EventRSVP {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])  // One RSVP per user per event
+}
+
+enum EventStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+  CANCELLED
 }

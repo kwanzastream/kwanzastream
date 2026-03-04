@@ -1,253 +1,280 @@
-"use client"
+'use client'
 
-import * as React from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { 
-  Wallet, 
-  Video, 
-  TrendingUp,
-  Users,
-  Gift,
-  Calendar,
-  ArrowRight,
-  Radio,
-  BarChart3
-} from "lucide-react"
-import Link from "next/link"
-import { Navbar } from "@/components/navbar"
+import { useState, useEffect } from 'react'
+import { Navbar } from '@/components/navbar'
+import { MobileNav } from '@/components/mobile-nav'
+import {
+  BarChart3, DollarSign, Users, Radio, TrendingUp, Eye,
+  Play, ChevronRight, Wallet, ArrowUpRight, ArrowDownRight,
+  Gift, Video
+} from 'lucide-react'
 
-export default function StudioDashboardPage() {
-  // Mock data
-  const earnings = 125000
-  const isLive = false
-  const activeEvents = 2
-  const totalViewers = 12500
-  const totalSalos = 450
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
-  const stats = [
-    { label: "Total de Ganhos", value: `${earnings.toLocaleString()} Kz`, icon: Wallet, color: "text-primary" },
-    { label: "Salos Recebidos", value: totalSalos.toString(), icon: Gift, color: "text-secondary" },
-    { label: "Total de Visualizações", value: totalViewers.toLocaleString(), icon: Users, color: "text-accent" },
-    { label: "Eventos Ativos", value: activeEvents.toString(), icon: Calendar, color: "text-primary" }
-  ]
+interface CreatorStats {
+  profile: { displayName: string; username: string; avatarUrl: string; kycTier: number }
+  balance: number
+  earnings: { total: number; thisMonth: number; thisWeek: number; platformFeePercent: number }
+  stats: { totalStreams: number; totalViewers: number; followers: number; totalDonations: number }
+  liveStream: { id: string; title: string; viewerCount: number; startedAt: string } | null
+  topDonations: { id: string; amount: number; saloType: string; message: string; sender: { displayName: string; username: string }; createdAt: string }[]
+  recentTransactions: { id: string; amount: number; type: string; description: string; createdAt: string }[]
+}
 
-  const topDonors = [
-    { name: "Usuário 1", amount: 5000, avatar: "/abstract-profile.png" },
-    { name: "Usuário 2", amount: 3000, avatar: "/abstract-profile.png" },
-    { name: "Usuário 3", amount: 2000, avatar: "/abstract-profile.png" }
-  ]
+interface ChartData {
+  chartData: { date: string; earnings: number }[]
+  days: number
+}
+
+interface StreamItem {
+  id: string; title: string; category: string; status: string;
+  viewerCount: number; peakViewers: number; donationCount: number;
+  clipCount: number; startedAt: string; endedAt: string; createdAt: string
+}
+
+export default function StudioPage() {
+  const [stats, setStats] = useState<CreatorStats | null>(null)
+  const [chartData, setChartData] = useState<ChartData | null>(null)
+  const [streams, setStreams] = useState<StreamItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [chartDays, setChartDays] = useState(30)
+
+  useEffect(() => { fetchData() }, [])
+  useEffect(() => { fetchChart() }, [chartDays])
+
+  const fetchData = async () => {
+    try {
+      const [statsRes, streamsRes] = await Promise.all([
+        fetch(`${API_URL}/api/creator/stats`, { credentials: 'include' }),
+        fetch(`${API_URL}/api/creator/streams?limit=5`, { credentials: 'include' }),
+      ])
+      if (statsRes.ok) setStats(await statsRes.json())
+      if (streamsRes.ok) {
+        const data = await streamsRes.json()
+        setStreams(data.streams || [])
+      }
+    } catch { }
+    setLoading(false)
+  }
+
+  const fetchChart = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/creator/earnings-chart?days=${chartDays}`, { credentials: 'include' })
+      if (res.ok) setChartData(await res.json())
+    } catch { }
+  }
+
+  const formatKz = (amount: number) =>
+    new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 0 }).format(amount) + ' Kz'
+
+  const timeAgo = (dateStr: string) => {
+    const secs = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
+    if (secs < 60) return 'agora'
+    if (secs < 3600) return `${Math.floor(secs / 60)}m`
+    if (secs < 86400) return `${Math.floor(secs / 3600)}h`
+    return `${Math.floor(secs / 86400)}d`
+  }
+
+  const maxEarning = chartData ? Math.max(...chartData.chartData.map(d => d.earnings), 1) : 1
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-muted-foreground">A carregar estúdio...</p>
+          </div>
+        </main>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
+      <main className="flex-1 overflow-y-auto pb-20 md:pb-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 space-y-6">
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-8">
           {/* Header */}
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-2">
-                Studio
-              </h1>
-              <p className="text-muted-foreground">
-                Gerencia o teu canal e acompanha o teu crescimento
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight">Estúdio do Creator</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {stats?.profile.displayName || 'Creator'} · @{stats?.profile.username}
               </p>
             </div>
-            <div className="flex gap-2">
-              <Link href="/studio/live/criar">
-                <Button size="lg" className="bg-primary hover:bg-primary/90">
-                  <Radio className="w-5 h-5 mr-2" />
-                  Iniciar Live
-                </Button>
-              </Link>
+            <a href="/stream"
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-xl font-bold text-sm hover:opacity-90 transition-opacity shadow-lg shadow-red-500/20">
+              <Radio className="w-4 h-4" /> Ir Live
+            </a>
+          </div>
+
+          {/* Live Now Banner */}
+          {stats?.liveStream && (
+            <a href={`/stream/${stats.liveStream.id}`}
+              className="block p-4 rounded-2xl bg-gradient-to-r from-red-500/20 to-orange-500/10 border border-red-500/30 hover:border-red-500/50 transition-all">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-white">{stats.liveStream.title}</p>
+                  <p className="text-xs text-red-300">{stats.liveStream.viewerCount} a assistir</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-red-300" />
+              </div>
+            </a>
+          )}
+
+          {/* Stat Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <StatCard icon={<DollarSign className="w-4 h-4" />} label="Saldo" value={formatKz(stats?.balance ?? 0)} color="text-green-400" bg="bg-green-500/10" />
+            <StatCard icon={<TrendingUp className="w-4 h-4" />} label="Este Mês" value={formatKz(stats?.earnings.thisMonth ?? 0)} color="text-blue-400" bg="bg-blue-500/10" />
+            <StatCard icon={<Users className="w-4 h-4" />} label="Seguidores" value={String(stats?.stats.followers ?? 0)} color="text-purple-400" bg="bg-purple-500/10" />
+            <StatCard icon={<Gift className="w-4 h-4" />} label="Doações" value={String(stats?.stats.totalDonations ?? 0)} color="text-amber-400" bg="bg-amber-500/10" />
+          </div>
+
+          {/* Earnings Chart */}
+          <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-white flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-primary" /> Ganhos
+              </h2>
+              <div className="flex gap-1">
+                {[7, 30, 90].map(d => (
+                  <button key={d} onClick={() => setChartDays(d)}
+                    className={`text-xs px-3 py-1 rounded-lg transition-all ${chartDays === d ? 'bg-primary/20 text-primary font-bold' : 'text-muted-foreground hover:bg-white/5'}`}>
+                    {d}d
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-end gap-[2px] h-32 md:h-40">
+              {chartData?.chartData.map((d) => {
+                const height = maxEarning > 0 ? (d.earnings / maxEarning) * 100 : 0
+                return (
+                  <div key={d.date} className="flex-1 group relative" title={`${d.date}: ${formatKz(d.earnings)}`}>
+                    <div className="w-full rounded-t-sm transition-all duration-300 group-hover:opacity-100"
+                      style={{
+                        height: `${Math.max(height, 2)}%`,
+                        background: height > 0 ? 'linear-gradient(to top, hsl(var(--primary)), hsl(var(--primary) / 0.6))' : 'hsl(var(--muted) / 0.2)',
+                        opacity: height > 0 ? 0.7 : 0.3,
+                      }} />
+                  </div>
+                )
+              })}
+            </div>
+            <div className="flex justify-between mt-2">
+              <span className="text-[10px] text-muted-foreground">{chartData?.chartData[0]?.date}</span>
+              <span className="text-[10px] text-muted-foreground">{chartData?.chartData[chartData.chartData.length - 1]?.date}</span>
             </div>
           </div>
 
-          {/* Live Status */}
-          {isLive ? (
-            <Card className="border-red-600 bg-red-600/10">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-3 w-3 rounded-full bg-red-600 animate-pulse" />
-                    <div>
-                      <p className="font-bold text-lg">Estás ao vivo!</p>
-                      <p className="text-sm text-muted-foreground">125 espectadores</p>
+          {/* Two Column: Streams + Donations/Transactions */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Stream History */}
+            <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-5">
+              <h2 className="font-bold text-white flex items-center gap-2 mb-4">
+                <Video className="w-4 h-4 text-primary" /> Streams Recentes
+              </h2>
+              <div className="space-y-3">
+                {streams.map(s => (
+                  <div key={s.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] transition-all">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${s.status === 'LIVE' ? 'bg-red-500/20' : 'bg-white/5'}`}>
+                      {s.status === 'LIVE' ? <Radio className="w-4 h-4 text-red-400" /> : <Play className="w-4 h-4 text-muted-foreground" />}
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-white truncate">{s.title}</p>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Eye className="w-3 h-3" /> {s.peakViewers}</span>
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Gift className="w-3 h-3" /> {s.donationCount}</span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">{timeAgo(s.createdAt)}</span>
                   </div>
-                  <Button variant="outline">Gerir Live</Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-bold text-lg mb-1">Não estás ao vivo</p>
-                    <p className="text-sm text-muted-foreground">Inicia uma live para começar a ganhar</p>
-                  </div>
-                  <Link href="/studio/live/criar">
-                    <Button>Iniciar Live</Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                ))}
+                {!streams.length && <p className="text-sm text-muted-foreground text-center py-8">Nenhuma stream ainda</p>}
+              </div>
+            </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {stats.map((stat, i) => (
-              <Card key={i}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`p-3 bg-muted rounded-lg`}>
-                      <stat.icon className={`w-5 h-5 ${stat.color}`} />
+            {/* Right Column */}
+            <div className="space-y-6">
+              {/* Top Donations */}
+              <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-5">
+                <h2 className="font-bold text-white flex items-center gap-2 mb-4">
+                  <Gift className="w-4 h-4 text-amber-400" /> Top Doações
+                </h2>
+                <div className="space-y-2.5">
+                  {stats?.topDonations.map((d, i) => (
+                    <div key={d.id} className="flex items-center gap-3">
+                      <span className={`text-sm font-bold w-5 text-center ${i === 0 ? 'text-amber-400' : i === 1 ? 'text-gray-300' : 'text-orange-400'}`}>{i + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-white truncate">{d.sender.displayName || d.sender.username}</p>
+                        {d.message && <p className="text-[10px] text-muted-foreground truncate">"{d.message}"</p>}
+                      </div>
+                      <span className="text-sm font-bold text-green-400">{formatKz(d.amount)}</span>
                     </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-1">{stat.label}</p>
-                  <p className="text-2xl font-black">{stat.value}</p>
-                </CardContent>
-              </Card>
-            ))}
+                  ))}
+                  {!stats?.topDonations.length && <p className="text-sm text-muted-foreground text-center py-4">Sem doações</p>}
+                </div>
+              </div>
+
+              {/* Recent Transactions */}
+              <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-5">
+                <h2 className="font-bold text-white flex items-center gap-2 mb-4">
+                  <Wallet className="w-4 h-4 text-blue-400" /> Movimentos
+                </h2>
+                <div className="space-y-2">
+                  {stats?.recentTransactions.map(t => (
+                    <div key={t.id} className="flex items-center gap-3 py-1.5">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center ${t.type === 'DEPOSIT' ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+                        {t.type === 'DEPOSIT' ? <ArrowDownRight className="w-3.5 h-3.5 text-green-400" /> : <ArrowUpRight className="w-3.5 h-3.5 text-red-400" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-white">{t.description || t.type}</p>
+                        <p className="text-[10px] text-muted-foreground">{timeAgo(t.createdAt)}</p>
+                      </div>
+                      <span className={`text-xs font-bold ${t.type === 'DEPOSIT' ? 'text-green-400' : 'text-red-400'}`}>
+                        {t.type === 'DEPOSIT' ? '+' : '-'}{formatKz(Math.abs(t.amount))}
+                      </span>
+                    </div>
+                  ))}
+                  {!stats?.recentTransactions.length && <p className="text-sm text-muted-foreground text-center py-4">Sem movimentos</p>}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Link href="/studio/lives">
-              <Card className="hover:border-primary transition-colors cursor-pointer h-full">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Video className="w-5 h-5 text-primary" />
-                    Gerir Lives
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Visualiza, edita e gerencia todas as tuas lives
-                  </p>
-                  <Button variant="ghost" className="w-full justify-between">
-                    Ver Todas
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link href="/studio/eventos">
-              <Card className="hover:border-primary transition-colors cursor-pointer h-full">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-secondary" />
-                    Eventos
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Cria e gerencia eventos digitais
-                  </p>
-                  <Button variant="ghost" className="w-full justify-between">
-                    Ver Eventos
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link href="/studio/ganhos">
-              <Card className="hover:border-primary transition-colors cursor-pointer h-full">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-accent" />
-                    Monetização
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Acompanha ganhos e solicita saques
-                  </p>
-                  <Button variant="ghost" className="w-full justify-between">
-                    Ver Ganhos
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            </Link>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { href: '/wallet', icon: <Wallet className="w-5 h-5" />, label: 'Carteira' },
+              { href: '/stream', icon: <Radio className="w-5 h-5" />, label: 'Nova Stream' },
+              { href: '/profile', icon: <Users className="w-5 h-5" />, label: 'Perfil' },
+              { href: '/explore', icon: <Eye className="w-5 h-5" />, label: 'Explorar' },
+            ].map(a => (
+              <a key={a.href} href={a.href}
+                className="flex items-center gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:border-white/10 transition-all group">
+                <span className="text-muted-foreground group-hover:text-primary transition-colors">{a.icon}</span>
+                <span className="text-sm font-medium text-muted-foreground group-hover:text-white transition-colors">{a.label}</span>
+              </a>
+            ))}
           </div>
-
-          {/* Top Donors */}
-          <section>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Top Doadores</h2>
-              <Link href="/studio/comunidade">
-                <Button variant="outline" size="sm">
-                  Ver Comunidade Completa
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
-            </div>
-            <Card>
-              <CardContent className="p-0">
-                <div className="divide-y">
-                  {topDonors.map((donor, i) => (
-                    <div key={i} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">
-                          {i + 1}
-                        </Badge>
-                        <div>
-                          <p className="font-medium">{donor.name}</p>
-                          <p className="text-sm text-muted-foreground">{donor.amount.toLocaleString()} Kz em Salos</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Analytics Preview */}
-          <section>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold flex items-center gap-2">
-                <BarChart3 className="w-5 h-5" />
-                Estatísticas
-              </h2>
-              <Button variant="outline" size="sm">Ver Relatório Completo</Button>
-            </div>
-            <Card>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Crescimento</p>
-                    <p className="text-2xl font-bold text-green-600">+12%</p>
-                    <p className="text-xs text-muted-foreground">vs mês anterior</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Média de Visualizações</p>
-                    <p className="text-2xl font-bold">1.2K</p>
-                    <p className="text-xs text-muted-foreground">por live</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Taxa de Conversão</p>
-                    <p className="text-2xl font-bold">8.5%</p>
-                    <p className="text-xs text-muted-foreground">viewers → doadores</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Tempo Médio</p>
-                    <p className="text-2xl font-bold">45min</p>
-                    <p className="text-xs text-muted-foreground">por live</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
         </div>
       </main>
+      <MobileNav />
+    </div>
+  )
+}
+
+function StatCard({ icon, label, value, color, bg }: { icon: React.ReactNode; label: string; value: string; color: string; bg: string }) {
+  return (
+    <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4 space-y-2">
+      <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center ${color}`}>{icon}</div>
+      <div>
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
+        <p className="text-lg font-bold text-white tracking-tight">{value}</p>
+      </div>
     </div>
   )
 }

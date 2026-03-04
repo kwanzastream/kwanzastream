@@ -1,0 +1,208 @@
+{
+    "dashboard": {
+        "title": "Kwanza Stream — Financial Operations",
+        "uid": "kwanza-financial-ops",
+        "tags": [
+            "kwanza",
+            "financial",
+            "p0"
+        ],
+        "timezone": "browser",
+        "refresh": "30s",
+        "time": {
+            "from": "now-24h",
+            "to": "now"
+        },
+        "panels": [
+            {
+                "title": "Transações por Tipo (últimas 24h)",
+                "type": "piechart",
+                "gridPos": {
+                    "h": 8,
+                    "w": 8,
+                    "x": 0,
+                    "y": 0
+                },
+                "targets": [
+                    {
+                        "rawSql": "SELECT type, COUNT(*) as count FROM \"Transaction\" WHERE \"createdAt\" > NOW() - INTERVAL '24 hours' GROUP BY type",
+                        "format": "table"
+                    }
+                ]
+            },
+            {
+                "title": "Volume Financeiro (Kz) — Rolling 7 dias",
+                "type": "timeseries",
+                "gridPos": {
+                    "h": 8,
+                    "w": 16,
+                    "x": 8,
+                    "y": 0
+                },
+                "targets": [
+                    {
+                        "rawSql": "SELECT DATE_TRUNC('hour', \"createdAt\") as time, SUM(amount::float / 100) as volume_kz FROM \"Transaction\" WHERE status = 'COMPLETED' AND \"createdAt\" > NOW() - INTERVAL '7 days' GROUP BY 1 ORDER BY 1",
+                        "format": "time_series"
+                    }
+                ]
+            },
+            {
+                "title": "Depósitos Pendentes",
+                "type": "stat",
+                "gridPos": {
+                    "h": 4,
+                    "w": 6,
+                    "x": 0,
+                    "y": 8
+                },
+                "targets": [
+                    {
+                        "rawSql": "SELECT COUNT(*) as value FROM \"Transaction\" WHERE type = 'DEPOSIT' AND status = 'PENDING'",
+                        "format": "table"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "thresholds": {
+                            "steps": [
+                                {
+                                    "value": 0,
+                                    "color": "green"
+                                },
+                                {
+                                    "value": 10,
+                                    "color": "yellow"
+                                },
+                                {
+                                    "value": 50,
+                                    "color": "red"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "title": "Levantamentos Pendentes de Aprovação",
+                "type": "stat",
+                "gridPos": {
+                    "h": 4,
+                    "w": 6,
+                    "x": 6,
+                    "y": 8
+                },
+                "targets": [
+                    {
+                        "rawSql": "SELECT COUNT(*) as value FROM \"Transaction\" WHERE type = 'WITHDRAWAL' AND status = 'PENDING'",
+                        "format": "table"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "thresholds": {
+                            "steps": [
+                                {
+                                    "value": 0,
+                                    "color": "green"
+                                },
+                                {
+                                    "value": 5,
+                                    "color": "yellow"
+                                },
+                                {
+                                    "value": 20,
+                                    "color": "red"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "title": "Discrepâncias Ledger",
+                "type": "stat",
+                "gridPos": {
+                    "h": 4,
+                    "w": 6,
+                    "x": 12,
+                    "y": 8
+                },
+                "description": "Number of accounts where User.balance ≠ LedgerEntry computed balance",
+                "targets": [
+                    {
+                        "rawSql": "SELECT COUNT(*) as value FROM (SELECT u.id, u.balance as wallet, COALESCE((SELECT balance FROM \"LedgerEntry\" WHERE \"accountId\" = u.id ORDER BY \"createdAt\" DESC LIMIT 1), 0) as ledger FROM \"User\" u WHERE u.balance != 0) sub WHERE wallet != ledger",
+                        "format": "table"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "thresholds": {
+                            "steps": [
+                                {
+                                    "value": 0,
+                                    "color": "green"
+                                },
+                                {
+                                    "value": 1,
+                                    "color": "red"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "title": "Doações (Salo) — Top Streamers Hoje",
+                "type": "table",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 12
+                },
+                "targets": [
+                    {
+                        "rawSql": "SELECT u.username, u.\"displayName\", COUNT(d.id) as total_donations, SUM(d.amount::float / 100) as total_kz FROM \"Donation\" d JOIN \"User\" u ON u.id = d.\"receiverId\" WHERE d.\"createdAt\" > NOW() - INTERVAL '24 hours' GROUP BY u.id, u.username, u.\"displayName\" ORDER BY total_kz DESC LIMIT 10",
+                        "format": "table"
+                    }
+                ]
+            },
+            {
+                "title": "Webhooks Falhados (últimas 24h)",
+                "type": "stat",
+                "gridPos": {
+                    "h": 4,
+                    "w": 6,
+                    "x": 18,
+                    "y": 8
+                },
+                "targets": [
+                    {
+                        "rawSql": "SELECT COUNT(*) as value FROM \"WebhookEventLog\" WHERE processed = false AND \"createdAt\" > NOW() - INTERVAL '24 hours'",
+                        "format": "table"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "thresholds": {
+                            "steps": [
+                                {
+                                    "value": 0,
+                                    "color": "green"
+                                },
+                                {
+                                    "value": 1,
+                                    "color": "yellow"
+                                },
+                                {
+                                    "value": 5,
+                                    "color": "red"
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        ]
+    }
+}
