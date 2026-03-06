@@ -108,6 +108,10 @@ app.use(cookieParser());
 import { sanitizeMiddleware } from './middleware/sanitizeMiddleware';
 app.use(sanitizeMiddleware);
 
+// Request logging — observability
+import { requestLogger } from './middleware/requestLogger';
+app.use(requestLogger);
+
 // ============== RATE LIMITING ==============
 // Auth endpoints: strict limit to prevent OTP/login brute-force
 const authLimiter = rateLimit({

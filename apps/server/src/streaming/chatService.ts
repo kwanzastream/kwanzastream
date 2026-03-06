@@ -3,6 +3,7 @@ import prisma from '../config/prisma';
 import redis from '../config/redis';
 import { verifyAccessToken, TokenPayload } from '../services/jwtService';
 import { setNotificationIO } from '../services/notificationService';
+import { filterMessage } from './chatFilter';
 
 // Allowed reaction emojis
 const ALLOWED_REACTIONS = ['❤️', '🔥', '😂', '💯', '👏'];
@@ -276,6 +277,13 @@ export const setupChatService = (io: Server) => {
             // Validate message
             if (!message || message.trim().length === 0 || message.length > 500) {
                 socket.emit('error', { message: 'Invalid message' });
+                return;
+            }
+
+            // Content moderation filter
+            const filterResult = filterMessage(message);
+            if (!filterResult.allowed) {
+                socket.emit('error', { message: filterResult.reason || 'Mensagem bloqueada' });
                 return;
             }
 
