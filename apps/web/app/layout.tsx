@@ -10,6 +10,7 @@ import { OfflineBanner } from "@/components/offline-banner"
 import { I18nProvider } from "@/lib/i18n"
 import { PostHogProvider } from "@/lib/posthog"
 import { CookieConsent } from "@/components/cookie-consent"
+import { BetaFeedback } from "@/components/beta-feedback"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -57,6 +58,7 @@ export default function RootLayout({
                 {children}
                 <MobileNav />
                 <CookieConsent />
+                <BetaFeedback />
               </ToastProvider>
             </I18nProvider>
           </PostHogProvider>
