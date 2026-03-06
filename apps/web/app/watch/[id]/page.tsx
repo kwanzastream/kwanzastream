@@ -116,14 +116,38 @@ export default function WatchPage() {
 
     const handleFollow = async () => {
         if (!stream?.streamer?.id) return;
+        // Optimistic update — instant feedback on slow networks
+        const wasFollowing = isFollowing;
+        setIsFollowing(!wasFollowing);
+        setStream(prev => prev ? {
+            ...prev,
+            streamer: {
+                ...prev.streamer,
+                _count: {
+                    ...prev.streamer._count!,
+                    followers: (prev.streamer._count?.followers || 0) + (wasFollowing ? -1 : 1),
+                },
+            },
+        } : null);
         try {
-            if (isFollowing) {
+            if (wasFollowing) {
                 await userService.unfollow(stream.streamer.id);
             } else {
                 await userService.follow(stream.streamer.id);
             }
-            setIsFollowing(!isFollowing);
         } catch (err) {
+            // Rollback on error
+            setIsFollowing(wasFollowing);
+            setStream(prev => prev ? {
+                ...prev,
+                streamer: {
+                    ...prev.streamer,
+                    _count: {
+                        ...prev.streamer._count!,
+                        followers: (prev.streamer._count?.followers || 0) + (wasFollowing ? 1 : -1),
+                    },
+                },
+            } : null);
             console.error('Follow error:', err);
         }
     };
