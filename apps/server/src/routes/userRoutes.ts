@@ -11,11 +11,13 @@ import {
     checkUsername,
 } from '../controllers/userController';
 import { authMiddleware, optionalAuthMiddleware } from '../middleware/authMiddleware';
+import { deleteMyAccount } from '../controllers/accountDeletionController';
 
 const router = Router();
 
 // Protected routes (must be before parameterized routes)
 router.put('/me', authMiddleware, updateProfile);
+router.delete('/me', authMiddleware, deleteMyAccount); // Right to Erasure (Lei 22/11)
 router.post('/me/stream-key', authMiddleware, generateStreamKey);
 router.post('/onboarding', authMiddleware, completeOnboarding);
 router.get('/check-username/:username', optionalAuthMiddleware, checkUsername);

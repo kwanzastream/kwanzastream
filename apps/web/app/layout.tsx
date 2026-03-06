@@ -8,6 +8,7 @@ import { ToastProvider } from "@/components/error-toast"
 import { MobileNav } from "@/components/mobile-nav"
 import { OfflineBanner } from "@/components/offline-banner"
 import { I18nProvider } from "@/lib/i18n"
+import { PostHogProvider } from "@/lib/posthog"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -48,13 +49,15 @@ export default function RootLayout({
     <html lang="pt-AO">
       <body className={`font-sans antialiased min-h-dvh`}>
         <AuthProvider>
-          <I18nProvider>
-            <ToastProvider>
-              <OfflineBanner />
-              {children}
-              <MobileNav />
-            </ToastProvider>
-          </I18nProvider>
+          <PostHogProvider>
+            <I18nProvider>
+              <ToastProvider>
+                <OfflineBanner />
+                {children}
+                <MobileNav />
+              </ToastProvider>
+            </I18nProvider>
+          </PostHogProvider>
           <Analytics />
         </AuthProvider>
       </body>

@@ -223,6 +223,18 @@ export const processWebhook = async (payload: any): Promise<boolean> => {
                 where: { id: transaction.userId },
                 data: { balance: { increment: creditAmount } },
             }),
+            // Audit trail: LedgerEntry for BNA compliance
+            prisma.ledgerEntry.create({
+                data: {
+                    transactionId: transaction.id,
+                    accountId: transaction.userId,
+                    accountType: 'user',
+                    debit: 0n,
+                    credit: creditAmount,
+                    balance: 0n, // Running balance calculated separately
+                    description: `Depósito Multicaixa Express ${transaction.reference}`,
+                },
+            }),
         ]);
 
         console.log('[Multicaixa] Payment completed for user:', transaction.userId);
