@@ -12,7 +12,7 @@ import { Navbar } from "@/components/navbar"
 import { MobileNav } from "@/components/mobile-nav"
 import { streamService, donationService } from "@/lib/services"
 
-const categories = ["Todos", "Música", "Kuduro", "Gaming", "Culinária", "Educação", "Negócios", "Religião"]
+const categories = ["Todos", "Gaming AO", "Kuduro & Semba", "Girabola & Futebol", "Comédia Angolana", "Culinária Angolana", "Música ao Vivo", "Conversa & IRL", "Educação", "Tech & Programação"]
 
 interface LiveStream {
   id: string

@@ -11,7 +11,27 @@ export const getSocket = (): Socket => {
             // Use cookies for auth — httpOnly cookies are sent automatically
             withCredentials: true,
             transports: ['websocket', 'polling'],
+            // Africa-first: robust reconnection for unstable mobile networks
+            reconnection: true,
+            reconnectionAttempts: 15,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 10000,
+            randomizationFactor: 0.5,
+            timeout: 20000,
         });
+
+        // Log reconnection events in development
+        if (process.env.NODE_ENV === 'development') {
+            socket.on('reconnect_attempt', (attempt) => {
+                console.log(`[Socket] Reconnecting... attempt ${attempt}`);
+            });
+            socket.on('reconnect', () => {
+                console.log('[Socket] Reconnected successfully');
+            });
+            socket.on('reconnect_failed', () => {
+                console.warn('[Socket] Reconnection failed after max attempts');
+            });
+        }
     }
     return socket;
 };

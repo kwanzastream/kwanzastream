@@ -5,6 +5,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import compression from 'compression';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -95,6 +96,7 @@ app.use(helmet({
     },
     crossOriginEmbedderPolicy: false, // Required for cross-origin media loading
 }));
+app.use(compression()); // gzip/brotli — Africa-first: saves mobile data
 app.use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,

@@ -39,8 +39,64 @@ const RATE_WINDOW = 60 * 1000; // 1 minute
 
 const userMessageCounts = new Map<string, { count: number; resetAt: number }>();
 
-// Banned/timed out users per stream
-const streamBans = new Map<string, Map<string, number>>(); // streamId -> (userId -> expiresAt)
+// Banned/timed out users per stream — Redis-backed with in-memory fallback
+const streamBansMemory = new Map<string, Map<string, number>>(); // fallback if Redis is down
+
+// Redis key: stream:bans:{streamId} — hash field: userId — value: expiresAt timestamp
+const setBan = async (streamId: string, userId: string, expiresAt: number): Promise<void> => {
+    // Always set in memory (fast path + fallback)
+    if (!streamBansMemory.has(streamId)) {
+        streamBansMemory.set(streamId, new Map());
+    }
+    streamBansMemory.get(streamId)!.set(userId, expiresAt);
+
+    // Persist to Redis (survives restart)
+    try {
+        if (redis.isOpen) {
+            const ttlSeconds = Math.ceil((expiresAt - Date.now()) / 1000);
+            if (ttlSeconds > 0) {
+                const key = `stream:bans:${streamId}`;
+                await redis.hSet(key, userId, expiresAt.toString());
+                // Set TTL on the hash to auto-cleanup after the longest ban
+                const currentTTL = await redis.ttl(key);
+                if (currentTTL < ttlSeconds) {
+                    await redis.expire(key, ttlSeconds + 60); // +60s buffer
+                }
+            }
+        }
+    } catch {
+        // Redis unavailable — in-memory ban still active
+    }
+};
+
+const isUserBanned = async (streamId: string, userId: string): Promise<{ banned: boolean; remaining: number }> => {
+    const now = Date.now();
+
+    // Try Redis first (authoritative, survives restart)
+    try {
+        if (redis.isOpen) {
+            const expiry = await redis.hGet(`stream:bans:${streamId}`, userId);
+            if (expiry) {
+                const expiresAt = parseInt(expiry, 10);
+                if (expiresAt > now) {
+                    return { banned: true, remaining: Math.ceil((expiresAt - now) / 1000) };
+                }
+                // Expired — clean up
+                await redis.hDel(`stream:bans:${streamId}`, userId);
+            }
+            return { banned: false, remaining: 0 };
+        }
+    } catch {
+        // Redis unavailable, fall through to memory
+    }
+
+    // Fallback: in-memory
+    const banExpiry = streamBansMemory.get(streamId)?.get(userId);
+    if (banExpiry && banExpiry > now) {
+        return { banned: true, remaining: Math.ceil((banExpiry - now) / 1000) };
+    }
+    return { banned: false, remaining: 0 };
+};
 
 export const setupChatService = (io: Server) => {
     // Register IO for notification push
@@ -191,11 +247,10 @@ export const setupChatService = (io: Server) => {
 
             const { streamId, message } = data;
 
-            // Check if user is banned
-            const banExpiry = streamBans.get(streamId)?.get(user.id);
-            if (banExpiry && banExpiry > Date.now()) {
-                const remaining = Math.ceil((banExpiry - Date.now()) / 1000);
-                socket.emit('error', { message: `You are timed out for ${remaining} seconds` });
+            // Check if user is banned (Redis-backed, survives restart)
+            const banStatus = await isUserBanned(streamId, user.id);
+            if (banStatus.banned) {
+                socket.emit('error', { message: `You are timed out for ${banStatus.remaining} seconds` });
                 return;
             }
 
@@ -295,11 +350,8 @@ export const setupChatService = (io: Server) => {
                 return;
             }
 
-            // Add timeout
-            if (!streamBans.has(streamId)) {
-                streamBans.set(streamId, new Map());
-            }
-            streamBans.get(streamId)!.set(targetUserId, Date.now() + duration * 1000);
+            // Add timeout (Redis-backed)
+            await setBan(streamId, targetUserId, Date.now() + duration * 1000);
 
             io.to(`chat:${streamId}`).emit('user-timeout', {
                 userId: targetUserId,
@@ -317,11 +369,8 @@ export const setupChatService = (io: Server) => {
 
             const { streamId, targetUserId } = data;
 
-            // Permanent ban (24 hours)
-            if (!streamBans.has(streamId)) {
-                streamBans.set(streamId, new Map());
-            }
-            streamBans.get(streamId)!.set(targetUserId, Date.now() + 24 * 60 * 60 * 1000);
+            // Permanent ban (24 hours, Redis-backed)
+            await setBan(streamId, targetUserId, Date.now() + 24 * 60 * 60 * 1000);
 
             io.to(`chat:${streamId}`).emit('user-banned', {
                 userId: targetUserId,

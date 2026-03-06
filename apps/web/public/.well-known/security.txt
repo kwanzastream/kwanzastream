@@ -1,0 +1,5 @@
+Contact: mailto:security@kwanzastream.com
+Expires: 2027-03-06T00:00:00.000Z
+Preferred-Languages: pt-AO, en
+Canonical: https://kwanzastream.com/.well-known/security.txt
+Policy: https://kwanzastream.com/legal/termos

@@ -14,14 +14,18 @@ import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 
 const categories = [
-  "Jogos & eSports",
-  "Igrejas & Espiritualidade",
+  "Gaming AO",
+  "Kuduro & Semba",
+  "Girabola & Futebol",
+  "Comédia Angolana",
+  "Culinária Angolana",
+  "Música ao Vivo",
+  "Conversa & IRL",
   "Educação",
-  "Podcasts & Conversas",
-  "DJs & Música",
+  "Tech & Programação",
+  "Igrejas & Espiritualidade",
   "Negócios & Empreendedorismo",
-  "Arte & Cultura",
-  "Comunidade & Vida Local"
+  "Arte & Cultura"
 ]
 
 export default function CreateLivePage() {

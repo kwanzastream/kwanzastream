@@ -64,7 +64,7 @@ jobs:
 
       - name: Run tests
         working-directory: apps/server
-        run: npx vitest run --coverage
+        run: npx vitest run --coverage --coverage.thresholds.lines=60
 
   # ============== WEB ==============
   web-build:

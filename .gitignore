@@ -6,10 +6,12 @@ node_modules/
 dist/
 build/
 
-# Environment files
+# Environment files — NEVER commit secrets
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!.env.*.example
+railway.env
 
 # IDE
 .vscode/
@@ -28,10 +30,7 @@ yarn-error.log*
 # Lock files (keep one)
 pnpm-lock.yaml
 
-# Railway / additional env files
-railway.env
-*.env.staging
-*.env.production
-!apps/server/.env.example
-!apps/server/.env.*.example
-!apps/web/.env.local.example
+# Test artifacts
+test-results/
+playwright-report/
+coverage/
