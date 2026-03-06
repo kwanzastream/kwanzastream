@@ -27,3 +27,11 @@ yarn-error.log*
 
 # Lock files (keep one)
 pnpm-lock.yaml
+
+# Railway / additional env files
+railway.env
+*.env.staging
+*.env.production
+!apps/server/.env.example
+!apps/server/.env.*.example
+!apps/web/.env.local.example
