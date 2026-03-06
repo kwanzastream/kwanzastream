@@ -27,6 +27,8 @@ import { useAuth } from '@/lib/auth-context';
 import { streamService, userService } from '@/lib/services';
 import { SaloSystem } from '@/components/salo-system';
 import { shareStream } from '@/lib/whatsapp-share';
+import { DonationAlertOverlay } from '@/components/donation-alert-overlay';
+import { ChatModerationPanel } from '@/components/chat-moderation-panel';
 
 interface StreamData {
     id: string;
@@ -226,7 +228,10 @@ export default function WatchPage() {
                         autoPlay
                     />
 
-                    {/* Donation Animation Overlay */}
+                    {/* Socket.io Real-time Donation Alert Overlay */}
+                    <DonationAlertOverlay streamId={stream.id} position="top" />
+
+                    {/* Local Donation Animation (sender feedback) */}
                     {donationAnim && (
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 animate-in fade-in zoom-in duration-500">
                             <div className="text-center bg-black/60 backdrop-blur-md rounded-2xl px-10 py-8 border border-primary/30">
@@ -319,11 +324,20 @@ export default function WatchPage() {
                     <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
                         <MessageCircle className="h-4 w-4 text-primary" /> Chat da Live
                     </h3>
-                    <div className="flex items-center gap-1.5">
-                        <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-                        <span className="text-[10px] text-muted-foreground">
-                            {isConnected ? 'Conectado' : 'Desconectado'}
-                        </span>
+                    <div className="flex items-center gap-2">
+                        {/* Chat Moderation Panel for streamers/mods */}
+                        <div className="relative">
+                            <ChatModerationPanel
+                                streamId={stream.id}
+                                isStreamer={stream.streamer?.id === user?.id}
+                            />
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+                            <span className="text-[10px] text-muted-foreground">
+                                {isConnected ? 'Conectado' : 'Desconectado'}
+                            </span>
+                        </div>
                     </div>
                 </div>
 

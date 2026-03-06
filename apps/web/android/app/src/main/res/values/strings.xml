@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Kwanza Stream</string>
+    <string name="title_activity_main">Kwanza Stream</string>
+    <string name="package_name">com.kwanzastream.app</string>
+    <string name="custom_url_scheme">com.kwanzastream.app</string>
+</resources>

@@ -202,5 +202,44 @@
         "seconds": "segundos",
         "minutes": "minutos",
         "hours": "horas"
+    },
+    "messages": {
+        "title": "Mensagens",
+        "search": "Procurar conversas...",
+        "noConversations": "Sem conversas",
+        "noConversationsDesc": "Visita o perfil de alguém e envia uma mensagem",
+        "placeholder": "Escreve uma mensagem...",
+        "sendFirst": "Envia a primeira mensagem!",
+        "selectChat": "As tuas mensagens",
+        "selectChatDesc": "Seleciona uma conversa para ver as mensagens ou visita o perfil de um creator para iniciar"
+    },
+    "subscriptions": {
+        "title": "Subscrições",
+        "subtitle": "Apoia os teus Creators",
+        "description": "Subscreve aos teus creators favoritos e desbloqueia benefícios exclusivos",
+        "plans": "Planos",
+        "mySubscriptions": "As Minhas",
+        "free": "Grátis",
+        "supporter": "Apoiante",
+        "vip": "VIP",
+        "perMonth": "/mês",
+        "subscribe": "Subscrever",
+        "currentPlan": "Plano Actual",
+        "mostPopular": "Mais Popular",
+        "noSubs": "Sem subscrições activas",
+        "noSubsDesc": "Explora creators e subscreve aos teus favoritos",
+        "expires": "Expira",
+        "faq": "Perguntas Frequentes"
+    },
+    "vods": {
+        "title": "VODs & Replays",
+        "subtitle": "Revê as melhores streams sempre que quiseres",
+        "search": "Procurar VODs...",
+        "all": "Todos",
+        "mine": "Os Meus",
+        "noVods": "Sem VODs disponíveis",
+        "noVodsDescAll": "Quando os creators fizerem streams, os replays aparecerão aqui",
+        "noVodsDescMine": "As tuas streams gravadas aparecerão aqui",
+        "exploreStreams": "Explorar Streams"
     }
 }

@@ -216,6 +216,9 @@ export const clipsService = {
     trending: (limit = 20) =>
         api.get('/api/clips/trending', { params: { limit } }),
 
+    getById: (id: string) =>
+        api.get(`/api/clips/${id}`),
+
     streamClips: (streamId: string, page = 1) =>
         api.get(`/api/clips/stream/${streamId}`, { params: { page } }),
 
@@ -227,6 +230,9 @@ export const clipsService = {
 
     delete: (id: string) =>
         api.delete(`/api/clips/${id}`),
+
+    incrementView: (id: string) =>
+        api.post(`/api/clips/${id}/view`),
 };
 
 // ============== EVENTS (P2) ==============

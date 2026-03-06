@@ -120,6 +120,13 @@ model User {
   clips             Clip[]            @relation("UserClips")
   events            Event[]           @relation("UserEvents")
   eventRsvps        EventRSVP[]
+  pushSubscriptions PushSubscription[]
+  conversationsA    Conversation[]     @relation("ConversationsA")
+  conversationsB    Conversation[]     @relation("ConversationsB")
+  sentMessages      DirectMessage[]    @relation("SentMessages")
+  subscriptions     Subscription[]     @relation("Subscriptions")
+  subscribers       Subscription[]     @relation("Subscribers")
+  vods              Vod[]              @relation("UserVods")
   
   @@index([phone])
   @@index([email])
@@ -193,6 +200,7 @@ model Stream {
   watchHistory WatchHistory[]
   clips        Clip[]
   events       Event[]
+  vods         Vod[]
   
   @@index([streamerId])
   @@index([status])
@@ -482,4 +490,116 @@ enum EventStatus {
   LIVE
   ENDED
   CANCELLED
+}
+
+// ============== PUSH NOTIFICATIONS ==============
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  endpoint  String   @unique
+  p256dh    String   // VAPID public key
+  auth      String   // VAPID auth key
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ============== DIRECT MESSAGING ==============
+
+model Conversation {
+  id            String    @id @default(uuid())
+  lastMessageAt DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Participants (exactly 2 users)
+  participantA  String
+  userA         User      @relation("ConversationsA", fields: [participantA], references: [id], onDelete: Cascade)
+  participantB  String
+  userB         User      @relation("ConversationsB", fields: [participantB], references: [id], onDelete: Cascade)
+
+  messages      DirectMessage[]
+
+  @@unique([participantA, participantB])
+  @@index([participantA, lastMessageAt])
+  @@index([participantB, lastMessageAt])
+}
+
+model DirectMessage {
+  id             String       @id @default(uuid())
+  content        String
+  read           Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  senderId       String
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+}
+
+// ============== SUBSCRIPTIONS ==============
+
+enum SubscriptionTier {
+  FREE
+  SUPPORTER  // basic tier
+  VIP        // premium tier
+}
+
+model Subscription {
+  id          String           @id @default(uuid())
+  tier        SubscriptionTier @default(FREE)
+  active      Boolean          @default(true)
+  startedAt   DateTime         @default(now())
+  expiresAt   DateTime?
+  autoRenew   Boolean          @default(false)
+  amount      BigInt           @default(0) // monthly price in Kz
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // Subscriber
+  subscriberId String
+  subscriber   User    @relation("Subscriptions", fields: [subscriberId], references: [id], onDelete: Cascade)
+
+  // Creator being subscribed to
+  creatorId    String
+  creator      User    @relation("Subscribers", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriberId, creatorId])
+  @@index([creatorId, active])
+  @@index([subscriberId, active])
+  @@index([expiresAt])
+}
+
+// ============== VOD / REPLAYS ==============
+
+model Vod {
+  id           String    @id @default(uuid())
+  title        String
+  description  String?
+  thumbnailUrl String?
+  videoUrl     String    // stored video URL
+  duration     Int       @default(0) // seconds
+  viewCount    Int       @default(0)
+  isPublic     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Source stream
+  streamId     String?
+  stream       Stream?   @relation(fields: [streamId], references: [id], onDelete: SetNull)
+
+  // Creator
+  creatorId    String
+  creator      User      @relation("UserVods", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId, createdAt])
+  @@index([viewCount])
 }

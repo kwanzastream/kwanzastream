@@ -202,5 +202,44 @@
         "seconds": "seconds",
         "minutes": "minutes",
         "hours": "hours"
+    },
+    "messages": {
+        "title": "Messages",
+        "search": "Search conversations...",
+        "noConversations": "No conversations",
+        "noConversationsDesc": "Visit someone's profile and send a message",
+        "placeholder": "Type a message...",
+        "sendFirst": "Send the first message!",
+        "selectChat": "Your messages",
+        "selectChatDesc": "Select a conversation to view messages or visit a creator's profile to start"
+    },
+    "subscriptions": {
+        "title": "Subscriptions",
+        "subtitle": "Support your Creators",
+        "description": "Subscribe to your favorite creators and unlock exclusive benefits",
+        "plans": "Plans",
+        "mySubscriptions": "My Subscriptions",
+        "free": "Free",
+        "supporter": "Supporter",
+        "vip": "VIP",
+        "perMonth": "/month",
+        "subscribe": "Subscribe",
+        "currentPlan": "Current Plan",
+        "mostPopular": "Most Popular",
+        "noSubs": "No active subscriptions",
+        "noSubsDesc": "Explore creators and subscribe to your favorites",
+        "expires": "Expires",
+        "faq": "Frequently Asked Questions"
+    },
+    "vods": {
+        "title": "VODs & Replays",
+        "subtitle": "Rewatch the best streams anytime",
+        "search": "Search VODs...",
+        "all": "All",
+        "mine": "My VODs",
+        "noVods": "No VODs available",
+        "noVodsDescAll": "When creators stream, replays will appear here",
+        "noVodsDescMine": "Your recorded streams will appear here",
+        "exploreStreams": "Explore Streams"
     }
 }

@@ -227,6 +227,14 @@ app.use('/api/clips', clipsRoutes);
 import eventsRoutes from './routes/eventsRoutes';
 app.use('/api/events', eventsRoutes);
 
+// P2: Web Push Notifications
+import pushRoutes from './routes/pushRoutes';
+app.use('/api/push', pushRoutes);
+
+// P4: Direct Messages
+import messageRoutes from './routes/messageRoutes';
+app.use('/api/messages', messageRoutes);
+
 // Sentry test endpoint (dev/staging only)
 if (process.env.NODE_ENV !== 'production') {
     app.get('/api/debug-sentry', (_req, _res) => {

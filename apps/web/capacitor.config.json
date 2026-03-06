@@ -1,0 +1,41 @@
+{
+    "appId": "com.kwanzastream.app",
+    "appName": "Kwanza Stream",
+    "webDir": "out",
+    "server": {
+        "cleartext": true
+    },
+    "plugins": {
+        "SplashScreen": {
+            "launchShowDuration": 2000,
+            "launchAutoHide": true,
+            "backgroundColor": "#050505",
+            "showSpinner": true,
+            "spinnerColor": "#FF6B00",
+            "androidScaleType": "CENTER_CROP"
+        },
+        "StatusBar": {
+            "style": "DARK",
+            "backgroundColor": "#050505"
+        },
+        "Keyboard": {
+            "resize": "body",
+            "resizeOnFullScreen": true
+        },
+        "PushNotifications": {
+            "presentationOptions": [
+                "badge",
+                "sound",
+                "alert"
+            ]
+        }
+    },
+    "android": {
+        "backgroundColor": "#050505"
+    },
+    "ios": {
+        "backgroundColor": "#050505",
+        "contentInset": "always",
+        "scheme": "kwanzastream"
+    }
+}

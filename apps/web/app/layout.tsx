@@ -11,6 +11,7 @@ import { I18nProvider } from "@/lib/i18n"
 import { PostHogProvider } from "@/lib/posthog"
 import { CookieConsent } from "@/components/cookie-consent"
 import { BetaFeedback } from "@/components/beta-feedback"
+import { NativeAppInit } from "@/components/native-app-init"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -59,6 +60,7 @@ export default function RootLayout({
                 <MobileNav />
                 <CookieConsent />
                 <BetaFeedback />
+                <NativeAppInit />
               </ToastProvider>
             </I18nProvider>
           </PostHogProvider>

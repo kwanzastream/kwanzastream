@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { Flame, TrendingUp, Radio, Users, MapPin, CheckCircle2 } from "lucide-react"
+import { Flame, TrendingUp, Radio, Users, MapPin, CheckCircle2, Scissors, Play, Clock, Eye } from "lucide-react"
 import Link from "next/link"
 import { Suspense } from "react"
 import { Navbar } from "@/components/navbar"
 import { MobileNav } from "@/components/mobile-nav"
-import { streamService, donationService } from "@/lib/services"
+import { streamService, donationService, clipsService } from "@/lib/services"
 
 const categories = ["Todos", "Gaming AO", "Kuduro & Semba", "Girabola & Futebol", "Comédia Angolana", "Culinária Angolana", "Música ao Vivo", "Conversa & IRL", "Educação", "Tech & Programação"]
 
@@ -30,10 +30,17 @@ interface TopCreator {
   donationCount: number
 }
 
+interface ClipItem {
+  id: string; title: string; thumbnailUrl?: string; duration: number;
+  viewCount: number; createdAt: string;
+  creator: { id: string; displayName?: string; username?: string; avatarUrl?: string }
+}
+
 export default function ExplorePage() {
   const [activeCategory, setActiveCategory] = React.useState("Todos")
   const [liveStreams, setLiveStreams] = React.useState<LiveStream[]>([])
   const [topCreators, setTopCreators] = React.useState<TopCreator[]>([])
+  const [trendingClips, setTrendingClips] = React.useState<ClipItem[]>([])
   const [loading, setLoading] = React.useState(true)
 
   React.useEffect(() => { fetchData() }, [activeCategory])
@@ -42,14 +49,27 @@ export default function ExplorePage() {
     setLoading(true)
     try {
       const category = activeCategory === "Todos" ? undefined : activeCategory
-      const [streamsRes, creatorsRes] = await Promise.all([
+      const [streamsRes, creatorsRes, clipsRes] = await Promise.all([
         streamService.getLive(1, 8, category).catch(() => ({ data: { streams: [] } })),
         donationService.getTopCreators({ limit: 6 }).catch(() => ({ data: { creators: [] } })),
+        clipsService.trending(6).catch(() => ({ data: { clips: [] } })),
       ])
       setLiveStreams(streamsRes.data.streams || [])
       setTopCreators(creatorsRes.data.creators || [])
+      setTrendingClips(clipsRes.data.clips || [])
     } catch { }
     setLoading(false)
+  }
+
+  const formatDuration = (secs: number) => {
+    const m = Math.floor(secs / 60)
+    const s = secs % 60
+    return `${m}:${s.toString().padStart(2, '0')}`
+  }
+
+  const formatViews = (n: number) => {
+    if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
+    return String(n)
   }
 
   return (
@@ -230,17 +250,66 @@ export default function ExplorePage() {
               </ScrollArea>
             </section>
 
-            {/* Trending */}
+            {/* Trending Clips */}
+            {trendingClips.length > 0 && (
+              <section className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-black flex items-center gap-2 tracking-tight">
+                    <Scissors className="h-6 w-6 text-primary" /> Clips em Alta
+                  </h3>
+                  <Link href="/clips">
+                    <Button variant="link" className="text-primary font-bold">Ver todos</Button>
+                  </Link>
+                </div>
+                <ScrollArea className="w-full whitespace-nowrap">
+                  <div className="flex gap-4 pb-4">
+                    {trendingClips.map(clip => (
+                      <Link key={clip.id} href={`/clips/${clip.id}`} className="w-44 flex-shrink-0 group">
+                        <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-black border border-white/10">
+                          {clip.thumbnailUrl ? (
+                            <img src={clip.thumbnailUrl} alt={clip.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/10 flex items-center justify-center">
+                              <Play className="w-8 h-8 text-white/30" />
+                            </div>
+                          )}
+                          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur px-1.5 py-0.5 rounded text-[9px] font-bold text-white flex items-center gap-0.5">
+                            <Clock className="w-2.5 h-2.5" /> {formatDuration(clip.duration)}
+                          </div>
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
+                            <div className="bg-primary/90 rounded-full p-2.5">
+                              <Play className="w-5 h-5 fill-white text-white" />
+                            </div>
+                          </div>
+                          <div className="absolute bottom-0 left-0 right-0 p-2.5 bg-gradient-to-t from-black to-transparent">
+                            <h4 className="text-white font-bold text-xs leading-tight line-clamp-2">{clip.title}</h4>
+                            <p className="text-white/60 text-[10px] mt-1 flex items-center gap-1">
+                              <Eye className="w-2.5 h-2.5" /> {formatViews(clip.viewCount)}
+                            </p>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                  <ScrollBar orientation="horizontal" />
+                </ScrollArea>
+              </section>
+            )}
+
+            {/* Trending & Location */}
             <section className="grid grid-cols-1 lg:grid-cols-3 gap-10">
               <div className="lg:col-span-2 space-y-6">
                 <h3 className="text-2xl font-black flex items-center gap-2 tracking-tight">
                   <TrendingUp className="h-6 w-6" /> Tendências em Angola
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <TrendingCard hashtag="#UnitelFesta" posts="45K" color="bg-primary" />
+                  <TrendingCard hashtag="#GirabolaAO" posts="67K" color="bg-primary" />
                   <TrendingCard hashtag="#KuduroPower" posts="120K" color="bg-secondary" />
-                  <TrendingCard hashtag="#AngolaModa" posts="12K" color="bg-blue-500" />
+                  <TrendingCard hashtag="#AngolaTech" posts="23K" color="bg-blue-500" />
                   <TrendingCard hashtag="#LuandaNoite" posts="89K" color="bg-red-500" />
+                  <TrendingCard hashtag="#SembaVibes" posts="45K" color="bg-green-500" />
+                  <TrendingCard hashtag="#GamingAO" posts="34K" color="bg-purple-500" />
                 </div>
               </div>
               <div className="space-y-6">
@@ -250,12 +319,18 @@ export default function ExplorePage() {
                 <div className="p-6 rounded-2xl bg-gradient-to-br from-white/10 to-transparent border border-white/10 space-y-4">
                   <p className="text-sm text-muted-foreground">Encontra eventos e creators na tua província.</p>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5">
-                      <span className="text-sm font-bold">Luanda</span>
-                      <Badge variant="secondary" className="bg-primary/20 text-primary border-none">
-                        {liveStreams.length} Lives
-                      </Badge>
-                    </div>
+                    {[
+                      { name: 'Luanda', count: liveStreams.length },
+                      { name: 'Benguela', count: Math.max(0, liveStreams.length - 2) },
+                      { name: 'Huambo', count: Math.max(0, liveStreams.length - 3) },
+                    ].map(province => (
+                      <div key={province.name} className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5">
+                        <span className="text-sm font-bold">{province.name}</span>
+                        <Badge variant="secondary" className="bg-primary/20 text-primary border-none">
+                          {province.count} Lives
+                        </Badge>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -270,12 +345,14 @@ export default function ExplorePage() {
 
 function TrendingCard({ hashtag, posts, color }: { hashtag: string; posts: string; color: string }) {
   return (
-    <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-all cursor-pointer group flex items-center justify-between">
-      <div className="space-y-1">
-        <p className="text-sm font-black group-hover:underline">{hashtag}</p>
-        <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{posts} posts esta semana</p>
+    <Link href={`/search?q=${encodeURIComponent(hashtag)}`}>
+      <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-all cursor-pointer group flex items-center justify-between">
+        <div className="space-y-1">
+          <p className="text-sm font-black group-hover:underline">{hashtag}</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{posts} posts esta semana</p>
+        </div>
+        <div className={`w-2 h-10 rounded-full ${color} opacity-50 group-hover:opacity-100 transition-opacity`} />
       </div>
-      <div className={`w-2 h-10 rounded-full ${color} opacity-50 group-hover:opacity-100 transition-opacity`} />
-    </div>
+    </Link>
   )
 }
