@@ -327,7 +327,7 @@ export default function LandingPage() {
 
         {/* Footer Bottom */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted-foreground border-t border-white/5 pt-10">
-          <p>© 2025 Kwanza Stream. Todos os direitos reservados.</p>
+          <p>© 2026 Kwanza Stream. Todos os direitos reservados.</p>
           <p>
             A Primeira Plataforma de Streaming Social de <span className="text-primary font-bold">Angola</span>
           </p>

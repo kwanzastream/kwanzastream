@@ -69,13 +69,13 @@ export function LiveFeed() {
       <div className="space-y-4">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold mb-2">Lives Agora</h2>
+            <h2 className="text-2xl font-semibold mb-2">Lives Agora</h2>
             <Skeleton className="h-4 w-48" />
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="overflow-hidden border-white/10 bg-card/50">
+            <Card key={i} className="overflow-hidden border-border card-surface rounded-2xl">
               <Skeleton className="aspect-video w-full" />
               <CardContent className="pt-4 pb-4 space-y-3">
                 <div className="flex items-center gap-2">
@@ -99,20 +99,20 @@ export function LiveFeed() {
       <div className="space-y-4">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold mb-2">Lives Agora</h2>
+            <h2 className="text-2xl font-semibold mb-2">Lives Agora</h2>
             <p className="text-muted-foreground text-sm">Nenhuma transmissão ao vivo</p>
           </div>
         </div>
-        <Card className="border-white/10 bg-card/50 backdrop-blur">
+        <Card className="border-border card-surface backdrop-blur rounded-2xl">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-4">
+            <div className="w-20 h-20 rounded-2xl surface-4 border border-border flex items-center justify-center mb-4">
               <WifiOff className="h-10 w-10 text-muted-foreground" />
             </div>
-            <h3 className="font-bold text-lg mb-2">Ninguém em live agora</h3>
+            <h3 className="font-semibold text-lg mb-2">Ninguém em live agora</h3>
             <p className="text-muted-foreground text-sm max-w-sm mb-6">
               Sê o primeiro a transmitir! Abre o Studio e começa a tua live para a comunidade angolana.
             </p>
-            <Button onClick={() => router.push('/stream')} className="bg-primary hover:bg-primary/90 gap-2">
+            <Button onClick={() => router.push('/stream')} className="bg-primary hover:bg-primary/90 gap-2 rounded-xl font-medium">
               <Play className="h-4 w-4" /> Começar a Transmitir
             </Button>
           </CardContent>
@@ -126,12 +126,12 @@ export function LiveFeed() {
       {/* Section Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold mb-2">Lives Agora</h2>
+          <h2 className="text-2xl font-semibold mb-2">Lives Agora</h2>
           <p className="text-muted-foreground text-sm">
             {streams.length} transmiss{streams.length === 1 ? 'ão' : 'ões'} ao vivo
           </p>
         </div>
-        <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+        <Button variant="outline" size="sm" className="gap-2 bg-transparent rounded-xl border-border font-medium">
           <TrendingUp className="w-4 h-4" />
           Tendências
         </Button>
@@ -143,7 +143,7 @@ export function LiveFeed() {
           <Card
             key={stream.id}
             onClick={() => router.push(`/watch/${stream.id}`)}
-            className="overflow-hidden border-white/10 hover:border-primary/50 transition-all group cursor-pointer bg-card/50 backdrop-blur"
+            className="overflow-hidden border-border hover:border-primary/50 transition-all group cursor-pointer card-surface backdrop-blur rounded-2xl"
           >
             {/* Stream Thumbnail */}
             <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 overflow-hidden">
@@ -158,7 +158,7 @@ export function LiveFeed() {
               {/* Live Badge */}
               <div className="absolute top-3 left-3 flex items-center gap-2">
                 <div className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-                <span className="bg-red-500/80 backdrop-blur text-white text-xs font-bold px-2 py-1 rounded">
+                <span className="bg-red-500/80 backdrop-blur text-white text-xs font-semibold px-2 py-1 rounded-md">
                   AO VIVO
                 </span>
               </div>
@@ -179,7 +179,7 @@ export function LiveFeed() {
               {/* Creator Info */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-sm font-bold">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-sm font-semibold">
                     {(stream.streamer?.displayName || stream.streamer?.username || '?')[0]}
                   </div>
                   <div>
@@ -203,7 +203,7 @@ export function LiveFeed() {
                     }}
                     className="p-1 rounded-full hover:bg-white/10 transition-colors"
                   >
-                    <Share2 className="w-4 h-4 text-muted-foreground hover:text-white transition-colors" />
+                    <Share2 className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors" />
                   </button>
                 </div>
               </div>
@@ -220,7 +220,7 @@ export function LiveFeed() {
                 <div className="flex items-center gap-2">
                   <Badge
                     variant="outline"
-                    className={`${categoryColors[stream.category] || 'bg-white/5 text-white/70 border-white/20'} border`}
+                    className={`${categoryColors[stream.category] || 'bg-white/5 text-white/70 border-border'} border`}
                   >
                     {stream.category}
                   </Badge>
@@ -228,12 +228,12 @@ export function LiveFeed() {
               )}
 
               {/* Action */}
-              <div className="flex items-center justify-between pt-2 border-t border-white/10">
+              <div className="flex items-center justify-between pt-2 border-t border-border">
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <Users className="w-3 h-3" />
                   <span className="text-xs">{stream.viewerCount} espectadores</span>
                 </div>
-                <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90">
+                <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90 rounded-xl font-medium">
                   <MessageCircle className="w-3 h-3" />
                   Assistir
                 </Button>
@@ -245,7 +245,7 @@ export function LiveFeed() {
 
       {/* Load More */}
       <div className="flex justify-center pt-4">
-        <Button variant="outline" className="w-full bg-transparent">
+        <Button variant="outline" className="w-full bg-transparent rounded-xl border-border font-medium">
           Carregar Mais Lives
         </Button>
       </div>

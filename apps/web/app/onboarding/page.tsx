@@ -46,6 +46,11 @@ const INTERESTS = [
   { id: "business", label: "Negócios", icon: Briefcase, color: "text-slate-400" },
   { id: "tech", label: "Tecnologia", icon: Cpu, color: "text-cyan-500" },
   { id: "fashion", label: "Moda", icon: Shirt, color: "text-pink-500" },
+  // Angolan culture categories
+  { id: "kuduro", label: "Kuduro & Dança", icon: Music, color: "text-amber-500" },
+  { id: "art", label: "Arte & Pintura", icon: Briefcase, color: "text-rose-400" },
+  { id: "faith", label: "Religião & Fé", icon: GraduationCap, color: "text-indigo-400" },
+  { id: "culture", label: "Cultura Angolana", icon: Trophy, color: "text-emerald-500" },
 ]
 
 function OnboardingContent() {

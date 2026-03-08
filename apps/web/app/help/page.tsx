@@ -215,7 +215,7 @@ function HelpCenterContent() {
 
       {/* Footer minimal */}
       <footer className="mt-auto py-8 border-t border-white/10 text-center">
-        <p className="text-xs text-muted-foreground">© 2025 Kwanza Stream. Todos os direitos reservados.</p>
+        <p className="text-xs text-muted-foreground">© 2026 Kwanza Stream. Todos os direitos reservados.</p>
       </footer>
     </div>
   )

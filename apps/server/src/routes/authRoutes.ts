@@ -13,6 +13,7 @@ import {
     requestPasswordReset,
     resetPassword,
 } from '../controllers/authController';
+import { initiateGoogleAuth, handleGoogleCallback } from '../controllers/auth/googleController';
 import { authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
@@ -25,6 +26,10 @@ router.post('/verify-otp', verifyOtpAndLogin);
 router.post('/refresh', refreshAccessToken);
 router.post('/logout', logout);
 
+// Google OAuth
+router.get('/google', initiateGoogleAuth);
+router.get('/google/callback', handleGoogleCallback);
+
 // Email verification & password recovery (public)
 router.post('/verify-email', verifyEmail);
 router.post('/request-password-reset', requestPasswordReset);
@@ -36,3 +41,4 @@ router.get('/me', authMiddleware, getMe);
 router.post('/send-verification-email', authMiddleware, sendVerificationEmail);
 
 export default router;
+

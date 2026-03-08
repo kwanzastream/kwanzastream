@@ -61,7 +61,7 @@ export function MobileNav() {
     const activeIndex = NAV_ITEMS.findIndex(item => isActive(item.href))
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-xl border-t border-white/[0.06]"
+        <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-xl border-t border-border"
             style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
         >
             <div ref={navRef} className="relative flex items-center justify-around h-[58px]">

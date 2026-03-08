@@ -88,13 +88,13 @@ export function SaloSystem({ receiverId, streamId, receiverName, onDonationSent,
             <button
               key={salo.key}
               onClick={() => setSelectedSalo(salo.key === selectedSalo?.key ? null : salo)}
-              className={`flex flex-col items-center p-2 rounded-lg border transition-all text-center ${selectedSalo?.key === salo.key
-                  ? 'border-primary bg-primary/10 scale-105'
-                  : 'border-white/10 hover:border-white/30 bg-white/5'
+              className={`flex flex-col items-center p-2 rounded-xl border transition-all text-center ${selectedSalo?.key === salo.key
+                ? 'border-primary bg-primary/10 scale-105'
+                : 'border-border hover:border-white/30 surface-4'
                 }`}
             >
               <span className="text-2xl">{salo.emoji}</span>
-              <span className="text-[10px] font-bold mt-1">{salo.price} Kz</span>
+              <span className="text-[10px] font-semibold mt-1">{salo.price} Kz</span>
             </button>
           ))}
         </div>
@@ -106,14 +106,14 @@ export function SaloSystem({ receiverId, streamId, receiverName, onDonationSent,
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder={`Mensagem para ${receiverName || 'streamer'}...`}
-              className="bg-white/5 border-white/10 h-8 text-xs"
+              className="surface-4 border-border h-8 text-xs rounded-xl"
               maxLength={200}
             />
             <Button
               onClick={handleSend}
               disabled={isSending}
               size="sm"
-              className={`w-full gap-2 bg-gradient-to-r ${selectedSalo.color} text-white font-bold`}
+              className={`w-full gap-2 bg-gradient-to-r ${selectedSalo.color} text-white font-semibold rounded-xl`}
             >
               {isSending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Gift className="h-3 w-3" />}
               Enviar {selectedSalo.name} ({selectedSalo.price} Kz)
@@ -127,7 +127,7 @@ export function SaloSystem({ receiverId, streamId, receiverName, onDonationSent,
           </p>
         )}
         {success && (
-          <p className="text-xs text-green-400 font-bold animate-in fade-in">{success}</p>
+          <p className="text-xs text-green-400 font-semibold animate-in fade-in">{success}</p>
         )}
       </div>
     )
@@ -139,7 +139,7 @@ export function SaloSystem({ receiverId, streamId, receiverName, onDonationSent,
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Gift className="h-5 w-5 text-primary" />
-          <h3 className="font-bold">Enviar Salo</h3>
+          <h3 className="font-semibold">Enviar Salo</h3>
           {receiverName && (
             <span className="text-sm text-muted-foreground">para {receiverName}</span>
           )}
@@ -157,18 +157,18 @@ export function SaloSystem({ receiverId, streamId, receiverName, onDonationSent,
           <Card
             key={salo.key}
             onClick={() => setSelectedSalo(salo.key === selectedSalo?.key ? null : salo)}
-            className={`cursor-pointer transition-all overflow-hidden ${selectedSalo?.key === salo.key
-                ? 'border-primary ring-1 ring-primary scale-[1.02]'
-                : 'border-white/10 hover:border-white/30 bg-card/50'
+            className={`cursor-pointer transition-all overflow-hidden rounded-2xl ${selectedSalo?.key === salo.key
+              ? 'border-primary ring-1 ring-primary scale-[1.02]'
+              : 'border-border hover:border-white/30 card-surface'
               }`}
           >
             <CardContent className="p-3 text-center space-y-2">
               <div className="text-3xl">{salo.emoji}</div>
-              <p className="text-xs font-bold truncate">{salo.name}</p>
+              <p className="text-xs font-semibold truncate">{salo.name}</p>
               <Badge variant="outline" className={`${tierColors[salo.tier]} border text-[10px] w-full justify-center`}>
                 {salo.tier}
               </Badge>
-              <p className="text-lg font-black text-accent">{salo.price.toLocaleString()}</p>
+              <p className="text-lg font-bold text-accent">{salo.price.toLocaleString()}</p>
               <p className="text-[10px] text-muted-foreground">Kz</p>
             </CardContent>
           </Card>
@@ -182,13 +182,13 @@ export function SaloSystem({ receiverId, streamId, receiverName, onDonationSent,
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder={`Mensagem (opcional) para ${receiverName || 'o streamer'}...`}
-            className="bg-white/5 border-white/10"
+            className="surface-4 border-border rounded-xl"
             maxLength={200}
           />
           <Button
             onClick={handleSend}
             disabled={isSending}
-            className={`w-full gap-2 bg-gradient-to-r ${selectedSalo.color} text-white font-bold h-12 text-base`}
+            className={`w-full gap-2 bg-gradient-to-r ${selectedSalo.color} text-white font-semibold h-12 text-base rounded-xl`}
           >
             {isSending ? (
               <><Loader2 className="h-4 w-4 animate-spin" /> A enviar...</>
@@ -201,14 +201,14 @@ export function SaloSystem({ receiverId, streamId, receiverName, onDonationSent,
 
       {/* Feedback */}
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
           <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
           <p className="text-sm text-red-300">{error}</p>
         </div>
       )}
       {success && (
-        <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-center animate-in fade-in">
-          <p className="text-sm font-bold text-green-300">{success}</p>
+        <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-center animate-in fade-in">
+          <p className="text-sm font-semibold text-green-300">{success}</p>
         </div>
       )}
     </div>

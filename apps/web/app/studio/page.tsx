@@ -6,7 +6,7 @@ import { MobileNav } from '@/components/mobile-nav'
 import {
   BarChart3, DollarSign, Users, Radio, TrendingUp, Eye,
   Play, ChevronRight, Wallet, ArrowUpRight, ArrowDownRight,
-  Gift, Video
+  Gift, Video, Palette, Shield, Settings2, CheckCircle2, Circle, X
 } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
@@ -38,6 +38,7 @@ export default function StudioPage() {
   const [streams, setStreams] = useState<StreamItem[]>([])
   const [loading, setLoading] = useState(true)
   const [chartDays, setChartDays] = useState(30)
+  const [checklistDismissed, setChecklistDismissed] = useState(false)
 
   useEffect(() => { fetchData() }, [])
   useEffect(() => { fetchChart() }, [chartDays])
@@ -125,6 +126,70 @@ export default function StudioPage() {
               </div>
             </a>
           )}
+
+          {/* Creator Activation Checklist */}
+          {stats && !checklistDismissed && (() => {
+            const items = [
+              { label: 'Perfil configurado', done: !!stats.profile.displayName, href: '/studio/channel' },
+              { label: 'Username definido', done: !!stats.profile.username, href: '/studio/channel' },
+              { label: 'Telefone verificado', done: true, href: undefined }, // Already verified to be here
+              { label: 'Stream key gerada', done: stats.stats.totalStreams > 0 || !!stats.liveStream, href: '/studio/stream' },
+              { label: 'Primeira stream realizada', done: stats.stats.totalStreams > 0, href: '/studio/stream' },
+              { label: 'KYC Nível 1 aprovado', done: stats.profile.kycTier >= 1, href: '/studio/kyc' },
+              { label: 'Primeira doação recebida', done: stats.stats.totalDonations > 0, href: '/studio/salos' },
+            ]
+            const completed = items.filter(i => i.done).length
+            const allDone = completed === items.length
+            if (allDone) return null
+            const progress = Math.round((completed / items.length) * 100)
+            return (
+              <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="font-bold text-white flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-primary" /> Activação do Creator
+                    </h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">{completed}/{items.length} passos · {progress}% completo</p>
+                  </div>
+                  <button
+                    onClick={() => setChecklistDismissed(true)}
+                    className="text-muted-foreground hover:text-white transition-colors p-1"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                {/* Progress bar */}
+                <div className="h-1.5 bg-white/5 rounded-full mb-4 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {items.map((item) => (
+                    <a
+                      key={item.label}
+                      href={item.done ? undefined : item.href}
+                      className={`flex items-center gap-3 p-3 rounded-xl transition-all ${item.done
+                          ? 'bg-green-500/5 border border-green-500/10'
+                          : 'bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.05] hover:border-white/10 cursor-pointer'
+                        }`}
+                    >
+                      {item.done
+                        ? <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0" />
+                        : <Circle className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                      }
+                      <span className={`text-sm ${item.done ? 'text-green-400 line-through' : 'text-white font-medium'
+                        }`}>
+                        {item.label}
+                      </span>
+                      {!item.done && item.href && <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Stat Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -248,10 +313,14 @@ export default function StudioPage() {
           {/* Quick Actions */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { href: '/wallet', icon: <Wallet className="w-5 h-5" />, label: 'Carteira' },
-              { href: '/stream', icon: <Radio className="w-5 h-5" />, label: 'Nova Stream' },
+              { href: '/studio/stream', icon: <Radio className="w-5 h-5" />, label: 'Nova Stream' },
+              { href: '/studio/analytics', icon: <BarChart3 className="w-5 h-5" />, label: 'Analytics' },
+              { href: '/studio/wallet', icon: <Wallet className="w-5 h-5" />, label: 'Carteira' },
+              { href: '/studio/salos', icon: <Gift className="w-5 h-5" />, label: 'Salos' },
+              { href: '/studio/channel', icon: <Palette className="w-5 h-5" />, label: 'Meu Canal' },
+              { href: '/studio/kyc', icon: <Shield className="w-5 h-5" />, label: 'Programa Creator' },
               { href: '/profile', icon: <Users className="w-5 h-5" />, label: 'Perfil' },
-              { href: '/explore', icon: <Eye className="w-5 h-5" />, label: 'Explorar' },
+              { href: '/settings', icon: <Settings2 className="w-5 h-5" />, label: 'Definições' },
             ].map(a => (
               <a key={a.href} href={a.href}
                 className="flex items-center gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:border-white/10 transition-all group">

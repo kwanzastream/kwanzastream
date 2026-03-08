@@ -10,6 +10,7 @@ const createStreamSchema = z.object({
     description: z.string().max(500).optional(),
     category: z.string().optional(),
     thumbnailUrl: z.string().url().optional(),
+    contentClassification: z.enum(['EVERYONE', 'TEEN', 'MATURE']).default('EVERYONE'),
 });
 
 const updateStreamSchema = createStreamSchema.partial();
@@ -27,6 +28,10 @@ export const getLiveStreams = async (req: Request, res: Response) => {
 
         const where: any = { status: 'LIVE' };
         if (category) where.category = category;
+
+        // Filter by content classification if requested
+        const { classification } = req.query;
+        if (classification) where.contentClassification = classification;
 
         // Filter by followed creators if requested
         if (filter === 'following') {
@@ -317,6 +322,39 @@ export const onStreamPublish = async (req: Request, res: Response) => {
 
             // Notify via WebSocket
             io.emit('stream-live', { streamId: stream.id, streamer: user });
+
+            // Sprint 4: Notify all followers
+            try {
+                const followers = await prisma.follow.findMany({
+                    where: { followingId: user.id },
+                    select: { followerId: true },
+                });
+                if (followers.length > 0) {
+                    const displayName = user.displayName || user.username || 'Streamer';
+                    await prisma.notification.createMany({
+                        data: followers.map(f => ({
+                            type: 'LIVE_STARTED' as const,
+                            title: `${displayName} está em directo!`,
+                            body: stream.title || 'Vem assistir agora',
+                            imageUrl: user.avatarUrl,
+                            linkUrl: `/stream/${stream.id}`,
+                            userId: f.followerId,
+                            eventId: `live-${stream.id}-${f.followerId}`,
+                        })),
+                        skipDuplicates: true,
+                    });
+                    for (const f of followers) {
+                        io.to(`user:${f.followerId}`).emit('notification', {
+                            type: 'LIVE_STARTED',
+                            title: `${displayName} está em directo!`,
+                            streamId: stream.id,
+                        });
+                    }
+                    console.log(`[Stream] Notified ${followers.length} followers of ${displayName}`);
+                }
+            } catch (notifErr) {
+                console.error('Follower notification error:', notifErr);
+            }
         }
 
         res.json({ success: true });
@@ -366,3 +404,140 @@ export const onStreamUnpublish = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+// Regenerate stream key — used when key is compromised
+export const regenerateStreamKey = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        const { randomUUID } = await import('crypto');
+        const newStreamKey = `kwz_${randomUUID().replace(/-/g, '').slice(0, 24)}`;
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: { streamKey: newStreamKey },
+        });
+
+        res.json({
+            success: true,
+            streamKey: newStreamKey,
+            rtmpUrl: process.env.RTMP_URL || 'rtmp://localhost:1935/live',
+            message: 'Stream key regenerated. Update your OBS/streaming software.',
+        });
+    } catch (error) {
+        console.error('Regenerate stream key error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+// Get stream health — real-time status for the stream manager
+export const getStreamHealth = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        const stream = await prisma.stream.findUnique({
+            where: { id },
+            include: {
+                streamer: {
+                    select: { streamKey: true },
+                },
+            },
+        });
+
+        if (!stream) {
+            return res.status(404).json({ error: 'Stream not found' });
+        }
+
+        // Get viewer count from Socket.io room
+        const room = io.sockets.adapter.rooms.get(`stream:${stream.id}`);
+        const viewerCount = room?.size || 0;
+
+        // Calculate duration if live
+        const duration = stream.status === 'LIVE' && stream.startedAt
+            ? Math.round((Date.now() - stream.startedAt.getTime()) / 1000)
+            : 0;
+
+        // Build HLS URL
+        const cdnUrl = process.env.STREAM_CDN_URL || 'http://localhost:8000';
+        const hlsUrl = stream.status === 'LIVE' && stream.streamer.streamKey
+            ? `${cdnUrl}/live/${stream.streamer.streamKey}/index.m3u8`
+            : null;
+
+        res.json({
+            streamId: stream.id,
+            status: stream.status,
+            viewerCount,
+            peakViewers: stream.peakViewers,
+            durationSeconds: duration,
+            hlsUrl,
+            startedAt: stream.startedAt,
+            endedAt: stream.endedAt,
+        });
+    } catch (error) {
+        console.error('Get stream health error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+// ============== Sprint 4: Categories & Featured ==============
+
+/**
+ * Get live categories with stream counts
+ * GET /api/streams/categories
+ */
+export const getCategories = async (_req: Request, res: Response) => {
+    try {
+        const streams = await prisma.stream.findMany({
+            where: { status: 'LIVE', category: { not: null } },
+            select: { category: true, viewerCount: true, thumbnailUrl: true },
+        });
+
+        const categoryMap = new Map<string, { liveCount: number; totalViewers: number; thumbnailUrl: string | null }>();
+        for (const s of streams) {
+            if (!s.category) continue;
+            const existing = categoryMap.get(s.category);
+            if (existing) {
+                existing.liveCount++;
+                existing.totalViewers += s.viewerCount;
+            } else {
+                categoryMap.set(s.category, { liveCount: 1, totalViewers: s.viewerCount, thumbnailUrl: s.thumbnailUrl });
+            }
+        }
+
+        const categories = Array.from(categoryMap.entries())
+            .map(([name, data]) => ({ name, ...data }))
+            .sort((a, b) => b.totalViewers - a.totalViewers);
+
+        res.json({ categories, total: categories.length });
+    } catch (error) {
+        console.error('Get categories error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
+ * Get featured/trending live streams (top by viewers)
+ * GET /api/streams/featured
+ */
+export const getFeaturedStreams = async (_req: Request, res: Response) => {
+    try {
+        const streams = await prisma.stream.findMany({
+            where: { status: 'LIVE' },
+            include: {
+                streamer: {
+                    select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true },
+                },
+            },
+            orderBy: { viewerCount: 'desc' },
+            take: 5,
+        });
+        res.json({ featured: streams });
+    } catch (error) {
+        console.error('Get featured streams error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+

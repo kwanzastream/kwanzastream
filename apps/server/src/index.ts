@@ -42,7 +42,8 @@ for (const envName of RECOMMENDED_ENVS) {
 
 // Import configs
 import prisma from './config/prisma';
-import { connectRedis } from './config/redis';
+import { connectRedis, pubClient, subClient } from './config/redis';
+import { createAdapter } from '@socket.io/redis-adapter';
 
 // Import routes
 import authRoutes from './routes/authRoutes';
@@ -120,6 +121,7 @@ const authLimiter = rateLimit({
     message: { error: 'Muitas tentativas. Aguarda 15 minutos.' },
     standardHeaders: true,
     legacyHeaders: false,
+    validate: { xForwardedForHeader: false, ip: false },
     keyGenerator: (req) => {
         // Combine IP + userId (if present) for shared networks
         const ip = req.ip || req.socket.remoteAddress || 'unknown';
@@ -235,6 +237,22 @@ app.use('/api/push', pushRoutes);
 import messageRoutes from './routes/messageRoutes';
 app.use('/api/messages', messageRoutes);
 
+// Sprint 3: Subscriptions & VODs
+import subscriptionRoutes from './routes/subscriptionRoutes';
+import vodRoutes from './routes/vodRoutes';
+app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/vods', vodRoutes);
+
+// Sprint 4: Watch History & Recommendations
+import watchHistoryRoutes from './routes/watchHistoryRoutes';
+import recommendationRoutes from './routes/recommendationRoutes';
+app.use('/api/watch-history', watchHistoryRoutes);
+app.use('/api/recommendations', recommendationRoutes);
+
+// Sprint 5: Analytics
+import analyticsRoutes from './routes/analyticsRoutes';
+app.use('/api/analytics', analyticsRoutes);
+
 // Sentry test endpoint (dev/staging only)
 if (process.env.NODE_ENV !== 'production') {
     app.get('/api/debug-sentry', (_req, _res) => {
@@ -274,8 +292,13 @@ const startServer = async () => {
         // Connect to Redis (optional, continues if fails)
         try {
             await connectRedis();
+            // Enable Socket.io Redis adapter for multi-pod chat scalability
+            if (pubClient.isOpen && subClient.isOpen) {
+                io.adapter(createAdapter(pubClient, subClient));
+                console.log('✅ Socket.io Redis adapter enabled (multi-pod chat ready)');
+            }
         } catch (err) {
-            console.warn('Redis connection failed, continuing without Redis');
+            console.warn('Redis connection failed, continuing without Redis (in-memory adapter)');
         }
 
         // Verify database connection

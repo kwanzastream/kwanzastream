@@ -5,6 +5,11 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { getCreatorStats, getCreatorStreams, getEarningsChart } from '../controllers/creatorController';
+import {
+    getStreamAnalytics,
+    getSubscriberAnalytics,
+    getFollowerGrowth,
+} from '../controllers/analyticsController';
 
 const router = Router();
 
@@ -19,5 +24,10 @@ router.get('/streams', getCreatorStreams as any);
 
 // GET /api/creator/earnings-chart?days=30 — Earnings data for charts
 router.get('/earnings-chart', getEarningsChart as any);
+
+// Sprint 5: Creator analytics
+router.get('/streams/:id/analytics', getStreamAnalytics as any);
+router.get('/subscribers/analytics', getSubscriberAnalytics as any);
+router.get('/followers/growth', getFollowerGrowth as any);
 
 export default router;

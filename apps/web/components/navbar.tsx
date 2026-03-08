@@ -4,7 +4,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Search, Bell, Radio, Wallet, LogOut, User, Settings, X, CheckCircle2, Users } from "lucide-react"
+import { Search, Bell, Radio, Wallet, LogOut, User, Settings, X, CheckCircle2, Users, Compass, MonitorPlay } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
@@ -84,24 +84,27 @@ export function Navbar() {
 
   const SearchDropdown = () => (
     showResults && searchQuery.trim() ? (
-      <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 max-h-80 overflow-y-auto">
+      <div className="absolute top-full left-0 right-0 mt-2 surface-2 border border-border rounded-xl overflow-hidden z-50 max-h-80 overflow-y-auto custom-scrollbar" style={{ boxShadow: 'var(--shadow-lg)' }}>
         {isSearching ? (
-          <div className="p-4 text-center text-sm text-muted-foreground">A pesquisar...</div>
+          <div className="p-6 text-center text-sm text-muted-foreground">
+            <div className="inline-block w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin mb-2" />
+            <p>A pesquisar...</p>
+          </div>
         ) : hasResults ? (
           <>
             {(searchResults?.users?.length || 0) > 0 && (
               <div>
-                <div className="px-3 py-2 text-xs font-bold text-muted-foreground uppercase tracking-wider bg-white/5">Creators</div>
+                <div className="px-4 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-widest surface-3">Creators</div>
                 {searchResults?.users?.map(u => (
-                  <button key={u.id} onClick={() => navigateTo(`/profile/${u.id}`)} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 transition-colors">
-                    <Avatar className="h-8 w-8">
+                  <button key={u.id} onClick={() => navigateTo(`/profile/${u.id}`)} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
+                    <Avatar className="h-9 w-9">
                       <AvatarImage src={u.avatarUrl || '/placeholder-user.jpg'} alt={u.displayName} />
                       <AvatarFallback className="bg-primary/20 text-primary text-xs">{(u.displayName || u.username || '?')[0]}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 text-left min-w-0">
-                      <p className="text-sm font-bold truncate flex items-center gap-1">
+                      <p className="text-sm font-semibold truncate flex items-center gap-1.5">
                         {u.displayName || u.username}
-                        {u.isVerified && <CheckCircle2 className="h-3 w-3 text-primary fill-primary" />}
+                        {u.isVerified && <CheckCircle2 className="h-3.5 w-3.5 text-primary fill-primary" />}
                       </p>
                       <p className="text-xs text-muted-foreground">@{u.username} · {u.followersCount} seguidores</p>
                     </div>
@@ -111,14 +114,14 @@ export function Navbar() {
             )}
             {(searchResults?.streams?.length || 0) > 0 && (
               <div>
-                <div className="px-3 py-2 text-xs font-bold text-muted-foreground uppercase tracking-wider bg-white/5">Lives</div>
+                <div className="px-4 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-widest surface-3">Lives</div>
                 {searchResults?.streams?.map(s => (
-                  <button key={s.id} onClick={() => navigateTo(`/stream/${s.id}`)} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 transition-colors">
-                    <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                  <button key={s.id} onClick={() => navigateTo(`/stream/${s.id}`)} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
+                    <div className="w-9 h-9 rounded-lg bg-red-500/15 flex items-center justify-center flex-shrink-0">
                       <Radio className="w-4 h-4 text-red-400" />
                     </div>
                     <div className="flex-1 text-left min-w-0">
-                      <p className="text-sm font-bold truncate">{s.title}</p>
+                      <p className="text-sm font-semibold truncate">{s.title}</p>
                       <p className="text-xs text-muted-foreground">{s.streamer?.displayName || s.streamer?.username} · {s.viewerCount} viewers</p>
                     </div>
                   </button>
@@ -127,9 +130,9 @@ export function Navbar() {
             )}
           </>
         ) : (
-          <div className="p-4 text-center text-sm text-muted-foreground">
-            <Users className="w-5 h-5 mx-auto mb-2 opacity-50" />
-            Nenhum resultado para "{searchQuery}"
+          <div className="p-6 text-center text-sm text-muted-foreground">
+            <Users className="w-5 h-5 mx-auto mb-2 opacity-40" />
+            Nenhum resultado para &quot;{searchQuery}&quot;
           </div>
         )}
       </div>
@@ -137,17 +140,17 @@ export function Navbar() {
   )
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-background/80 backdrop-blur-md overflow-visible">
-      <div className="flex h-14 md:h-16 items-center justify-between px-3 md:px-6">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/85 backdrop-blur-xl overflow-visible">
+      <div className="flex h-14 md:h-16 items-center justify-between px-4 md:px-6 max-w-[1600px] mx-auto">
         {/* Logo — always visible */}
         {!showSearch && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <Link
               href={isLoggedIn ? "/feed" : "/"}
-              className="flex items-center gap-2 group transition-transform hover:scale-105"
+              className="flex items-center gap-2.5 group transition-transform hover:scale-[1.02]"
             >
-              <Image src="/kwanza-logo.png" alt="Kwanza Stream" width={32} height={32} className="rounded-lg" />
-              <span className="font-bold text-xl tracking-tighter hidden md:block uppercase">
+              <Image src="/kwanza-logo.png" alt="Kwanza Stream" width={30} height={30} className="rounded-lg" />
+              <span className="font-bold text-lg tracking-tight hidden md:block">
                 KWANZA <span className="text-secondary">STREAM</span>
               </span>
             </Link>
@@ -158,13 +161,13 @@ export function Navbar() {
         {isLoggedIn && (
           <>
             {/* Desktop search */}
-            <div className="hidden md:block flex-1 max-w-md mx-4 relative" ref={searchRef}>
+            <div className="hidden md:block flex-1 max-w-lg mx-6 relative" ref={searchRef}>
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 <Input
                   type="search"
                   placeholder="Pesquisar creators, lives ou hashtags..."
-                  className="w-full bg-white/5 border-white/10 pl-9 focus-visible:ring-primary h-9"
+                  className="w-full surface-4 border-border pl-10 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary h-10 rounded-xl text-sm"
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   onFocus={() => searchQuery.trim() && setShowResults(true)}
@@ -177,18 +180,18 @@ export function Navbar() {
             {showSearch && (
               <div className="flex-1 flex items-center gap-2 md:hidden relative" ref={searchRef}>
                 <div className="relative flex-1">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   <Input
                     type="search"
                     placeholder="Pesquisar..."
-                    className="w-full bg-white/5 border-white/10 pl-9 focus-visible:ring-primary h-9 text-base"
+                    className="w-full surface-4 border-border pl-10 focus-visible:ring-1 focus-visible:ring-primary h-10 rounded-xl text-base"
                     autoFocus
                     value={searchQuery}
                     onChange={(e) => handleSearchChange(e.target.value)}
                     onFocus={() => searchQuery.trim() && setShowResults(true)}
                   />
                 </div>
-                <button onClick={() => { setShowSearch(false); setSearchQuery(""); setShowResults(false) }} className="p-2 text-muted-foreground">
+                <button onClick={() => { setShowSearch(false); setSearchQuery(""); setShowResults(false) }} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
                   <X className="w-5 h-5" />
                 </button>
                 <SearchDropdown />
@@ -197,31 +200,51 @@ export function Navbar() {
           </>
         )}
 
-        <div className="flex items-center gap-1 md:gap-2">
+        <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
           {isLoggedIn && user ? (
             <>
               {/* Mobile search toggle */}
               {!showSearch && (
-                <button onClick={() => setShowSearch(true)} className="p-2 text-muted-foreground hover:text-foreground md:hidden">
+                <button onClick={() => setShowSearch(true)} className="p-2 text-muted-foreground hover:text-foreground transition-colors md:hidden rounded-lg hover:bg-white/5">
                   <Search className="w-5 h-5" />
                 </button>
               )}
 
               {/* Language + Notification — desktop only */}
-              <div className="hidden md:flex items-center gap-1">
+              <div className="hidden md:flex items-center gap-0.5">
                 <LanguageSwitcher compact />
                 <NotificationBell />
               </div>
 
-              <Button asChild variant="ghost" className="hidden md:flex gap-2 font-bold text-primary h-9">
+              {/* Nav Links — desktop */}
+              <div className="hidden md:flex items-center gap-1">
+                <Button asChild variant="ghost" className="h-9 rounded-xl gap-1.5 text-muted-foreground hover:text-foreground font-medium text-sm">
+                  <Link href="/streams">
+                    <MonitorPlay className="h-4 w-4" />
+                    Streams
+                  </Link>
+                </Button>
+                <Button asChild variant="ghost" className="h-9 rounded-xl gap-1.5 text-muted-foreground hover:text-foreground font-medium text-sm">
+                  <Link href="/explore">
+                    <Compass className="h-4 w-4" />
+                    Explorar
+                  </Link>
+                </Button>
+              </div>
+
+              {/* Wallet badge */}
+              <Button asChild variant="ghost" className="hidden md:flex gap-2 font-semibold text-primary h-9 rounded-xl hover:bg-primary/10">
                 <Link href="/wallet">
                   <Wallet className="h-4 w-4" />
                   {(user.balance || 0).toLocaleString()} Kz
                 </Link>
               </Button>
-              <Button asChild variant="ghost" size="sm" className="hidden md:flex font-bold text-primary">
+
+              {/* Go Live button */}
+              <Button asChild size="sm" className="hidden md:flex font-semibold bg-primary hover:bg-primary/90 text-white rounded-xl gap-1.5 h-9 px-4">
                 <Link href="/stream">
-                  <Radio className="mr-2 h-4 w-4" /> Go Live
+                  <Radio className="h-3.5 w-3.5" />
+                  Go Live
                 </Link>
               </Button>
 
@@ -229,7 +252,7 @@ export function Navbar() {
               <div className="relative" ref={menuRef}>
                 <Avatar
                   onClick={() => setShowMenu(!showMenu)}
-                  className="h-8 w-8 cursor-pointer ring-offset-background transition-all hover:ring-2 hover:ring-primary ring-offset-2"
+                  className="h-8 w-8 cursor-pointer ring-offset-background transition-all hover:ring-2 hover:ring-primary/50 ring-offset-2"
                 >
                   <AvatarImage src={user.avatarUrl || '/abstract-profile.png'} alt={user.displayName || 'User'} />
                   <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white font-bold text-xs">
@@ -238,25 +261,45 @@ export function Navbar() {
                 </Avatar>
 
                 {showMenu && (
-                  <div className="absolute right-0 top-12 w-56 bg-card border border-white/10 rounded-xl shadow-2xl py-2 animate-in fade-in slide-in-from-top-2 z-50">
-                    <div className="px-4 py-3 border-b border-white/10">
-                      <p className="font-bold text-sm truncate">{user.displayName || user.username || 'Utilizador'}</p>
-                      {user.phone && <p className="text-xs text-muted-foreground">{user.phone}</p>}
+                  <div className="absolute right-0 top-12 w-60 surface-2 border border-border rounded-xl py-1.5 animate-fade-in z-50" style={{ boxShadow: 'var(--shadow-lg)' }}>
+                    <div className="px-4 py-3 border-b border-border">
+                      <p className="font-semibold text-sm truncate">{user.displayName || user.username || 'Utilizador'}</p>
+                      {user.phone && <p className="text-xs text-muted-foreground mt-0.5">{user.phone}</p>}
                     </div>
-                    <button
-                      onClick={() => { setShowMenu(false); router.push(`/profile/${user.id}`) }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/5 transition-colors"
-                    >
-                      <User className="h-4 w-4 text-muted-foreground" /> O Meu Perfil
-                    </button>
-                    <button
-                      onClick={() => { setShowMenu(false); router.push('/wallet') }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/5 transition-colors md:hidden"
-                    >
-                      <Wallet className="h-4 w-4 text-muted-foreground" /> Carteira
-                      <span className="ml-auto text-xs font-bold text-primary">{(user.balance || 0).toLocaleString()} Kz</span>
-                    </button>
-                    <div className="border-t border-white/10 mt-1 pt-1">
+                    <div className="py-1">
+                      <button
+                        onClick={() => { setShowMenu(false); router.push(`/profile/${user.id}`) }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/5 transition-colors"
+                      >
+                        <User className="h-4 w-4 text-muted-foreground" /> O Meu Perfil
+                      </button>
+                      <button
+                        onClick={() => { setShowMenu(false); router.push('/settings') }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/5 transition-colors"
+                      >
+                        <Settings className="h-4 w-4 text-muted-foreground" /> Definições
+                      </button>
+                      <button
+                        onClick={() => { setShowMenu(false); router.push('/streams') }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/5 transition-colors md:hidden"
+                      >
+                        <MonitorPlay className="h-4 w-4 text-muted-foreground" /> Streams Ao Vivo
+                      </button>
+                      <button
+                        onClick={() => { setShowMenu(false); router.push('/explore') }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/5 transition-colors md:hidden"
+                      >
+                        <Compass className="h-4 w-4 text-muted-foreground" /> Explorar
+                      </button>
+                      <button
+                        onClick={() => { setShowMenu(false); router.push('/wallet') }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/5 transition-colors md:hidden"
+                      >
+                        <Wallet className="h-4 w-4 text-muted-foreground" /> Carteira
+                        <span className="ml-auto text-xs font-semibold text-primary">{(user.balance || 0).toLocaleString()} Kz</span>
+                      </button>
+                    </div>
+                    <div className="border-t border-border pt-1">
                       <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
@@ -269,18 +312,17 @@ export function Navbar() {
               </div>
             </>
           ) : (
-            <>
-              <Button asChild variant="ghost" className="font-bold">
+            <div className="flex items-center gap-2">
+              <Button asChild variant="ghost" className="font-semibold h-9 rounded-xl">
                 <Link href="/auth">Entrar</Link>
               </Button>
-              <Button asChild className="bg-primary hover:bg-primary/90 font-bold">
+              <Button asChild className="bg-primary hover:bg-primary/90 font-semibold h-9 rounded-xl px-5">
                 <Link href="/auth">Criar Conta</Link>
               </Button>
-            </>
+            </div>
           )}
         </div>
       </div>
     </header>
   )
 }
-

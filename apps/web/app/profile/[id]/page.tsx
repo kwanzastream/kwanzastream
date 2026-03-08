@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { userService, streamService } from '@/lib/services'
+import { Navbar } from '@/components/navbar'
 
 interface UserProfile {
     id: string
@@ -169,7 +170,7 @@ export default function ProfilePage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#050505] text-white max-w-3xl mx-auto p-6 space-y-6">
+            <div className="min-h-screen bg-background text-foreground max-w-3xl mx-auto p-6 space-y-6">
                 <div className="flex items-center gap-4">
                     <Skeleton className="h-24 w-24 rounded-full" />
                     <div className="space-y-2 flex-1">
@@ -179,7 +180,7 @@ export default function ProfilePage() {
                     </div>
                 </div>
                 <div className="flex gap-4">
-                    {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 flex-1 rounded-xl" />)}
+                    {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 flex-1 rounded-2xl" />)}
                 </div>
             </div>
         )
@@ -187,11 +188,11 @@ export default function ProfilePage() {
 
     if (!profile) {
         return (
-            <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center">
+            <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
                 <div className="text-center space-y-4">
-                    <p className="text-xl font-bold">Utilizador não encontrado</p>
-                    <Button onClick={() => router.push('/feed')} variant="outline">
-                        <ArrowLeft className="h-4 w-4 mr-2" /> Voltar ao Feed
+                    <p className="text-xl font-semibold">Utilizador não encontrado</p>
+                    <Button onClick={() => router.push('/feed')} variant="outline" className="rounded-xl gap-2">
+                        <ArrowLeft className="h-4 w-4" /> Voltar ao Feed
                     </Button>
                 </div>
             </div>
@@ -201,18 +202,21 @@ export default function ProfilePage() {
     const joinDate = new Date(profile.createdAt).toLocaleDateString('pt-AO', { month: 'long', year: 'numeric' })
 
     return (
-        <div className="min-h-screen bg-[#050505] text-white">
-            {/* Hero */}
+        <div className="min-h-screen bg-background text-foreground pb-mobile-nav">
+            {/* Navbar */}
+            <Navbar />
+
+            {/* Hero Banner */}
             <div
-                className={`relative h-48 bg-gradient-to-br from-primary/30 via-secondary/20 to-transparent bg-cover bg-center group ${isOwnProfile ? 'cursor-pointer' : ''}`}
+                className={`relative h-44 md:h-56 bg-gradient-to-br from-primary/25 via-secondary/15 to-accent/10 bg-cover bg-center group ${isOwnProfile ? 'cursor-pointer' : ''}`}
                 style={profile.bannerUrl ? { backgroundImage: `url(${profile.bannerUrl})` } : undefined}
                 onClick={() => isOwnProfile && bannerInputRef.current?.click()}
             >
-                <div className="absolute inset-0 bg-black/20" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-black/10" />
                 {isOwnProfile && (
                     <>
                         <input ref={bannerInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleBannerUpload} />
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm">
                             {bannerUploading ? (
                                 <Loader2 className="h-8 w-8 text-white animate-spin" />
                             ) : (
@@ -223,18 +227,13 @@ export default function ProfilePage() {
                         </div>
                     </>
                 )}
-                <div className="absolute top-4 left-4 z-10">
-                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); router.back() }} className="text-white/70 hover:text-white bg-black/30 backdrop-blur">
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
-                </div>
             </div>
 
             <div className="max-w-3xl mx-auto px-4 md:px-6 -mt-16 relative z-10">
                 {/* Profile Header */}
                 <div className="flex flex-col md:flex-row items-start gap-6 mb-8">
                     <div className="relative group">
-                        <Avatar className="h-28 w-28 ring-4 ring-[#050505] shadow-2xl">
+                        <Avatar className="h-28 w-28 ring-4 ring-background shadow-2xl">
                             <AvatarImage src={profile.avatarUrl || '/abstract-profile.png'} />
                             <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-3xl font-bold">
                                 {(profile.displayName || profile.username || 'U')[0]}
@@ -264,17 +263,17 @@ export default function ProfilePage() {
                                     value={editName}
                                     onChange={(e) => setEditName(e.target.value)}
                                     placeholder="Nome de exibição"
-                                    className="bg-white/5 border-white/10 text-lg font-bold h-12"
+                                    className="surface-4 border-border text-lg font-semibold h-12 rounded-xl"
                                 />
                                 <Input
                                     value={editBio}
                                     onChange={(e) => setEditBio(e.target.value)}
                                     placeholder="Bio..."
-                                    className="bg-white/5 border-white/10"
+                                    className="surface-4 border-border rounded-xl"
                                     maxLength={500}
                                 />
                                 <div className="flex gap-2">
-                                    <Button onClick={handleSave} size="sm" className="bg-primary gap-2" disabled={isSaving}>
+                                    <Button onClick={handleSave} size="sm" className="bg-primary hover:bg-primary/90 gap-2 rounded-xl font-semibold" disabled={isSaving}>
                                         {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                                         Guardar
                                     </Button>
@@ -286,7 +285,7 @@ export default function ProfilePage() {
                         ) : (
                             <>
                                 <div className="flex items-center gap-3">
-                                    <h1 className="text-2xl md:text-3xl font-black">
+                                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
                                         {profile.displayName || profile.username || 'Utilizador'}
                                     </h1>
                                     {profile.isVerified && (
@@ -314,11 +313,11 @@ export default function ProfilePage() {
                             {isOwnProfile ? (
                                 <>
                                     {!isEditing && (
-                                        <Button onClick={() => setIsEditing(true)} variant="outline" size="sm" className="border-white/20 bg-transparent gap-2">
+                                        <Button onClick={() => setIsEditing(true)} variant="outline" size="sm" className="border-border bg-transparent gap-2 rounded-xl font-medium">
                                             <Edit3 className="h-3 w-3" /> Editar Perfil
                                         </Button>
                                     )}
-                                    <Button onClick={() => router.push('/stream')} size="sm" className="bg-primary gap-2">
+                                    <Button onClick={() => router.push('/stream')} size="sm" className="bg-primary hover:bg-primary/90 gap-2 rounded-xl font-medium">
                                         <Radio className="h-3 w-3" /> Ir ao Vivo
                                     </Button>
                                 </>
@@ -329,8 +328,8 @@ export default function ProfilePage() {
                                         disabled={followLoading}
                                         size="sm"
                                         className={isFollowing
-                                            ? 'border-white/20 bg-transparent text-white gap-2'
-                                            : 'bg-primary hover:bg-primary/90 gap-2'
+                                            ? 'border-border bg-transparent text-foreground gap-2 rounded-xl font-medium'
+                                            : 'bg-primary hover:bg-primary/90 gap-2 rounded-xl font-medium'
                                         }
                                         variant={isFollowing ? 'outline' : 'default'}
                                     >
@@ -343,7 +342,7 @@ export default function ProfilePage() {
                                         )}
                                         {isFollowing ? 'A Seguir' : 'Seguir'}
                                     </Button>
-                                    <Button variant="outline" size="sm" className="border-white/20 bg-transparent gap-2">
+                                    <Button variant="outline" size="sm" className="border-border bg-transparent gap-2 rounded-xl font-medium">
                                         <Gift className="h-3 w-3" /> Enviar Salo
                                     </Button>
                                 </>
@@ -354,54 +353,46 @@ export default function ProfilePage() {
 
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-3 mb-8">
-                    <Card className="border-white/10 bg-card/50">
-                        <CardContent className="p-4 text-center">
-                            <p className="text-2xl font-black">{(profile._count?.followers || 0).toLocaleString()}</p>
-                            <p className="text-xs text-muted-foreground font-medium">Seguidores</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-white/10 bg-card/50">
-                        <CardContent className="p-4 text-center">
-                            <p className="text-2xl font-black">{(profile._count?.following || 0).toLocaleString()}</p>
-                            <p className="text-xs text-muted-foreground font-medium">A Seguir</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-white/10 bg-card/50">
-                        <CardContent className="p-4 text-center">
-                            <p className="text-2xl font-black">{streams.length}</p>
-                            <p className="text-xs text-muted-foreground font-medium">Transmissões</p>
-                        </CardContent>
-                    </Card>
+                    <div className="p-5 rounded-2xl card-surface text-center">
+                        <p className="text-2xl font-bold">{(profile._count?.followers || 0).toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground font-medium mt-0.5">Seguidores</p>
+                    </div>
+                    <div className="p-5 rounded-2xl card-surface text-center">
+                        <p className="text-2xl font-bold">{(profile._count?.following || 0).toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground font-medium mt-0.5">A Seguir</p>
+                    </div>
+                    <div className="p-5 rounded-2xl card-surface text-center">
+                        <p className="text-2xl font-bold">{streams.length}</p>
+                        <p className="text-xs text-muted-foreground font-medium mt-0.5">Transmissões</p>
+                    </div>
                 </div>
 
                 {/* Stream History */}
                 <div className="space-y-4 pb-12">
-                    <h2 className="text-lg font-bold flex items-center gap-2">
-                        <Radio className="h-5 w-5 text-primary" /> Transmissões
+                    <h2 className="text-lg font-semibold flex items-center gap-2">
+                        <Radio className="h-4 w-4 text-primary" /> Transmissões
                     </h2>
                     {streams.length === 0 ? (
-                        <Card className="border-white/10 bg-card/50">
-                            <CardContent className="py-12 text-center">
-                                <Radio className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                                <p className="text-sm text-muted-foreground">
-                                    {isOwnProfile ? 'Ainda não fizeste nenhuma transmissão.' : 'Sem transmissões ainda.'}
-                                </p>
-                                {isOwnProfile && (
-                                    <Button onClick={() => router.push('/stream')} size="sm" className="mt-4 bg-primary gap-2">
-                                        <Play className="h-3 w-3" /> Começar a Transmitir
-                                    </Button>
-                                )}
-                            </CardContent>
-                        </Card>
+                        <div className="py-12 text-center rounded-2xl card-surface">
+                            <Radio className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                            <p className="text-sm text-muted-foreground">
+                                {isOwnProfile ? 'Ainda não fizeste nenhuma transmissão.' : 'Sem transmissões ainda.'}
+                            </p>
+                            {isOwnProfile && (
+                                <Button onClick={() => router.push('/stream')} size="sm" className="mt-4 bg-primary hover:bg-primary/90 gap-2 rounded-xl font-medium">
+                                    <Play className="h-3 w-3" /> Começar a Transmitir
+                                </Button>
+                            )}
+                        </div>
                     ) : (
                         <div className="grid gap-3">
                             {streams.map((s) => (
-                                <Card
+                                <div
                                     key={s.id}
-                                    className="border-white/10 bg-card/50 hover:border-primary/30 transition-colors cursor-pointer"
+                                    className="rounded-2xl card-surface hover:!border-primary/30 transition-all cursor-pointer"
                                     onClick={() => s.status === 'LIVE' ? router.push(`/watch/${s.id}`) : undefined}
                                 >
-                                    <CardContent className="p-4 flex items-center justify-between">
+                                    <div className="p-4 flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${s.status === 'LIVE'
                                                 ? 'bg-red-500/20 text-red-400'
@@ -410,7 +401,7 @@ export default function ProfilePage() {
                                                 {s.status === 'LIVE' ? <Radio className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                                             </div>
                                             <div>
-                                                <p className="font-bold text-sm">{s.title}</p>
+                                                <p className="font-semibold text-sm">{s.title}</p>
                                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                     {s.category && <span>{s.category}</span>}
                                                     {s.startedAt && <span>• {new Date(s.startedAt).toLocaleDateString('pt-AO')}</span>}
@@ -421,15 +412,15 @@ export default function ProfilePage() {
                                             {s.status === 'LIVE' ? (
                                                 <Badge className="bg-red-500 border-none text-white text-xs animate-pulse">AO VIVO</Badge>
                                             ) : (
-                                                <Badge variant="outline" className="border-white/20 text-xs">Terminada</Badge>
+                                                <Badge variant="outline" className="border-border text-xs">Terminada</Badge>
                                             )}
                                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                                 <Users className="h-3 w-3" />
                                                 {s.viewerCount}
                                             </div>
                                         </div>
-                                    </CardContent>
-                                </Card>
+                                    </div>
+                                </div>
                             ))}
                         </div>
                     )}

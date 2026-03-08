@@ -289,3 +289,48 @@ export const getTransactionHistory = async (req: AuthenticatedRequest, res: Resp
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+// Check payment status — polls Multicaixa (or mock) for transaction status
+export const checkPaymentStatus = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        const { transactionId } = req.params;
+
+        // Verify the transaction belongs to this user
+        const transaction = await prisma.transaction.findFirst({
+            where: { id: transactionId, userId },
+        });
+
+        if (!transaction) {
+            return res.status(404).json({ error: 'Transaction not found' });
+        }
+
+        // If already completed/failed, return DB status
+        if (transaction.status !== 'PENDING') {
+            return res.json({
+                transactionId: transaction.id,
+                status: transaction.status,
+                amount: Number(transaction.amount) / 100,
+                message: `Transaction is ${transaction.status.toLowerCase()}`,
+            });
+        }
+
+        // Poll payment provider for pending transactions
+        const { verifyPayment } = await import('../payments/multicaixa');
+        const paymentStatus = await verifyPayment(transaction.reference || transactionId);
+
+        res.json({
+            transactionId: transaction.id,
+            status: paymentStatus.paid ? 'COMPLETED' : 'PENDING',
+            providerStatus: paymentStatus.status,
+            amount: Number(transaction.amount) / 100,
+        });
+    } catch (error) {
+        console.error('Check payment status error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};

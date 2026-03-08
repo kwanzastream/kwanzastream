@@ -78,7 +78,7 @@ export function WalletSection({ isCreator = false, balance = 0 }: { isCreator?: 
       {/* Wallet Balance Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Available Balance */}
-        <Card className="border-white/10 bg-gradient-to-br from-primary/20 to-primary/5">
+        <Card className="border-border bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl">
           <CardContent className="pt-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -93,12 +93,12 @@ export function WalletSection({ isCreator = false, balance = 0 }: { isCreator?: 
                 </button>
               </div>
               <div>
-                <p className="text-4xl font-black text-primary">
+                <p className="text-4xl font-bold text-primary">
                   {showBalance ? balance.toLocaleString() : '****'}
                 </p>
                 <p className="text-xs text-muted-foreground pt-1">Kwanzas</p>
               </div>
-              <Button size="sm" className="w-full gap-2 bg-primary hover:bg-primary/90">
+              <Button size="sm" className="w-full gap-2 bg-primary hover:bg-primary/90 rounded-xl font-medium">
                 <Plus className="w-4 h-4" />
                 Carregar Saldo
               </Button>
@@ -108,7 +108,7 @@ export function WalletSection({ isCreator = false, balance = 0 }: { isCreator?: 
 
         {/* This Month Earnings (for creators) */}
         {isCreator && (
-          <Card className="border-white/10 bg-gradient-to-br from-secondary/20 to-secondary/5">
+          <Card className="border-border bg-gradient-to-br from-secondary/20 to-secondary/5 rounded-2xl">
             <CardContent className="pt-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -118,7 +118,7 @@ export function WalletSection({ isCreator = false, balance = 0 }: { isCreator?: 
                   <TrendingUp className="w-4 h-4 text-secondary" />
                 </div>
                 <div>
-                  <p className="text-4xl font-black text-secondary">
+                  <p className="text-4xl font-bold text-secondary">
                     {(2_845_000).toLocaleString()}
                   </p>
                   <p className="text-xs text-muted-foreground pt-1">Kwanzas</p>
@@ -133,7 +133,7 @@ export function WalletSection({ isCreator = false, balance = 0 }: { isCreator?: 
         )}
 
         {/* Pending Actions */}
-        <Card className="border-white/10 bg-gradient-to-br from-accent/20 to-accent/5">
+        <Card className="border-border bg-gradient-to-br from-accent/20 to-accent/5 rounded-2xl">
           <CardContent className="pt-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -143,7 +143,7 @@ export function WalletSection({ isCreator = false, balance = 0 }: { isCreator?: 
                 <Clock className="w-4 h-4 text-accent" />
               </div>
               <div>
-                <p className="text-3xl font-black text-accent">1</p>
+                <p className="text-3xl font-bold text-accent">1</p>
                 <p className="text-xs text-muted-foreground pt-1">
                   Saque em processamento
                 </p>
@@ -151,7 +151,7 @@ export function WalletSection({ isCreator = false, balance = 0 }: { isCreator?: 
               <Button
                 size="sm"
                 variant="outline"
-                className="w-full gap-2 border-accent/50 bg-transparent"
+                className="w-full gap-2 border-accent/50 bg-transparent rounded-xl font-medium"
               >
                 Ver Detalhes
               </Button>
@@ -162,21 +162,21 @@ export function WalletSection({ isCreator = false, balance = 0 }: { isCreator?: 
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Button variant="outline" className="h-20 flex-col gap-2 bg-transparent">
+        <Button variant="outline" className="h-20 flex-col gap-2 bg-transparent rounded-2xl border-border">
           <Plus className="w-5 h-5" />
           <span className="text-xs">Carregar Saldo</span>
         </Button>
-        <Button variant="outline" className="h-20 flex-col gap-2 bg-transparent">
+        <Button variant="outline" className="h-20 flex-col gap-2 bg-transparent rounded-2xl border-border">
           <Send className="w-5 h-5" />
           <span className="text-xs">Enviar Salo</span>
         </Button>
         {isCreator && (
           <>
-            <Button variant="outline" className="h-20 flex-col gap-2 bg-transparent">
+            <Button variant="outline" className="h-20 flex-col gap-2 bg-transparent rounded-2xl border-border">
               <ArrowUpRight className="w-5 h-5" />
               <span className="text-xs">Solicitar Saque</span>
             </Button>
-            <Button variant="outline" className="h-20 flex-col gap-2 bg-transparent">
+            <Button variant="outline" className="h-20 flex-col gap-2 bg-transparent rounded-2xl border-border">
               <TrendingUp className="w-5 h-5" />
               <span className="text-xs">Ver Análise</span>
             </Button>
@@ -185,17 +185,17 @@ export function WalletSection({ isCreator = false, balance = 0 }: { isCreator?: 
       </div>
 
       {/* Payment Methods */}
-      <Card className="border-white/10 bg-card/50">
+      <Card className="border-border card-surface rounded-2xl">
         <CardHeader>
           <CardTitle className="text-lg">Métodos de Pagamento</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Multicaixa */}
-            <div className="p-4 rounded-lg border border-white/10 hover:border-primary/50 transition-all cursor-pointer">
+            <div className="p-4 rounded-xl border border-border hover:border-primary/50 transition-all cursor-pointer">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
                     <Building2 className="w-6 h-6 text-white" />
                   </div>
                   <div>
@@ -204,16 +204,16 @@ export function WalletSection({ isCreator = false, balance = 0 }: { isCreator?: 
                   </div>
                 </div>
               </div>
-              <Button size="sm" className="w-full" variant="secondary">
+              <Button size="sm" className="w-full rounded-xl font-medium" variant="secondary">
                 Carregar via MCX
               </Button>
             </div>
 
             {/* USSD */}
-            <div className="p-4 rounded-lg border border-white/10 hover:border-secondary/50 transition-all cursor-pointer">
+            <div className="p-4 rounded-xl border border-border hover:border-secondary/50 transition-all cursor-pointer">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-secondary to-secondary/60 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-secondary to-secondary/60 flex items-center justify-center">
                     <Smartphone className="w-6 h-6 text-secondary-foreground" />
                   </div>
                   <div>
@@ -222,7 +222,7 @@ export function WalletSection({ isCreator = false, balance = 0 }: { isCreator?: 
                   </div>
                 </div>
               </div>
-              <Button size="sm" className="w-full" variant="secondary">
+              <Button size="sm" className="w-full rounded-xl font-medium" variant="secondary">
                 Recarregar
               </Button>
             </div>
@@ -231,7 +231,7 @@ export function WalletSection({ isCreator = false, balance = 0 }: { isCreator?: 
       </Card>
 
       {/* Transaction History */}
-      <Card className="border-white/10 bg-card/50">
+      <Card className="border-border card-surface rounded-2xl">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Histórico de Transações</CardTitle>
@@ -243,14 +243,14 @@ export function WalletSection({ isCreator = false, balance = 0 }: { isCreator?: 
             {mockTransactions.map((tx) => (
               <div
                 key={tx.id}
-                className="flex items-center justify-between p-3 rounded-lg hover:bg-white/5 transition-colors"
+                className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors"
               >
                 <div className="flex items-center gap-3 flex-1">
                   {/* Transaction Icon */}
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === 'income' || tx.type === 'deposit'
-                        ? 'bg-green-500/20'
-                        : 'bg-red-500/20'
+                      ? 'bg-green-500/20'
+                      : 'bg-red-500/20'
                       }`}
                   >
                     {tx.type === 'income' || tx.type === 'deposit' ? (
@@ -273,9 +273,9 @@ export function WalletSection({ isCreator = false, balance = 0 }: { isCreator?: 
                 {/* Amount & Status */}
                 <div className="text-right">
                   <p
-                    className={`font-bold text-sm ${tx.type === 'income' || tx.type === 'deposit'
-                        ? 'text-green-400'
-                        : 'text-red-400'
+                    className={`font-semibold text-sm ${tx.type === 'income' || tx.type === 'deposit'
+                      ? 'text-green-400'
+                      : 'text-red-400'
                       }`}
                   >
                     {tx.type === 'income' || tx.type === 'deposit' ? '+' : '-'}
@@ -284,8 +284,8 @@ export function WalletSection({ isCreator = false, balance = 0 }: { isCreator?: 
                   <Badge
                     variant="outline"
                     className={`text-xs mt-1 ${tx.status === 'completed'
-                        ? 'bg-green-500/10 text-green-300 border-green-500/30'
-                        : 'bg-yellow-500/10 text-yellow-300 border-yellow-500/30'
+                      ? 'bg-green-500/10 text-green-300 border-green-500/30'
+                      : 'bg-yellow-500/10 text-yellow-300 border-yellow-500/30'
                       }`}
                   >
                     {tx.status === 'completed' ? 'Concluída' : 'Pendente'}
@@ -294,7 +294,7 @@ export function WalletSection({ isCreator = false, balance = 0 }: { isCreator?: 
               </div>
             ))}
           </div>
-          <Button variant="outline" className="w-full mt-4 bg-transparent">
+          <Button variant="outline" className="w-full mt-4 bg-transparent rounded-xl border-border font-medium">
             Ver Todos os Históricos
           </Button>
         </CardContent>

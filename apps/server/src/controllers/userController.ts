@@ -436,3 +436,64 @@ export const checkUsername = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+// ============== Sprint 2: AutoMod Settings ==============
+
+const autoModSchema = z.object({
+    enabled: z.boolean(),
+    customWords: z.array(z.string().min(1).max(50)).max(200).optional(),
+});
+
+// Get AutoMod settings for current user
+export const getAutoModSettings = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { autoModEnabled: true, customBannedWords: true },
+        });
+
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        res.json({
+            autoModEnabled: user.autoModEnabled,
+            customBannedWords: user.customBannedWords,
+        });
+    } catch (error) {
+        console.error('Get AutoMod settings error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+// Update AutoMod settings for current user's channel
+export const updateAutoModSettings = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ error: 'Authentication required' });
+
+        const data = autoModSchema.parse(req.body);
+
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data: {
+                autoModEnabled: data.enabled,
+                ...(data.customWords !== undefined && { customBannedWords: data.customWords }),
+            },
+            select: { autoModEnabled: true, customBannedWords: true },
+        });
+
+        res.json({
+            success: true,
+            autoModEnabled: user.autoModEnabled,
+            customBannedWords: user.customBannedWords,
+        });
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ error: 'Validation error', details: error.errors });
+        }
+        console.error('Update AutoMod settings error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};

@@ -50,6 +50,12 @@ enum StreamStatus {
   ENDED
 }
 
+enum ContentClassification {
+  EVERYONE   // Suitable for all audiences
+  TEEN       // 13+ content
+  MATURE     // 18+ content
+}
+
 // ============== MODELS ==============
 
 model User {
@@ -68,6 +74,13 @@ model User {
   streamKey     String?  @unique
   interests     String[] @default([])
   onboardingCompleted Boolean @default(false)
+  
+  // Google OAuth
+  googleId      String?  @unique
+  
+  // AutoMod per-channel config
+  autoModEnabled    Boolean  @default(true)
+  customBannedWords String[] @default([])
   
   // Wallet (stored in centimos: 1 Kz = 100 centimos)
   balance       BigInt   @default(0)
@@ -183,6 +196,7 @@ model Stream {
   description  String?
   thumbnailUrl String?
   category     String?
+  contentClassification ContentClassification @default(EVERYONE)
   status       StreamStatus @default(OFFLINE)
   viewerCount  Int          @default(0)
   peakViewers  Int          @default(0)

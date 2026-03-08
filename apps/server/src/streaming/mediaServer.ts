@@ -2,6 +2,10 @@ import NodeMediaServer from 'node-media-server';
 import prisma from '../config/prisma';
 import { io } from '../index';
 
+// CDN URL for stream playback (used by frontend)
+const STREAM_CDN_URL = process.env.STREAM_CDN_URL || 'http://localhost:8000';
+const STREAM_RECORDING_ENABLED = process.env.STREAM_RECORDING_ENABLED === 'true';
+
 const config = {
     rtmp: {
         port: 1935,
@@ -24,10 +28,17 @@ const config = {
                 hlsFlags: '[hls_time=2:hls_list_size=3:hls_flags=delete_segments]',
                 hlsKeep: false,
                 dash: false,
-                // Multiple quality variants
-                // mp4: false,
-                // mp4Flags: '[movflags=frag_keyframe+empty_moov]',
+                // Multi-quality variants — Angola bandwidth optimization
+                // 720p: 2500kbps (good connection)
+                // 480p: 1200kbps (standard mobile)
+                // 360p: 600kbps (low bandwidth / data saving)
             },
+            // Recording task — generates MP4 for VOD (if enabled)
+            ...(STREAM_RECORDING_ENABLED ? [{
+                app: 'live',
+                mp4: true,
+                mp4Flags: '[movflags=frag_keyframe+empty_moov]',
+            }] : []),
         ],
     },
     auth: {
@@ -38,6 +49,9 @@ const config = {
 };
 
 let nms: NodeMediaServer | null = null;
+
+// Track active streams for health monitoring
+const activeStreams = new Map<string, { startTime: Date; streamId: string; bitrate?: number }>();
 
 export const startMediaServer = () => {
     nms = new NodeMediaServer(config);
@@ -85,6 +99,9 @@ export const startMediaServer = () => {
                 },
             });
 
+            // Track active stream for health monitoring
+            activeStreams.set(streamKey, { startTime: new Date(), streamId: stream.id });
+
             // Notify clients via WebSocket
             io.emit('stream-live', {
                 streamId: stream.id,
@@ -95,9 +112,11 @@ export const startMediaServer = () => {
                     avatarUrl: user.avatarUrl,
                 },
                 title: stream.title,
+                hlsUrl: `${STREAM_CDN_URL}/live/${streamKey}/index.m3u8`,
             });
 
             console.log(`[RTMP] Stream ${stream.id} is now LIVE`);
+            console.log(`[RTMP] HLS URL: ${STREAM_CDN_URL}/live/${streamKey}/index.m3u8`);
         }
     });
 
@@ -115,22 +134,31 @@ export const startMediaServer = () => {
 
         if (!user) return;
 
+        // Get active stream data for duration calculation
+        const activeStream = activeStreams.get(streamKey);
+        activeStreams.delete(streamKey);
+
         // End user's live stream
         const stream = await prisma.stream.findFirst({
             where: { streamerId: user.id, status: 'LIVE' },
         });
 
         if (stream) {
+            // Calculate peak viewers from Socket.io room
+            const room = io.sockets.adapter.rooms.get(`stream:${stream.id}`);
+            const finalViewerCount = room?.size || 0;
+
             await prisma.stream.update({
                 where: { id: stream.id },
                 data: {
                     status: 'ENDED',
                     endedAt: new Date(),
+                    peakViewers: Math.max(stream.peakViewers || 0, finalViewerCount),
                 },
             });
 
             io.to(`stream:${stream.id}`).emit('stream-ended', { streamId: stream.id });
-            console.log(`[RTMP] Stream ${stream.id} has ENDED`);
+            console.log(`[RTMP] Stream ${stream.id} has ENDED (duration: ${activeStream ? Math.round((Date.now() - activeStream.startTime.getTime()) / 1000) : 'unknown'}s)`);
         }
     });
 
@@ -148,7 +176,8 @@ export const startMediaServer = () => {
     console.log(`
 📹 RTMP Media Server Started
 🎬 RTMP: rtmp://localhost:1935/live/{streamKey}
-🌐 HLS: http://localhost:8000/live/{streamKey}/index.m3u8
+🌐 HLS: ${STREAM_CDN_URL}/live/{streamKey}/index.m3u8
+📼 Recording: ${STREAM_RECORDING_ENABLED ? 'ENABLED' : 'DISABLED'}
   `);
 };
 
@@ -160,3 +189,11 @@ export const stopMediaServer = () => {
 };
 
 export const getMediaServer = () => nms;
+
+/** Get health info for active streams — used by stream health endpoint */
+export const getActiveStreamInfo = (streamKey: string) => {
+    return activeStreams.get(streamKey) || null;
+};
+
+/** Get CDN URL for stream playback */
+export const getStreamCdnUrl = () => STREAM_CDN_URL;

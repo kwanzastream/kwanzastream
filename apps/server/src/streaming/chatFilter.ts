@@ -55,8 +55,10 @@ export interface FilterResult {
 /**
  * Filter a chat message for prohibited content.
  * Returns { allowed: true } if message passes, or { allowed: false, reason } if blocked.
+ * @param message The chat message text
+ * @param customBannedWords Optional per-channel custom banned words from streamer config
  */
-export const filterMessage = (message: string): FilterResult => {
+export const filterMessage = (message: string, customBannedWords?: string[]): FilterResult => {
     const lower = message.toLowerCase().trim();
 
     // Empty message
@@ -69,10 +71,19 @@ export const filterMessage = (message: string): FilterResult => {
         return { allowed: false, reason: 'Mensagem demasiado longa (max 500 chars)' };
     }
 
-    // Blocked words check
+    // Blocked words check (global)
     for (const word of BLOCKED_WORDS) {
         if (lower.includes(word)) {
             return { allowed: false, reason: 'Mensagem contém conteúdo proibido' };
+        }
+    }
+
+    // Per-channel custom banned words check
+    if (customBannedWords && customBannedWords.length > 0) {
+        for (const word of customBannedWords) {
+            if (lower.includes(word.toLowerCase())) {
+                return { allowed: false, reason: 'Mensagem bloqueada pelo streamer' };
+            }
         }
     }
 

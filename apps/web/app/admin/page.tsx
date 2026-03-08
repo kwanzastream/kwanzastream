@@ -29,7 +29,11 @@ import {
   LogOut,
   Filter,
   Search,
+  Radio,
+  Shield,
+  ChevronRight,
 } from 'lucide-react'
+import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import Loading from './loading'
 
@@ -124,11 +128,10 @@ export default function AdminDashboard() {
             <button
               key={tab}
               onClick={() => setSelectedTab(tab)}
-              className={`px-4 py-3 border-b-2 text-sm font-medium transition-colors ${
-                selectedTab === tab
+              className={`px-4 py-3 border-b-2 text-sm font-medium transition-colors ${selectedTab === tab
                   ? 'border-primary text-primary'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
+                }`}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
@@ -274,6 +277,35 @@ export default function AdminDashboard() {
                         <p className="text-xs text-muted-foreground">{creator.streams} streams</p>
                       </div>
                     </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Admin Quick Navigation */}
+            <Card className="border-white/10">
+              <CardHeader>
+                <CardTitle className="text-base">Gestão Rápida</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[
+                    { href: '/admin/users', icon: <Users className="h-5 w-5" />, label: 'Utilizadores', desc: 'Gerir contas e acessos', color: 'text-blue-400 bg-blue-500/10' },
+                    { href: '/admin/streams', icon: <Radio className="h-5 w-5" />, label: 'Streams', desc: 'Monitorizar lives', color: 'text-red-400 bg-red-500/10' },
+                    { href: '/admin/kyc', icon: <Shield className="h-5 w-5" />, label: 'KYC', desc: 'Verificações pendentes', color: 'text-amber-400 bg-amber-500/10' },
+                    { href: '/admin/settings', icon: <Settings className="h-5 w-5" />, label: 'Configurações', desc: 'Feature flags e taxas', color: 'text-purple-400 bg-purple-500/10' },
+                  ].map(item => (
+                    <Link key={item.href} href={item.href}
+                      className="flex items-center gap-4 p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all group">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.color}`}>
+                        {item.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold">{item.label}</p>
+                        <p className="text-xs text-muted-foreground">{item.desc}</p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                    </Link>
                   ))}
                 </div>
               </CardContent>

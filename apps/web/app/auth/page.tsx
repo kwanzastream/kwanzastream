@@ -239,7 +239,7 @@ export default function AuthPage() {
   if (step === "otp") {
     return (
       <AuthShell title="Verificar código" subtitle={`Enviámos um código para ${phone || identifier}`}>
-        <Card className="border-white/10 bg-card/50 backdrop-blur-xl">
+        <Card className="border-border surface-1 backdrop-blur-xl rounded-2xl">
           <CardHeader className="space-y-1">
             <CardTitle className="text-xl">Código de Verificação</CardTitle>
             <CardDescription>
@@ -261,7 +261,7 @@ export default function AuthPage() {
                   type="text"
                   inputMode="numeric"
                   placeholder="000000"
-                  className="h-14 text-center text-2xl tracking-[0.5em] font-mono border-white/10 bg-white/5"
+                  className="h-14 text-center text-2xl tracking-[0.5em] font-mono border-border surface-4 rounded-xl"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   required
@@ -273,7 +273,7 @@ export default function AuthPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="flex-1 h-11 border-white/10"
+                  className="flex-1 h-11 border-border rounded-xl"
                   onClick={() => {
                     setStep("form")
                     setOtp("")
@@ -285,7 +285,7 @@ export default function AuthPage() {
                 <Button
                   type="submit"
                   disabled={isLoading || otp.length !== 6}
-                  className="flex-1 h-11 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold"
+                  className="flex-1 h-11 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-semibold rounded-xl"
                 >
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verificar"}
                 </Button>
@@ -316,11 +316,11 @@ export default function AuthPage() {
       subtitle={mode === "signin" ? "Escolhe como entrar" : "Junta-te à maior comunidade Angolana de creators"}
     >
       {/* Tab Switcher */}
-      <div className="flex rounded-xl overflow-hidden border border-white/10 bg-white/5 p-1">
+      <div className="flex rounded-xl overflow-hidden border border-border surface-4 p-1">
         <button
           onClick={() => switchMode("signin")}
           className={cn(
-            "flex-1 py-2.5 text-sm font-bold rounded-lg transition-all",
+            "flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all",
             mode === "signin"
               ? "bg-primary text-white shadow-lg"
               : "text-muted-foreground hover:text-white"
@@ -331,7 +331,7 @@ export default function AuthPage() {
         <button
           onClick={() => switchMode("signup")}
           className={cn(
-            "flex-1 py-2.5 text-sm font-bold rounded-lg transition-all",
+            "flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all",
             mode === "signup"
               ? "bg-primary text-white shadow-lg"
               : "text-muted-foreground hover:text-white"
@@ -341,7 +341,7 @@ export default function AuthPage() {
         </button>
       </div>
 
-      <Card className="border-white/10 bg-card/50 backdrop-blur-xl">
+      <Card className="border-border surface-1 backdrop-blur-xl rounded-2xl">
         <CardHeader className="space-y-1 pb-4">
           <CardTitle className="text-xl">
             {mode === "signin" ? "Iniciar Sessão" : "Criar Conta"}
@@ -365,7 +365,7 @@ export default function AuthPage() {
                     id="identifier"
                     type="text"
                     placeholder="912345678, email@ex.com ou username"
-                    className="pl-10 h-11 border-white/10 bg-white/5"
+                    className="pl-10 h-11 border-border surface-4 rounded-xl"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     required
@@ -390,7 +390,7 @@ export default function AuthPage() {
                     id="loginPassword"
                     type={showLoginPassword ? "text" : "password"}
                     placeholder="••••••••"
-                    className="pl-10 pr-10 h-11 border-white/10 bg-white/5"
+                    className="pl-10 pr-10 h-11 border-border surface-4 rounded-xl"
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     required
@@ -398,7 +398,7 @@ export default function AuthPage() {
                   <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                   <button
                     type="button"
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-white transition-colors"
+                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
                     onClick={() => setShowLoginPassword(!showLoginPassword)}
                     tabIndex={-1}
                   >
@@ -410,7 +410,7 @@ export default function AuthPage() {
               <Button
                 type="submit"
                 disabled={isLoading || !identifier || !loginPassword}
-                className="w-full h-11 bg-primary hover:bg-primary/90 font-bold"
+                className="w-full h-11 bg-primary hover:bg-primary/90 font-semibold rounded-xl"
               >
                 {isLoading ? (
                   <>
@@ -426,7 +426,7 @@ export default function AuthPage() {
               {/* OTP Option */}
               <div className="relative my-1">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/10" />
+                  <div className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
                   <span className="bg-card px-3 text-muted-foreground">ou</span>
@@ -436,7 +436,7 @@ export default function AuthPage() {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full h-11 border-white/10 bg-white/5 hover:bg-white/10"
+                className="w-full h-11 border-border surface-4 hover:bg-white/10 rounded-xl"
                 onClick={() => {
                   setPhone(identifier.replace(/\D/g, ""))
                   handleRequestOtp()
@@ -451,7 +451,7 @@ export default function AuthPage() {
               <div className="grid grid-cols-3 gap-3 pt-1">
                 <button
                   type="button"
-                  className="flex items-center justify-center h-11 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-all group"
+                  className="flex items-center justify-center h-11 rounded-xl border border-border surface-4 hover:bg-white/10 transition-all group"
                   title="Google (em breve)"
                 >
                   <svg className="h-5 w-5 opacity-50 group-hover:opacity-80" viewBox="0 0 24 24">
@@ -463,7 +463,7 @@ export default function AuthPage() {
                 </button>
                 <button
                   type="button"
-                  className="flex items-center justify-center h-11 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-all group"
+                  className="flex items-center justify-center h-11 rounded-xl border border-border surface-4 hover:bg-white/10 transition-all group"
                   title="Facebook (em breve)"
                 >
                   <svg className="h-5 w-5 text-blue-500 opacity-50 group-hover:opacity-80" fill="currentColor" viewBox="0 0 24 24">
@@ -472,7 +472,7 @@ export default function AuthPage() {
                 </button>
                 <button
                   type="button"
-                  className="flex items-center justify-center h-11 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-all group"
+                  className="flex items-center justify-center h-11 rounded-xl border border-border surface-4 hover:bg-white/10 transition-all group"
                   title="Instagram (em breve)"
                 >
                   <svg className="h-5 w-5 text-pink-500 opacity-50 group-hover:opacity-80" fill="currentColor" viewBox="0 0 24 24">
@@ -494,7 +494,7 @@ export default function AuthPage() {
                     id="fullName"
                     type="text"
                     placeholder="Ex: Elsio Costa"
-                    className="pl-10 h-11 border-white/10 bg-white/5"
+                    className="pl-10 h-11 border-border surface-4 rounded-xl"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     required
@@ -512,7 +512,7 @@ export default function AuthPage() {
                     id="username"
                     type="text"
                     placeholder="ex: elsio_costa"
-                    className="pl-10 h-11 border-white/10 bg-white/5 lowercase"
+                    className="pl-10 h-11 border-border surface-4 lowercase rounded-xl"
                     value={username}
                     onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 30))}
                     required
@@ -527,7 +527,7 @@ export default function AuthPage() {
               <div className="grid gap-2">
                 <Label htmlFor="phone">Telefone</Label>
                 <div className="flex gap-2">
-                  <div className="flex items-center justify-center px-3 rounded-md bg-white/5 border border-white/10 text-sm font-bold text-muted-foreground">
+                  <div className="flex items-center justify-center px-3 rounded-xl surface-4 border border-border text-sm font-semibold text-muted-foreground">
                     +244
                   </div>
                   <div className="relative flex-1">
@@ -535,7 +535,7 @@ export default function AuthPage() {
                       id="phone"
                       type="tel"
                       placeholder="9XX XXX XXX"
-                      className="pl-10 h-11 border-white/10 bg-white/5"
+                      className="pl-10 h-11 border-border surface-4 rounded-xl"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
                       required
@@ -554,7 +554,7 @@ export default function AuthPage() {
                     id="email"
                     type="email"
                     placeholder="email@exemplo.com"
-                    className="pl-10 h-11 border-white/10 bg-white/5"
+                    className="pl-10 h-11 border-border surface-4 rounded-xl"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -570,7 +570,7 @@ export default function AuthPage() {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
-                    className="pl-10 pr-10 h-11 border-white/10 bg-white/5"
+                    className="pl-10 pr-10 h-11 border-border surface-4 rounded-xl"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -579,7 +579,7 @@ export default function AuthPage() {
                   <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                   <button
                     type="button"
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-white transition-colors"
+                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
                     tabIndex={-1}
                   >
@@ -596,7 +596,7 @@ export default function AuthPage() {
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="••••••••"
                     className={cn(
-                      "pl-10 pr-10 h-11 border-white/10 bg-white/5",
+                      "pl-10 pr-10 h-11 border-border surface-4 rounded-xl",
                       confirmPassword && password !== confirmPassword && "border-red-500/50"
                     )}
                     value={confirmPassword}
@@ -606,7 +606,7 @@ export default function AuthPage() {
                   <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                   <button
                     type="button"
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-white transition-colors"
+                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     tabIndex={-1}
                   >
@@ -665,7 +665,7 @@ export default function AuthPage() {
                   !termsAccepted ||
                   !ageConfirmed
                 }
-                className="w-full h-11 bg-primary hover:bg-primary/90 font-bold"
+                className="w-full h-11 bg-primary hover:bg-primary/90 font-semibold rounded-xl"
               >
                 {isLoading ? (
                   <>
@@ -681,7 +681,7 @@ export default function AuthPage() {
               {/* OTP Registration option */}
               <div className="relative my-1">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/10" />
+                  <div className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
                   <span className="bg-card px-3 text-muted-foreground">ou</span>
@@ -691,7 +691,7 @@ export default function AuthPage() {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full h-11 border-white/10 bg-white/5 hover:bg-white/10"
+                className="w-full h-11 border-border surface-4 hover:bg-white/10 rounded-xl"
                 onClick={() => {
                   if (phone.length >= 9) handleRequestOtp()
                   else setError("Insere o número de telefone primeiro.")

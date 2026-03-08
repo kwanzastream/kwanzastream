@@ -25,7 +25,12 @@ const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || ''
 const VAPID_EMAIL = process.env.VAPID_EMAIL || 'mailto:admin@kwanzastream.com'
 
 if (webpush && VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
-    webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY)
+    try {
+        webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY)
+    } catch (err) {
+        console.warn('⚠️  Invalid VAPID keys — push notifications disabled:', (err as Error).message)
+        webpush = null
+    }
 }
 
 // POST /api/push/subscribe
