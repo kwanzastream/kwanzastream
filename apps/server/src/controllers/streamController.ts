@@ -24,36 +24,49 @@ const paginationSchema = z.object({
 export const getLiveStreams = async (req: Request, res: Response) => {
     try {
         const { page, limit } = paginationSchema.parse(req.query);
-        const { category, filter } = req.query;
+        const filter = req.query.filter as string | undefined;
 
-        const where: any = { status: 'LIVE' };
-        if (category) where.category = category;
+        // Try getting from cache if it's a generic public request (no fancy filters other than pagination)
+        const isPublicCacheable = !filter && page === 1; // Simplification: cache the first page for homepage loads
+        let cacheKey = '';
 
-        // Filter by content classification if requested
-        const { classification } = req.query;
-        if (classification) where.contentClassification = classification;
+        if (isPublicCacheable) {
+            cacheKey = `streams:live:p${page}:l${limit}`;
+            try {
+                const { redis } = await import('../config/redis');
+                if (redis.isOpen) {
+                    const cached = await redis.get(cacheKey);
+                    if (cached) return res.json(JSON.parse(cached));
+                }
+            } catch (redisError) {
+                // ignore cache errors
+            }
+        }
 
-        // Filter by followed creators if requested
+        let whereClause: any = { status: 'LIVE' };
+
+        // Handle "following" filter for authenticated users
         if (filter === 'following') {
-            const userId = (req as any).user?.userId;
-            if (!userId) {
-                return res.status(401).json({ error: 'Authentication required for following filter' });
+            const authReq = req as AuthenticatedRequest;
+            if (!authReq.user) {
+                return res.status(401).json({ error: 'Login required for this filter' });
             }
 
-            const follows = await prisma.follow.findMany({
-                where: { followerId: userId },
+            const following = await prisma.follow.findMany({
+                where: { followerId: authReq.user.userId },
                 select: { followingId: true },
             });
 
-            where.streamerId = { in: follows.map(f => f.followingId) };
+            if (following.length === 0) {
+                return res.json({ streams: [], total: 0, pages: 0, currentPage: page }); // No active following
+            }
+
+            whereClause.streamerId = { in: following.map(f => f.followingId) };
         }
 
         const [streams, total] = await Promise.all([
             prisma.stream.findMany({
-                where,
-                skip: (page - 1) * limit,
-                take: limit,
-                orderBy: { viewerCount: 'desc' },
+                where: whereClause,
                 include: {
                     streamer: {
                         select: {
@@ -62,23 +75,41 @@ export const getLiveStreams = async (req: Request, res: Response) => {
                             displayName: true,
                             avatarUrl: true,
                             isVerified: true,
+                            bio: true,
                         },
                     },
                 },
+                orderBy: { viewerCount: 'desc' }, // the hottest streams first
+                skip: (page - 1) * limit,
+                take: limit,
             }),
-            prisma.stream.count({ where }),
+            prisma.stream.count({ where: whereClause }),
         ]);
 
-        res.json({
+        const result = {
             streams,
-            pagination: {
-                page,
-                limit,
-                total,
-                pages: Math.ceil(total / limit),
-            },
-        });
+            total,
+            pages: Math.ceil(total / limit),
+            currentPage: page,
+        };
+
+        // If public cacheable, store it in redis
+        if (isPublicCacheable) {
+            try {
+                const { redis } = await import('../config/redis');
+                if (redis.isOpen) {
+                    await redis.setEx(cacheKey, 15, JSON.stringify(result)); // Cache for 15s to smooth out microbursts
+                }
+            } catch (e) {
+                // Ignore cache set error
+            }
+        }
+
+        res.json(result);
     } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ error: 'Parâmetros inválidos.', details: error.errors });
+        }
         console.error('Get live streams error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
@@ -490,6 +521,17 @@ export const getStreamHealth = async (req: Request, res: Response) => {
  */
 export const getCategories = async (_req: Request, res: Response) => {
     try {
+        const cacheKey = 'streams:categories';
+        try {
+            const { redis } = await import('../config/redis');
+            if (redis.isOpen) {
+                const cached = await redis.get(cacheKey);
+                if (cached) return res.json(JSON.parse(cached));
+            }
+        } catch (e) {
+            // ignore
+        }
+
         const streams = await prisma.stream.findMany({
             where: { status: 'LIVE', category: { not: null } },
             select: { category: true, viewerCount: true, thumbnailUrl: true },
@@ -511,7 +553,16 @@ export const getCategories = async (_req: Request, res: Response) => {
             .map(([name, data]) => ({ name, ...data }))
             .sort((a, b) => b.totalViewers - a.totalViewers);
 
-        res.json({ categories, total: categories.length });
+        const result = { categories, total: categories.length };
+
+        try {
+            const { redis } = await import('../config/redis');
+            if (redis.isOpen) {
+                await redis.setEx(cacheKey, 60, JSON.stringify(result)); // Cache for 60s
+            }
+        } catch (e) { }
+
+        res.json(result);
     } catch (error) {
         console.error('Get categories error:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -524,6 +575,15 @@ export const getCategories = async (_req: Request, res: Response) => {
  */
 export const getFeaturedStreams = async (_req: Request, res: Response) => {
     try {
+        const cacheKey = 'streams:featured';
+        try {
+            const { redis } = await import('../config/redis');
+            if (redis.isOpen) {
+                const cached = await redis.get(cacheKey);
+                if (cached) return res.json(JSON.parse(cached));
+            }
+        } catch (e) { }
+
         const streams = await prisma.stream.findMany({
             where: { status: 'LIVE' },
             include: {
@@ -534,7 +594,17 @@ export const getFeaturedStreams = async (_req: Request, res: Response) => {
             orderBy: { viewerCount: 'desc' },
             take: 5,
         });
-        res.json({ featured: streams });
+
+        const result = { featured: streams };
+
+        try {
+            const { redis } = await import('../config/redis');
+            if (redis.isOpen) {
+                await redis.setEx(cacheKey, 30, JSON.stringify(result)); // Cache for 30s
+            }
+        } catch (e) { }
+
+        res.json(result);
     } catch (error) {
         console.error('Get featured streams error:', error);
         res.status(500).json({ error: 'Internal server error' });

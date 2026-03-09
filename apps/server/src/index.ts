@@ -279,10 +279,8 @@ if (process.env.SENTRY_DSN) {
 }
 
 // Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    console.error('Server error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-});
+import { errorHandler } from './middleware/errorHandler';
+app.use(errorHandler as express.ErrorRequestHandler);
 
 // Start server
 const PORT = process.env.PORT || 5000;

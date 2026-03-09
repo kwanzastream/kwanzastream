@@ -4,43 +4,38 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* ============== CORE PALETTE ============== */
-  --background: oklch(0.07 0.005 260);
+  /* ============== PREMIUM CORE PALETTE ============== */
+  /* Very dark, elegant slate backgrounds */
+  --background: oklch(0.145 0.005 260);
   --foreground: oklch(0.97 0 0);
-  --card: oklch(0.11 0.005 260);
+  --card: oklch(0.17 0.005 260);
   --card-foreground: oklch(0.97 0 0);
-  --popover: oklch(0.11 0.005 260);
+  --popover: oklch(0.17 0.005 260);
   --popover-foreground: oklch(0.97 0 0);
-  --primary: oklch(0.63 0.26 25);
-  /* Vibrant Red — Angola flag inspired */
+  /* Refined Brand Red (Netflix style) */
+  --primary: oklch(0.6 0.22 25);
   --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.85 0.18 85);
-  /* Golden Yellow — Angola flag inspired */
-  --secondary-foreground: oklch(0.08 0 0);
-  --accent: oklch(0.55 0.2 250);
-  /* Cool blue accent */
+  /* Premium Gold/Amber for secondary accents */
+  --secondary: oklch(0.8 0.15 80);
+  --secondary-foreground: oklch(0.1 0 0);
+  --accent: oklch(0.25 0.01 260);
   --accent-foreground: oklch(0.98 0 0);
-  --muted: oklch(0.22 0.005 260);
-  --muted-foreground: oklch(0.58 0 0);
+  --muted: oklch(0.22 0.01 260);
+  --muted-foreground: oklch(0.65 0.005 260);
   --destructive: oklch(0.5 0.2 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.18 0.005 260);
-  --input: oklch(0.16 0.005 260);
-  --ring: oklch(0.63 0.26 25);
-  --success: oklch(0.65 0.25 142);
-  --warning: oklch(0.85 0.18 85);
+  --border: oklch(0.25 0.01 260); /* Subtle borders */
+  --input: oklch(0.22 0.01 260);
+  --ring: oklch(0.6 0.22 25);
+  --success: oklch(0.65 0.2 145);
+  --warning: oklch(0.8 0.15 80);
 
   /* ============== SURFACE HIERARCHY ============== */
-  --surface-0: oklch(0.07 0.005 260);
-  /* Page background */
-  --surface-1: oklch(0.10 0.005 260);
-  /* Cards, panels */
-  --surface-2: oklch(0.13 0.008 260);
-  /* Elevated cards, sidebars */
-  --surface-3: oklch(0.16 0.01 260);
-  /* Hover states, active cards */
-  --surface-4: oklch(0.20 0.01 260);
-  /* Inputs, interactive surfaces */
+  --surface-0: oklch(0.13 0.005 260); /* Deepest back layer */
+  --surface-1: oklch(0.15 0.005 260); /* Base panels */
+  --surface-2: oklch(0.18 0.005 260); /* Elevated cards */
+  --surface-3: oklch(0.22 0.01 260);  /* Interactive states */
+  --surface-4: oklch(0.28 0.01 260);  /* Buttons/Inputs */
 
   /* ============== CHART COLORS ============== */
   --chart-1: oklch(0.63 0.26 25);
@@ -50,13 +45,14 @@
   --chart-5: oklch(0.6 0.22 130);
 
   /* ============== SPACING & SHAPE ============== */
-  --radius: 0.75rem;
-  --radius-xs: 0.25rem;
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.25rem;
-  --radius-2xl: 1.5rem;
+  /* Sleeker, sharper borders instead of large rounded elements */
+  --radius: 0.5rem;
+  --radius-xs: 0.125rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
 
   /* ============== ELEVATION (glow shadows) ============== */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -139,45 +135,45 @@
 }
 
 .dark {
-  --background: oklch(0.07 0.005 260);
+  --background: oklch(0.145 0.005 260);
   --foreground: oklch(0.97 0 0);
-  --card: oklch(0.11 0.005 260);
+  --card: oklch(0.17 0.005 260);
   --card-foreground: oklch(0.97 0 0);
-  --popover: oklch(0.11 0.005 260);
+  --popover: oklch(0.17 0.005 260);
   --popover-foreground: oklch(0.97 0 0);
-  --primary: oklch(0.63 0.26 25);
+  --primary: oklch(0.6 0.22 25);
   --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.85 0.18 85);
-  --secondary-foreground: oklch(0.08 0 0);
-  --accent: oklch(0.55 0.2 250);
+  --secondary: oklch(0.8 0.15 80);
+  --secondary-foreground: oklch(0.1 0 0);
+  --accent: oklch(0.25 0.01 260);
   --accent-foreground: oklch(0.98 0 0);
-  --muted: oklch(0.22 0.005 260);
-  --muted-foreground: oklch(0.58 0 0);
+  --muted: oklch(0.22 0.01 260);
+  --muted-foreground: oklch(0.65 0.005 260);
   --destructive: oklch(0.5 0.2 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.18 0.005 260);
-  --input: oklch(0.16 0.005 260);
-  --ring: oklch(0.63 0.26 25);
-  --success: oklch(0.65 0.25 142);
-  --warning: oklch(0.85 0.18 85);
-  --chart-1: oklch(0.63 0.26 25);
-  --chart-2: oklch(0.55 0.2 250);
-  --chart-3: oklch(0.85 0.18 85);
+  --border: oklch(0.25 0.01 260);
+  --input: oklch(0.22 0.01 260);
+  --ring: oklch(0.6 0.22 25);
+  --success: oklch(0.65 0.2 145);
+  --warning: oklch(0.8 0.15 80);
+  --chart-1: oklch(0.6 0.22 25);
+  --chart-2: oklch(0.25 0.01 260);
+  --chart-3: oklch(0.8 0.15 80);
   --chart-4: oklch(0.7 0.2 35);
   --chart-5: oklch(0.6 0.22 130);
-  --sidebar: oklch(0.10 0.005 260);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.16 0.005 260);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.18 0.005 260);
-  --sidebar-ring: oklch(0.439 0 0);
+  --sidebar: oklch(0.15 0.005 260);
+  --sidebar-foreground: oklch(0.97 0 0);
+  --sidebar-primary: oklch(0.6 0.22 25);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.22 0.01 260);
+  --sidebar-accent-foreground: oklch(0.97 0 0);
+  --sidebar-border: oklch(0.25 0.01 260);
+  --sidebar-ring: oklch(0.6 0.22 25);
 }
 
 @theme inline {
-  --font-sans: "Inter", "Geist", "Geist Fallback", system-ui, sans-serif;
-  --font-mono: "Geist Mono", "Geist Mono Fallback", monospace;
+  --font-sans: var(--font-sans), "Outfit", "Geist", system-ui, sans-serif;
+  --font-mono: var(--font-mono), "Geist Mono", monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -276,17 +272,18 @@
   background-color: var(--surface-4);
 }
 
-/* Professional card with subtle border and depth */
+/* Professional card with subtle glassmorphic border and depth */
 .card-surface {
   background-color: var(--surface-1);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-lg);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
   transition: background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
 }
 
 .card-surface:hover {
   background-color: var(--surface-2);
-  border-color: oklch(0.25 0.01 260);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .card-elevated {

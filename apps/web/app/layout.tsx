@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Outfit, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { AuthProvider } from "@/lib/auth-context"
@@ -13,8 +13,8 @@ import { CookieConsent } from "@/components/cookie-consent"
 import { BetaFeedback } from "@/components/beta-feedback"
 import { NativeAppInit } from "@/components/native-app-init"
 
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+const _outfit = Outfit({ subsets: ["latin"], variable: "--font-sans" })
+const _geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" })
 
 export const metadata: Metadata = {
   title: "Kwanza Stream - Rede Social para Creators Angolanos",
@@ -50,7 +50,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-AO">
-      <body className={`font-sans antialiased min-h-dvh`}>
+      <body className={`${_outfit.variable} ${_geistMono.variable} font-sans antialiased min-h-dvh`}>
         <AuthProvider>
           <PostHogProvider>
             <I18nProvider>
