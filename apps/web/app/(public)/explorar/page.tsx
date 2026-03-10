@@ -1,246 +1,182 @@
 "use client"
-import * as React from "react"
-import { Button } from "@/components/ui/button"
+
+import { useEffect, useState } from "react"
+import { api } from "@/lib/api"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { Search, Music, Gamepad2, GraduationCap, Briefcase, Heart, Filter, Users, CheckCircle2 } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Search, Eye } from "lucide-react"
 import Link from "next/link"
-import { Suspense } from "react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-const categories = [
-  {
-    id: "musica",
-    name: "Música",
-    icon: <Music />,
-    color: "from-purple-600",
-    desc: "Os ritmos de Angola: Kuduro, Semba e mais.",
-  },
-  {
-    id: "gaming",
-    name: "Gaming",
-    icon: <Gamepad2 />,
-    color: "from-blue-600",
-    desc: "Melhores gameplays e competições nacionais.",
-  },
-  {
-    id: "educacao",
-    name: "Educação",
-    icon: <GraduationCap />,
-    color: "from-green-600",
-    desc: "Aprende novas skills com creators angolanos.",
-  },
-  {
-    id: "negocios",
-    name: "Negócios",
-    icon: <Briefcase />,
-    color: "from-orange-600",
-    desc: "Empreendedorismo e economia digital em Angola.",
-  },
-]
+export default function ExplorarPage() {
+  const [search, setSearch] = useState("")
+  const [streams, setStreams] = useState<any[]>([])
+  const [creators, setCreators] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-function CategoriesContent() {
-  const [activeCat, setActiveCat] = React.useState(categories[0])
+  useEffect(() => {
+    Promise.all([
+      api.get("/api/streams/live").catch(() => ({ data: [] })),
+      api.get("/api/recommendations/creators").catch(() => ({ data: [] })),
+    ]).then(([streamsRes, creatorsRes]) => {
+      setStreams(streamsRes.data?.streams || streamsRes.data || [])
+      setCreators(creatorsRes.data?.creators || creatorsRes.data || [])
+    }).finally(() => setLoading(false))
+  }, [])
+
+  const filteredStreams = streams.filter((s: any) =>
+    search ? s.title?.toLowerCase().includes(search.toLowerCase()) || s.streamer?.displayName?.toLowerCase().includes(search.toLowerCase()) : true
+  )
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Dynamic Header */}
-      <section className={`h-64 md:h-80 bg-linear-to-br ${activeCat.color} to-black relative overflow-hidden shrink-0`}>
-        <div className="absolute inset-0 angola-pattern opacity-10" />
-        <div className="absolute inset-0 bg-linear-to-t from-background via-transparent to-transparent" />
-
-        <div className="relative z-10 max-w-7xl mx-auto h-full flex flex-col justify-center px-4 md:px-8 space-y-4">
-          <Link href="/feed">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="bg-black/20 text-white hover:bg-black/40 border-none rounded-full mb-4"
-            >
-              ← Voltar ao Feed
-            </Button>
-          </Link>
-          <div className="flex items-center gap-4">
-            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 text-white shadow-2xl">
-              {React.cloneElement(activeCat.icon as React.ReactElement<any>, { className: "w-10 h-10" })}
-            </div>
-            <div className="space-y-1">
-              <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white uppercase">
-                {activeCat.name}
-              </h1>
-              <p className="text-lg text-white/80 font-medium max-w-xl">{activeCat.desc}</p>
-            </div>
-          </div>
-          <div className="flex gap-4 items-center">
-            <Badge className="bg-white/20 text-white border-none font-bold py-1 px-4">12.5K Seguidores</Badge>
-            <Button className="bg-white text-black hover:bg-white/90 font-black rounded-full px-8">Seguir Canal</Button>
-          </div>
+    <div className="max-w-screen-xl mx-auto px-4 py-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-4">Explorar</h1>
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="Pesquisar streams, canais..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-      </section>
+      </div>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 md:px-8 py-8 space-y-10">
-        {/* Filter Bar */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <ScrollArea className="w-full md:w-auto">
-            <div className="flex gap-2 pb-2">
-              {["Mais Populares", "Ao Vivo Agora", "Recentemente", "Mais Vistos"].map((filter) => (
-                <Button
-                  key={filter}
-                  variant="outline"
-                  className="rounded-full border-white/10 bg-white/5 hover:bg-white/10 font-bold text-xs"
-                >
-                  {filter}
-                </Button>
+      <Tabs defaultValue="tudo">
+        <TabsList className="mb-6">
+          {["tudo", "streams", "categorias", "canais"].map((t) => (
+            <TabsTrigger key={t} value={t} className="capitalize">{t}</TabsTrigger>
+          ))}
+        </TabsList>
+
+        <TabsContent value="tudo">
+          {loading ? <ExplorarSkeleton /> : (
+            <div className="space-y-10">
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="w-2 h-2 bg-[#CE1126] rounded-full animate-pulse" />
+                  <h2 className="font-semibold">Ao Vivo Agora</h2>
+                  <Badge variant="secondary">{filteredStreams.length}</Badge>
+                </div>
+                {filteredStreams.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum stream ao vivo</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {filteredStreams.slice(0, 8).map((stream: any) => (
+                      <Link key={stream.id} href={`/stream/${stream.streamer?.username || stream.id}`} className="group rounded-xl overflow-hidden border border-border/50 hover:border-primary/50 transition-all">
+                        <div className="aspect-video bg-muted relative">
+                          {stream.thumbnailUrl && <img src={stream.thumbnailUrl} alt={stream.title} className="w-full h-full object-cover" />}
+                          <Badge className="absolute top-2 left-2 bg-[#CE1126] text-white text-[10px]">AO VIVO</Badge>
+                          <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/70 rounded px-1.5 py-0.5">
+                            <Eye className="w-3 h-3 text-white" /><span className="text-white text-[10px]">{stream.viewerCount || 0}</span>
+                          </div>
+                        </div>
+                        <div className="p-3">
+                          <p className="text-sm font-medium truncate">{stream.title}</p>
+                          <p className="text-xs text-muted-foreground">{stream.streamer?.displayName}</p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <h2 className="font-semibold mb-4">Categorias</h2>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { slug: "gaming", label: "🎮 Gaming" }, { slug: "musica", label: "🎵 Música" },
+                    { slug: "futebol", label: "⚽ Futebol" }, { slug: "just-talking", label: "💬 Just Talking" },
+                    { slug: "irl", label: "📍 IRL Angola" }, { slug: "comedia", label: "😂 Comédia" },
+                    { slug: "criatividade", label: "🎨 Criatividade" }, { slug: "tech", label: "💻 Tech" },
+                    { slug: "radio", label: "📻 Rádio" }, { slug: "educacao", label: "📚 Educação" },
+                  ].map((cat) => (
+                    <Link key={cat.slug} href={`/categoria/${cat.slug}`}>
+                      <Badge variant="outline" className="text-sm py-1.5 px-3 hover:border-primary cursor-pointer transition-colors">{cat.label}</Badge>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h2 className="font-semibold mb-4">Criadores em Destaque</h2>
+                {creators.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum criador disponível</p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    {creators.slice(0, 12).map((creator: any) => (
+                      <Link key={creator.id} href={`/${creator.username}`} className="text-center p-3 rounded-xl border border-border/50 hover:border-primary/50 transition-all group">
+                        <Avatar className="w-12 h-12 mx-auto mb-2">
+                          <AvatarImage src={creator.avatarUrl} />
+                          <AvatarFallback className="bg-primary/20 text-primary text-xs">{creator.displayName?.slice(0, 2)}</AvatarFallback>
+                        </Avatar>
+                        <p className="text-xs font-medium truncate">{creator.displayName}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">@{creator.username}</p>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="streams">
+          {filteredStreams.length === 0 ? (
+            <p className="text-center text-muted-foreground py-12">Nenhum stream ao vivo</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredStreams.map((stream: any) => (
+                <Link key={stream.id} href={`/stream/${stream.streamer?.username || stream.id}`} className="rounded-xl overflow-hidden border border-border/50 hover:border-primary/50">
+                  <div className="aspect-video bg-muted relative">
+                    {stream.thumbnailUrl && <img src={stream.thumbnailUrl} alt={stream.title} className="w-full h-full object-cover" />}
+                    <Badge className="absolute top-2 left-2 bg-[#CE1126] text-white text-[10px]">AO VIVO</Badge>
+                  </div>
+                  <div className="p-3"><p className="text-sm font-medium truncate">{stream.title}</p><p className="text-xs text-muted-foreground">{stream.streamer?.displayName}</p></div>
+                </Link>
               ))}
             </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1 md:w-64">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Filtrar nesta categoria..."
-                className="bg-white/5 border-white/10 pl-10 h-9 rounded-full text-xs"
-              />
-            </div>
-            <Button size="icon" variant="outline" className="rounded-full border-white/10 h-9 w-9 bg-transparent">
-              <Filter className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {activeCat.id === "musica" && (
-            <>
-              <CategoryStreamCard
-                title="Ensaio para o Coliseu"
-                name="Anselmo Ralph"
-                viewers="3.4K"
-                image="/recording-studio.png"
-                isLive
-                verified
-              />
-              <CategoryStreamCard
-                title="Mix de Kuduro 2024"
-                name="DJ Luanda"
-                viewers="1.2K"
-                image="/vibrant-concert-stage.png"
-                isLive
-              />
-              <CategoryStreamCard
-                title="Semba das Quintas"
-                name="Yola Semedo"
-                viewers="5.6K"
-                image="/recording-studio.png"
-                verified
-              />
-              <CategoryStreamCard
-                title="Novo Som: Afrobeat AO"
-                name="Preto Show"
-                viewers="900"
-                image="/vibrant-concert-stage.png"
-                isLive
-                verified
-              />
-            </>
           )}
-        </div>
+        </TabsContent>
 
-        {/* Sidebar Style Section - Top Creators */}
-        <section className="space-y-6 pt-10 border-t border-white/10">
-          <h3 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-2">
-            <Users className="h-6 w-6 text-primary" /> Top Creators de {activeCat.name}
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 group hover:border-primary/50 transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-12 w-12 border border-white/10">
-                    <AvatarImage src="/abstract-profile.png" alt="Creator" />
-                    <AvatarFallback>C</AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <h4 className="text-sm font-bold truncate flex items-center gap-1">
-                      Creator {i} <CheckCircle2 className="h-3 w-3 text-primary fill-primary text-white" />
-                    </h4>
-                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
-                      120K Seguidores
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="rounded-full text-muted-foreground group-hover:text-primary"
-                >
-                  <Heart className="h-4 w-4" />
-                </Button>
-              </div>
+        <TabsContent value="categorias">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {[
+              { slug: "gaming", label: "Gaming", emoji: "🎮" }, { slug: "musica", label: "Música", emoji: "🎵" },
+              { slug: "futebol", label: "Futebol", emoji: "⚽" }, { slug: "just-talking", label: "Just Talking", emoji: "💬" },
+              { slug: "irl", label: "IRL Angola", emoji: "📍" }, { slug: "comedia", label: "Comédia", emoji: "😂" },
+              { slug: "criatividade", label: "Criatividade", emoji: "🎨" }, { slug: "tech", label: "Tech & Negócios", emoji: "💻" },
+            ].map((cat) => (
+              <Link key={cat.slug} href={`/categoria/${cat.slug}`} className="aspect-video rounded-xl border border-border/50 hover:border-primary/50 flex flex-col items-center justify-center gap-2 bg-muted/30">
+                <span className="text-4xl">{cat.emoji}</span><span className="font-medium">{cat.label}</span>
+              </Link>
             ))}
           </div>
-        </section>
-      </main>
+        </TabsContent>
 
-      {/* Category Navigation Footer - Mobile Only */}
-      <footer className="sticky bottom-0 bg-background/80 backdrop-blur-xl border-t border-white/10 p-4 md:hidden overflow-x-auto">
-        <div className="flex gap-4">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCat(cat)}
-              className={`flex flex-col items-center gap-1 min-w-[60px] ${activeCat.id === cat.id ? "text-primary" : "text-muted-foreground"}`}
-            >
-              <div className={`p-2 rounded-xl ${activeCat.id === cat.id ? "bg-primary/20" : "bg-white/5"}`}>
-                {React.cloneElement(cat.icon as React.ReactElement<any>, { className: "w-5 h-5" })}
-              </div>
-              <span className="text-[10px] font-bold">{cat.name}</span>
-            </button>
-          ))}
-        </div>
-      </footer>
+        <TabsContent value="canais">
+          {creators.length === 0 ? (
+            <p className="text-center text-muted-foreground py-12">Nenhum canal disponível</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {creators.map((creator: any) => (
+                <Link key={creator.id} href={`/${creator.username}`} className="text-center p-4 rounded-xl border border-border/50 hover:border-primary/50">
+                  <Avatar className="w-16 h-16 mx-auto mb-3"><AvatarImage src={creator.avatarUrl} /><AvatarFallback className="bg-primary/20 text-primary">{creator.displayName?.slice(0, 2)}</AvatarFallback></Avatar>
+                  <p className="text-sm font-medium">{creator.displayName}</p><p className="text-xs text-muted-foreground">@{creator.username}</p>
+                </Link>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
 
-function CategoryStreamCard({ title, name, viewers, image, isLive = false, verified = false }: any) {
+function ExplorarSkeleton() {
   return (
-    <div className="group cursor-pointer space-y-3">
-      <div className="aspect-video rounded-xl overflow-hidden relative border border-white/10 bg-black/40">
-        <img
-          src={image || "/placeholder.svg"}
-          alt={title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-        />
-        {isLive && (
-          <div className="absolute top-2 left-2">
-            <Badge className="bg-red-600 border-none text-[10px] font-black px-2 py-0.5">AO VIVO</Badge>
-          </div>
-        )}
-        <div className="absolute bottom-2 left-2">
-          <Badge className="bg-black/70 backdrop-blur-md border-none text-[10px] flex items-center gap-1 font-bold">
-            <Users className="w-3 h-3" /> {viewers}
-          </Badge>
-        </div>
-      </div>
-      <div className="space-y-1">
-        <h4 className="text-sm font-bold truncate group-hover:text-primary transition-colors">{title}</h4>
-        <p className="text-xs text-muted-foreground flex items-center gap-1 truncate font-medium">
-          {name} {verified && <CheckCircle2 className="h-3 w-3 text-primary fill-primary text-white" />}
-        </p>
-      </div>
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      {Array(8).fill(0).map((_, i) => (
+        <div key={i} className="space-y-2"><Skeleton className="aspect-video rounded-xl" /><Skeleton className="h-3 w-3/4" /><Skeleton className="h-3 w-1/2" /></div>
+      ))}
     </div>
-  )
-}
-
-export default function CategoriesPage() {
-  return (
-    <Suspense fallback={null}>
-      <CategoriesContent />
-    </Suspense>
   )
 }

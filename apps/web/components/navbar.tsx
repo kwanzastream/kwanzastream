@@ -1,328 +1,247 @@
 "use client"
-import * as React from "react"
-import Image from "next/image"
+
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
+import { api } from "@/lib/api"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Search, Bell, Radio, Wallet, LogOut, User, Settings, X, CheckCircle2, Users, Compass, MonitorPlay } from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
-import { NotificationBell } from "@/components/notification-bell"
-import { searchService } from "@/lib/services"
-import { LanguageSwitcher } from "@/components/language-switcher"
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import {
+  Search, Bell, Menu, Radio, User, Settings,
+  LogOut, LayoutDashboard, Wallet, Tv, Zap
+} from "lucide-react"
+import { toast } from "sonner"
 
-interface SearchResult {
-  users?: { id: string; username: string; displayName: string; avatarUrl?: string; isVerified: boolean; followersCount: number }[]
-  streams?: { id: string; title: string; category?: string; viewerCount: number; streamer: { id: string; displayName?: string; username?: string; avatarUrl?: string } }[]
+interface NavbarProps {
+  variant?: "public" | "main"
 }
 
-export function Navbar() {
-  const { user, isLoggedIn, isLoading, logout } = useAuth()
+export function Navbar({ variant = "public" }: NavbarProps) {
+  const { user, isAuthenticated, logout } = useAuth()
   const router = useRouter()
-  const [showMenu, setShowMenu] = React.useState(false)
-  const [showSearch, setShowSearch] = React.useState(false)
-  const [searchQuery, setSearchQuery] = React.useState("")
-  const [searchResults, setSearchResults] = React.useState<SearchResult | null>(null)
-  const [isSearching, setIsSearching] = React.useState(false)
-  const [showResults, setShowResults] = React.useState(false)
-  const menuRef = React.useRef<HTMLDivElement>(null)
-  const searchRef = React.useRef<HTMLDivElement>(null)
-  const searchTimeout = React.useRef<NodeJS.Timeout | null>(null)
+  const pathname = usePathname()
+  const [searchQuery, setSearchQuery] = useState("")
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  // Close menu when clicking outside
-  React.useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setShowMenu(false)
-      }
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setShowResults(false)
-      }
+  useEffect(() => {
+    if (!isAuthenticated) return
+    api.get("/api/notifications/unread-count")
+      .then((res) => setUnreadCount(res.data?.count ?? 0))
+      .catch(() => { })
+  }, [isAuthenticated, pathname])
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      router.push(`/pesquisa?q=${encodeURIComponent(searchQuery.trim())}`)
+      setSearchQuery("")
     }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
-
-  // Debounced search
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value)
-    if (searchTimeout.current) clearTimeout(searchTimeout.current)
-    if (!value.trim()) {
-      setSearchResults(null)
-      setShowResults(false)
-      return
-    }
-    setIsSearching(true)
-    setShowResults(true)
-    searchTimeout.current = setTimeout(async () => {
-      try {
-        const res = await searchService.search(value.trim())
-        setSearchResults(res.data)
-      } catch {
-        setSearchResults(null)
-      } finally {
-        setIsSearching(false)
-      }
-    }, 300)
-  }
-
-  const navigateTo = (path: string) => {
-    setShowResults(false)
-    setSearchQuery("")
-    setShowSearch(false)
-    router.push(path)
   }
 
   const handleLogout = async () => {
-    setShowMenu(false)
-    await logout()
-    router.push('/')
+    try {
+      await logout()
+      router.push("/")
+      toast.success("Sessão terminada")
+    } catch {
+      toast.error("Erro ao terminar sessão")
+    }
   }
 
-  const hasResults = searchResults && ((searchResults.users?.length || 0) + (searchResults.streams?.length || 0)) > 0
-
-  const SearchDropdown = () => (
-    showResults && searchQuery.trim() ? (
-      <div className="absolute top-full left-0 right-0 mt-2 surface-2 border border-border rounded-xl overflow-hidden z-50 max-h-80 overflow-y-auto custom-scrollbar" style={{ boxShadow: 'var(--shadow-lg)' }}>
-        {isSearching ? (
-          <div className="p-6 text-center text-sm text-muted-foreground">
-            <div className="inline-block w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin mb-2" />
-            <p>A pesquisar...</p>
-          </div>
-        ) : hasResults ? (
-          <>
-            {(searchResults?.users?.length || 0) > 0 && (
-              <div>
-                <div className="px-4 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-widest surface-3">Creators</div>
-                {searchResults?.users?.map(u => (
-                  <button key={u.id} onClick={() => navigateTo(`/profile/${u.id}`)} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage src={u.avatarUrl || '/placeholder-user.jpg'} alt={u.displayName} />
-                      <AvatarFallback className="bg-primary/20 text-primary text-xs">{(u.displayName || u.username || '?')[0]}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 text-left min-w-0">
-                      <p className="text-sm font-semibold truncate flex items-center gap-1.5">
-                        {u.displayName || u.username}
-                        {u.isVerified && <CheckCircle2 className="h-3.5 w-3.5 text-primary fill-primary" />}
-                      </p>
-                      <p className="text-xs text-muted-foreground">@{u.username} · {u.followersCount} seguidores</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-            {(searchResults?.streams?.length || 0) > 0 && (
-              <div>
-                <div className="px-4 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-widest surface-3">Lives</div>
-                {searchResults?.streams?.map(s => (
-                  <button key={s.id} onClick={() => navigateTo(`/stream/${s.id}`)} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
-                    <div className="w-9 h-9 rounded-lg bg-red-500/15 flex items-center justify-center flex-shrink-0">
-                      <Radio className="w-4 h-4 text-red-400" />
-                    </div>
-                    <div className="flex-1 text-left min-w-0">
-                      <p className="text-sm font-semibold truncate">{s.title}</p>
-                      <p className="text-xs text-muted-foreground">{s.streamer?.displayName || s.streamer?.username} · {s.viewerCount} viewers</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="p-6 text-center text-sm text-muted-foreground">
-            <Users className="w-5 h-5 mx-auto mb-2 opacity-40" />
-            Nenhum resultado para &quot;{searchQuery}&quot;
-          </div>
-        )}
-      </div>
-    ) : null
-  )
+  const initials = user?.displayName
+    ? user.displayName.slice(0, 2).toUpperCase()
+    : user?.username?.slice(0, 2).toUpperCase() ?? "KS"
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/85 backdrop-blur-xl overflow-visible">
-      <div className="flex h-14 md:h-16 items-center justify-between px-4 md:px-6 max-w-[1600px] mx-auto">
-        {/* Logo — always visible */}
-        {!showSearch && (
-          <div className="flex items-center gap-2 shrink-0">
-            <Link
-              href={isLoggedIn ? "/feed" : "/"}
-              className="flex items-center gap-2.5 group transition-transform hover:scale-[1.02]"
-            >
-              <Image src="/kwanza-logo.png" alt="Kwanza Stream" width={30} height={30} className="rounded-lg" />
-              <span className="font-bold text-lg tracking-tight hidden md:block">
-                KWANZA <span className="text-secondary">STREAM</span>
-              </span>
-            </Link>
+    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex h-14 items-center gap-4 px-4 md:px-6 max-w-screen-2xl mx-auto">
+
+        {/* Logo */}
+        <Link href={isAuthenticated ? "/feed" : "/"} className="flex items-center gap-2 shrink-0">
+          <div className="w-7 h-7 rounded bg-primary flex items-center justify-center">
+            <Tv className="w-4 h-4 text-white" />
           </div>
+          <span className="font-bold text-lg hidden sm:block tracking-tight">Kwanza Stream</span>
+        </Link>
+
+        {/* Nav links (public, desktop) */}
+        {variant === "public" && (
+          <nav className="hidden md:flex items-center gap-1 ml-2">
+            {[
+              { href: "/explorar", label: "Explorar" },
+              { href: "/ao-vivo", label: "Ao Vivo" },
+              { href: "/categoria/gaming", label: "Gaming" },
+              { href: "/categoria/musica", label: "Música" },
+              { href: "/radio", label: "Rádio" },
+            ].map((item) => (
+              <Link key={item.href} href={item.href}
+                className={`px-3 py-1.5 rounded-md text-sm transition-colors ${pathname === item.href ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}>
+                {item.label}
+              </Link>
+            ))}
+          </nav>
         )}
 
-        {/* Search — full bar on desktop, expandable on mobile */}
-        {isLoggedIn && (
-          <>
-            {/* Desktop search */}
-            <div className="hidden md:block flex-1 max-w-lg mx-6 relative" ref={searchRef}>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                <Input
-                  type="search"
-                  placeholder="Pesquisar creators, lives ou hashtags..."
-                  className="w-full surface-4 border-border pl-10 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary h-10 rounded-xl text-sm"
-                  value={searchQuery}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  onFocus={() => searchQuery.trim() && setShowResults(true)}
-                />
-              </div>
-              <SearchDropdown />
+        {/* Search (main variant) */}
+        {variant === "main" && (
+          <form onSubmit={handleSearch} className="flex-1 max-w-md hidden md:flex">
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input placeholder="Pesquisar streams, canais, jogos..." className="pl-9 h-9 bg-muted/50 border-0 focus-visible:ring-1" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             </div>
-
-            {/* Mobile expanded search */}
-            {showSearch && (
-              <div className="flex-1 flex items-center gap-2 md:hidden relative" ref={searchRef}>
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                  <Input
-                    type="search"
-                    placeholder="Pesquisar..."
-                    className="w-full surface-4 border-border pl-10 focus-visible:ring-1 focus-visible:ring-primary h-10 rounded-xl text-base"
-                    autoFocus
-                    value={searchQuery}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    onFocus={() => searchQuery.trim() && setShowResults(true)}
-                  />
-                </div>
-                <button onClick={() => { setShowSearch(false); setSearchQuery(""); setShowResults(false) }} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
-                <SearchDropdown />
-              </div>
-            )}
-          </>
+          </form>
         )}
 
-        <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
-          {isLoggedIn && user ? (
+        <div className="flex-1" />
+
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          {variant === "main" && (
+            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => router.push("/pesquisa")}>
+              <Search className="w-5 h-5" />
+            </Button>
+          )}
+
+          {isAuthenticated ? (
             <>
-              {/* Mobile search toggle */}
-              {!showSearch && (
-                <button onClick={() => setShowSearch(true)} className="p-2 text-muted-foreground hover:text-foreground transition-colors md:hidden rounded-lg hover:bg-white/5">
-                  <Search className="w-5 h-5" />
-                </button>
-              )}
-
-              {/* Language + Notification — desktop only */}
-              <div className="hidden md:flex items-center gap-0.5">
-                <LanguageSwitcher compact />
-                <NotificationBell />
-              </div>
-
-              {/* Nav Links — desktop */}
-              <div className="hidden md:flex items-center gap-1">
-                <Button asChild variant="ghost" className="h-9 rounded-xl gap-1.5 text-muted-foreground hover:text-foreground font-medium text-sm">
-                  <Link href="/streams">
-                    <MonitorPlay className="h-4 w-4" />
-                    Streams
-                  </Link>
-                </Button>
-                <Button asChild variant="ghost" className="h-9 rounded-xl gap-1.5 text-muted-foreground hover:text-foreground font-medium text-sm">
-                  <Link href="/explore">
-                    <Compass className="h-4 w-4" />
-                    Explorar
-                  </Link>
-                </Button>
-              </div>
-
-              {/* Wallet badge */}
-              <Button asChild variant="ghost" className="hidden md:flex gap-2 font-semibold text-primary h-9 rounded-xl hover:bg-primary/10">
-                <Link href="/wallet">
-                  <Wallet className="h-4 w-4" />
-                  {(user.balance || 0).toLocaleString()} Kz
-                </Link>
+              <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-1.5 text-primary" onClick={() => router.push("/dashboard/stream-manager")}>
+                <Radio className="w-4 h-4" /><span className="text-xs font-medium">Transmitir</span>
               </Button>
 
-              {/* Go Live button */}
-              <Button asChild size="sm" className="hidden md:flex font-semibold bg-primary hover:bg-primary/90 text-white rounded-xl gap-1.5 h-9 px-4">
-                <Link href="/stream">
-                  <Radio className="h-3.5 w-3.5" />
-                  Go Live
-                </Link>
-              </Button>
-
-              {/* Profile Menu */}
-              <div className="relative" ref={menuRef}>
-                <Avatar
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="h-8 w-8 cursor-pointer ring-offset-background transition-all hover:ring-2 hover:ring-primary/50 ring-offset-2"
-                >
-                  <AvatarImage src={user.avatarUrl || '/abstract-profile.png'} alt={user.displayName || 'User'} />
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white font-bold text-xs">
-                    {(user.displayName || user.username || 'U')[0]}
-                  </AvatarFallback>
-                </Avatar>
-
-                {showMenu && (
-                  <div className="absolute right-0 top-12 w-60 surface-2 border border-border rounded-xl py-1.5 animate-fade-in z-50" style={{ boxShadow: 'var(--shadow-lg)' }}>
-                    <div className="px-4 py-3 border-b border-border">
-                      <p className="font-semibold text-sm truncate">{user.displayName || user.username || 'Utilizador'}</p>
-                      {user.phone && <p className="text-xs text-muted-foreground mt-0.5">{user.phone}</p>}
-                    </div>
-                    <div className="py-1">
-                      <button
-                        onClick={() => { setShowMenu(false); router.push(`/profile/${user.id}`) }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/5 transition-colors"
-                      >
-                        <User className="h-4 w-4 text-muted-foreground" /> O Meu Perfil
-                      </button>
-                      <button
-                        onClick={() => { setShowMenu(false); router.push('/settings') }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/5 transition-colors"
-                      >
-                        <Settings className="h-4 w-4 text-muted-foreground" /> Definições
-                      </button>
-                      <button
-                        onClick={() => { setShowMenu(false); router.push('/streams') }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/5 transition-colors md:hidden"
-                      >
-                        <MonitorPlay className="h-4 w-4 text-muted-foreground" /> Streams Ao Vivo
-                      </button>
-                      <button
-                        onClick={() => { setShowMenu(false); router.push('/explore') }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/5 transition-colors md:hidden"
-                      >
-                        <Compass className="h-4 w-4 text-muted-foreground" /> Explorar
-                      </button>
-                      <button
-                        onClick={() => { setShowMenu(false); router.push('/wallet') }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/5 transition-colors md:hidden"
-                      >
-                        <Wallet className="h-4 w-4 text-muted-foreground" /> Carteira
-                        <span className="ml-auto text-xs font-semibold text-primary">{(user.balance || 0).toLocaleString()} Kz</span>
-                      </button>
-                    </div>
-                    <div className="border-t border-border pt-1">
-                      <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
-                      >
-                        <LogOut className="h-4 w-4" /> Terminar Sessão
-                      </button>
-                    </div>
-                  </div>
+              <Button variant="ghost" size="icon" className="relative" onClick={() => router.push("/notificacoes")}>
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
                 )}
-              </div>
+              </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-1.5 rounded-full hover:opacity-80 transition-opacity">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={user?.avatarUrl} />
+                      <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">{initials}</AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <p className="font-medium truncate">{user?.displayName || user?.username}</p>
+                    <p className="text-xs text-muted-foreground font-normal truncate">@{user?.username}</p>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push(`/${user?.username}`)}><User className="w-4 h-4 mr-2" />O meu canal</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push("/dashboard")}><LayoutDashboard className="w-4 h-4 mr-2" />Dashboard</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push("/wallet")}>
+                    <Wallet className="w-4 h-4 mr-2" /><span className="flex-1">Carteira</span>
+                    {user?.balance !== undefined && <span className="text-xs text-muted-foreground">{(user.balance / 100).toLocaleString("pt-AO")} Kz</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push("/definicoes")}><Settings className="w-4 h-4 mr-2" />Definições</DropdownMenuItem>
+                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={handleLogout}><LogOut className="w-4 h-4 mr-2" />Terminar sessão</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </>
           ) : (
-            <div className="flex items-center gap-2">
-              <Button asChild variant="ghost" className="font-semibold h-9 rounded-xl">
-                <Link href="/auth">Entrar</Link>
-              </Button>
-              <Button asChild className="bg-primary hover:bg-primary/90 font-semibold h-9 rounded-xl px-5">
-                <Link href="/auth">Criar Conta</Link>
-              </Button>
-            </div>
+            <>
+              <Link href="/entrar"><Button variant="ghost" size="sm">Entrar</Button></Link>
+              <Link href="/registar"><Button size="sm" className="hidden sm:flex"><Zap className="w-3.5 h-3.5 mr-1.5" />Criar conta</Button></Link>
+            </>
           )}
+
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden"><Menu className="w-5 h-5" /></Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 p-0">
+              <MobileMenu isAuthenticated={isAuthenticated} user={user} onClose={() => setMobileMenuOpen(false)} onLogout={handleLogout} />
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>
+  )
+}
+
+function MobileMenu({ isAuthenticated, user, onClose, onLogout }: { isAuthenticated: boolean; user: any; onClose: () => void; onLogout: () => void }) {
+  const router = useRouter()
+  const navigate = (href: string) => { router.push(href); onClose() }
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="p-4 border-b">
+        {isAuthenticated ? (
+          <div className="flex items-center gap-3">
+            <Avatar className="w-10 h-10">
+              <AvatarImage src={user?.avatarUrl} />
+              <AvatarFallback className="bg-primary/20 text-primary">{user?.displayName?.slice(0, 2).toUpperCase() ?? "KS"}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-medium text-sm">{user?.displayName || user?.username}</p>
+              <p className="text-xs text-muted-foreground">@{user?.username}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <Button className="flex-1" size="sm" onClick={() => navigate("/registar")}>Criar conta</Button>
+            <Button variant="outline" className="flex-1" size="sm" onClick={() => navigate("/entrar")}>Entrar</Button>
+          </div>
+        )}
+      </div>
+
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        {[
+          { href: "/explorar", icon: "🔭", label: "Explorar" },
+          { href: "/ao-vivo", icon: "🔴", label: "Ao Vivo" },
+          { href: "/categoria/gaming", icon: "🎮", label: "Gaming" },
+          { href: "/categoria/musica", icon: "🎵", label: "Música" },
+          { href: "/categoria/futebol", icon: "⚽", label: "Futebol" },
+          { href: "/radio", icon: "📻", label: "Rádio" },
+          { href: "/torneios", icon: "🏆", label: "Torneios" },
+          { href: "/leaderboard", icon: "📊", label: "Leaderboard" },
+        ].map((item) => (
+          <button key={item.href} onClick={() => navigate(item.href)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm hover:bg-muted transition-colors text-left">
+            <span>{item.icon}</span><span>{item.label}</span>
+          </button>
+        ))}
+
+        {isAuthenticated && (
+          <>
+            <div className="pt-2 pb-1"><p className="px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">A minha conta</p></div>
+            {[
+              { href: "/", icon: "👤", label: "O meu canal" },
+              { href: "/feed", icon: "🏠", label: "Feed" },
+              { href: "/mensagens", icon: "💬", label: "Mensagens" },
+              { href: "/notificacoes", icon: "🔔", label: "Notificações" },
+              { href: "/wallet", icon: "💰", label: "Carteira" },
+              { href: "/dashboard", icon: "🎛️", label: "Dashboard" },
+              { href: "/definicoes", icon: "⚙️", label: "Definições" },
+            ].map((item) => (
+              <button key={item.href} onClick={() => navigate(item.href === "/" && user?.username ? `/${user.username}` : item.href)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm hover:bg-muted transition-colors text-left">
+                <span>{item.icon}</span><span>{item.label}</span>
+              </button>
+            ))}
+          </>
+        )}
+      </nav>
+
+      {isAuthenticated && (
+        <div className="p-3 border-t">
+          <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm text-destructive hover:bg-destructive/10 transition-colors">
+            <LogOut className="w-4 h-4" />Terminar sessão
+          </button>
+        </div>
+      )}
+    </div>
   )
 }

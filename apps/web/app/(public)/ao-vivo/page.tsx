@@ -1,142 +1,142 @@
-'use client'
+"use client"
 
-import * as React from 'react'
-import { Navbar } from '@/components/navbar'
-import { StreamCard } from '@/components/stream-card'
-import { CategoryPill, ALL_CATEGORIES } from '@/components/category-pill'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Button } from '@/components/ui/button'
-import { streamService } from '@/lib/services'
-import { Radio } from 'lucide-react'
+import { useEffect, useState, useCallback } from "react"
+import { api } from "@/lib/api"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Eye, Radio, RefreshCw } from "lucide-react"
 
-interface LiveStream {
+interface Stream {
     id: string
     title: string
-    category?: string
+    category: string
     viewerCount: number
     thumbnailUrl?: string
-    streamer: {
-        id: string
-        displayName?: string
-        username?: string
-        avatarUrl?: string
-    }
+    streamer: { id: string; username: string; displayName: string; avatarUrl?: string }
 }
 
-export default function StreamsPage() {
-    const [streams, setStreams] = React.useState<LiveStream[]>([])
-    const [loading, setLoading] = React.useState(true)
-    const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null)
+const CATEGORY_FILTERS = [
+    { slug: "", label: "Todos" },
+    { slug: "gaming", label: "🎮 Gaming" },
+    { slug: "musica", label: "🎵 Música" },
+    { slug: "futebol", label: "⚽ Futebol" },
+    { slug: "just-talking", label: "💬 Just Talking" },
+    { slug: "irl", label: "📍 IRL" },
+    { slug: "comedia", label: "😂 Comédia" },
+    { slug: "tech", label: "💻 Tech" },
+    { slug: "radio", label: "📻 Rádio" },
+]
 
-    React.useEffect(() => {
-        const fetchStreams = async () => {
-            try {
-                const res = await streamService.getLive(1, 50, selectedCategory || undefined)
-                setStreams(res.data.streams || res.data || [])
-            } catch (err) {
-                console.error('Erro ao carregar streams:', err)
-            } finally {
-                setLoading(false)
-            }
+export default function AoVivoPage() {
+    const [streams, setStreams] = useState<Stream[]>([])
+    const [loading, setLoading] = useState(true)
+    const [filter, setFilter] = useState("")
+    const [refreshing, setRefreshing] = useState(false)
+
+    const fetchStreams = useCallback(async (silent = false) => {
+        if (!silent) setLoading(true)
+        else setRefreshing(true)
+        try {
+            const res = await api.get("/api/streams/live")
+            setStreams(res.data?.streams || res.data || [])
+        } catch {
+            setStreams([])
+        } finally {
+            setLoading(false); setRefreshing(false)
         }
-        fetchStreams()
-        const interval = setInterval(fetchStreams, 30000)
+    }, [])
+
+    useEffect(() => { fetchStreams() }, [fetchStreams])
+    useEffect(() => {
+        const interval = setInterval(() => fetchStreams(true), 30_000)
         return () => clearInterval(interval)
-    }, [selectedCategory])
+    }, [fetchStreams])
+
+    const filtered = filter ? streams.filter((s) => s.category?.toLowerCase() === filter) : streams
+    const totalViewers = filtered.reduce((acc, s) => acc + (s.viewerCount || 0), 0)
 
     return (
-        <div className="min-h-dvh bg-background pb-mobile-nav">
-            <Navbar />
-
-            <div className="max-w-7xl mx-auto px-4 md:px-6 pt-20 md:pt-24 pb-12">
-                {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
-                        Streams Ao Vivo
-                    </h1>
-                    <p className="text-muted-foreground">
-                        Descobre o que está a acontecer na comunidade angolana agora mesmo.
+        <div className="max-w-screen-xl mx-auto px-4 py-6">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <Radio className="w-5 h-5 text-[#CE1126]" />
+                        <h1 className="text-2xl font-bold">Ao Vivo</h1>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                        {filtered.length} stream{filtered.length !== 1 ? "s" : ""} ao vivo · {totalViewers > 999 ? `${(totalViewers / 1000).toFixed(1)}k` : totalViewers} viewer{totalViewers !== 1 ? "s" : ""}
                     </p>
                 </div>
+                <Button variant="ghost" size="icon" onClick={() => fetchStreams(true)} disabled={refreshing}>
+                    <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+                </Button>
+            </div>
 
-                {/* Category Filters — horizontal scroll on mobile */}
-                <div className="mb-8">
-                    <div className="scroll-tabs gap-2 pb-2">
-                        <CategoryPill
-                            category="Todos"
-                            active={selectedCategory === null}
-                            onClick={() => setSelectedCategory(null)}
-                        />
-                        {ALL_CATEGORIES.map((cat) => (
-                            <CategoryPill
-                                key={cat}
-                                category={cat}
-                                active={selectedCategory === cat}
-                                onClick={() => setSelectedCategory(cat === selectedCategory ? null : cat)}
-                            />
-                        ))}
-                    </div>
+            {/* Category filters */}
+            <div className="flex flex-wrap gap-2 mb-6">
+                {CATEGORY_FILTERS.map((cat) => (
+                    <button key={cat.slug} onClick={() => setFilter(cat.slug)}
+                        className={`px-3 py-1.5 rounded-full text-sm transition-colors border ${filter === cat.slug ? "border-primary bg-primary/10 text-primary font-medium" : "border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground"}`}>
+                        {cat.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Content */}
+            {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {Array(8).fill(0).map((_, i) => (
+                        <div key={i} className="rounded-xl border border-border/50 overflow-hidden">
+                            <Skeleton className="aspect-video" />
+                            <div className="p-3 flex gap-2.5"><Skeleton className="w-8 h-8 rounded-full shrink-0" /><div className="flex-1 space-y-2"><Skeleton className="h-3 w-3/4" /><Skeleton className="h-3 w-1/2" /></div></div>
+                        </div>
+                    ))}
                 </div>
-
-                {/* Stream Grid */}
-                {loading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-                        {Array.from({ length: 8 }).map((_, i) => (
-                            <div key={i} className="rounded-2xl card-surface overflow-hidden">
-                                <Skeleton className="aspect-video w-full" />
-                                <div className="p-4 space-y-3">
-                                    <div className="flex gap-3">
-                                        <Skeleton className="h-8 w-8 rounded-full" />
-                                        <div className="space-y-2 flex-1">
-                                            <Skeleton className="h-3 w-3/4" />
-                                            <Skeleton className="h-2.5 w-1/2" />
+            ) : filtered.length === 0 ? (
+                <div className="text-center py-20">
+                    <p className="text-4xl mb-4">📺</p>
+                    <p className="font-medium text-lg mb-2">{filter ? "Nenhum stream nesta categoria" : "Nenhum stream ao vivo"}</p>
+                    <p className="text-sm text-muted-foreground mb-6">{filter ? "Tenta outra categoria ou volta mais tarde" : "Sê o primeiro a transmitir!"}</p>
+                    {filter && <Button variant="outline" onClick={() => setFilter("")}>Ver todos</Button>}
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {filtered.map((stream) => (
+                        <Link key={stream.id} href={`/stream/${stream.streamer?.username || stream.id}`}>
+                            <div className="group rounded-xl overflow-hidden border border-border/50 hover:border-primary/50 transition-all bg-card">
+                                <div className="relative aspect-video bg-muted">
+                                    {stream.thumbnailUrl ? (
+                                        <img src={stream.thumbnailUrl} alt={stream.title} className="w-full h-full object-cover group-hover:brightness-110 transition-all" />
+                                    ) : (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-muted">
+                                            <span className="text-4xl opacity-60">{stream.category === "gaming" ? "🎮" : stream.category === "musica" ? "🎵" : "📺"}</span>
                                         </div>
+                                    )}
+                                    <Badge className="absolute top-2 left-2 bg-[#CE1126] text-white text-[10px] px-1.5 py-0.5 font-bold">AO VIVO</Badge>
+                                    <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/70 backdrop-blur-sm rounded px-1.5 py-0.5">
+                                        <Eye className="w-3 h-3 text-white" /><span className="text-white text-[10px] font-medium">{stream.viewerCount > 999 ? `${(stream.viewerCount / 1000).toFixed(1)}k` : stream.viewerCount}</span>
                                     </div>
-                                    <Skeleton className="h-5 w-20 rounded-full" />
+                                </div>
+                                <div className="p-3 flex gap-2.5">
+                                    <Avatar className="w-8 h-8 shrink-0 mt-0.5">
+                                        <AvatarImage src={stream.streamer?.avatarUrl} />
+                                        <AvatarFallback className="text-xs bg-primary/20 text-primary">{stream.streamer?.displayName?.slice(0, 2)}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-medium truncate">{stream.title}</p>
+                                        <p className="text-xs text-muted-foreground truncate mt-0.5">{stream.streamer?.displayName}</p>
+                                        <Badge variant="secondary" className="text-[10px] mt-1.5 px-1.5">{stream.category}</Badge>
+                                    </div>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                ) : streams.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-24 text-center">
-                        <div className="w-20 h-20 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-6">
-                            <Radio className="h-9 w-9 text-primary/60" />
-                        </div>
-                        <h3 className="text-xl font-bold mb-2">
-                            {selectedCategory ? `Nenhuma live de ${selectedCategory}` : 'Nenhuma live agora'}
-                        </h3>
-                        <p className="text-muted-foreground text-sm mb-6 max-w-sm">
-                            {selectedCategory
-                                ? `Ainda não há streams nesta categoria. Experimenta outra ou volta mais tarde!`
-                                : 'Sê o primeiro a transmitir para a comunidade angolana! 🇦🇴'}
-                        </p>
-                        {selectedCategory && (
-                            <Button
-                                variant="outline"
-                                className="rounded-xl"
-                                onClick={() => setSelectedCategory(null)}
-                            >
-                                Ver todas as categorias
-                            </Button>
-                        )}
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-                        {streams.map((stream) => (
-                            <StreamCard
-                                key={stream.id}
-                                id={stream.id}
-                                title={stream.title}
-                                thumbnailUrl={stream.thumbnailUrl}
-                                category={stream.category}
-                                viewerCount={stream.viewerCount}
-                                streamer={stream.streamer}
-                                isLive
-                            />
-                        ))}
-                    </div>
-                )}
-            </div>
+                        </Link>
+                    ))}
+                </div>
+            )}
         </div>
     )
 }
