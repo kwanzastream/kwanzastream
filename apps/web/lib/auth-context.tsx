@@ -1,28 +1,38 @@
 "use client"
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect, useCallback } from "react"
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  type ReactNode,
+} from "react"
 import api from "./api"
 
-interface User {
+export type UserRole = "USER" | "STREAMER" | "ADMIN"
+
+export interface AuthUser {
   id: string
-  phone: string
+  username: string
+  displayName: string
   email?: string
-  username?: string
-  displayName?: string
+  phone?: string
   avatarUrl?: string
-  avatar?: string
+  avatar?: string // backward compat alias for avatarUrl
+  bannerUrl?: string
   bio?: string
-  role: string
+  role: UserRole
   isVerified: boolean
+  emailVerified: boolean
+  kycTier: number
+  balance: number
+  interests: string[]
+  streamKey?: string
   isBanned?: boolean
   banReason?: string
-  emailVerified?: boolean
   onboardingCompleted?: boolean
-  balance: number
-  streamKey?: string
-  createdAt: string
-  // Extended fields populated by profile/dashboard endpoints
+  createdAt?: string
   followers?: number
   following?: number
   location?: string
@@ -30,73 +40,113 @@ interface User {
 }
 
 interface AuthContextType {
-  user: User | null
-  isLoggedIn: boolean
+  user: AuthUser | null
   isLoading: boolean
-  requestOtp: (phone: string, termsAccepted?: boolean, ageConfirmed?: boolean) => Promise<{ isNewUser: boolean; code?: string }>
-  verifyOtp: (phone: string, code: string) => Promise<void>
+  isAuthenticated: boolean
+  isLoggedIn: boolean // backward compat alias
+  login: (credentials: LoginCredentials) => Promise<void>
+  loginWithOtp: (phone: string, code: string) => Promise<void>
+  requestOtp: (phone: string) => Promise<void>
+  register: (data: RegisterData) => Promise<void>
   logout: () => Promise<void>
-  updateProfile: (data: Partial<User>) => Promise<void>
   refreshUser: () => Promise<void>
+  updateUser: (data: Partial<AuthUser>) => void
+  updateProfile: (data: Partial<AuthUser>) => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+interface LoginCredentials {
+  email?: string
+  phone?: string
+  password?: string
+}
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+interface RegisterData {
+  username: string
+  displayName?: string
+  email?: string
+  phone?: string
+  password?: string
+  dateOfBirth: string
+  interests?: string[]
+}
+
+const AuthContext = createContext<AuthContextType | null>(null)
+
+function setTokenCookie(token: string) {
+  document.cookie = `ks_token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
+}
+
+function clearTokenCookie() {
+  document.cookie = "ks_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
+}
+
+function storeToken(token: string) {
+  localStorage.setItem("ks_token", token)
+  setTokenCookie(token)
+}
+
+function clearToken() {
+  localStorage.removeItem("ks_token")
+  clearTokenCookie()
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Fetch current user from API (uses httpOnly cookie automatically)
   const refreshUser = useCallback(async () => {
     try {
-      const response = await api.get('/api/auth/me')
-      setUser(response.data.user)
-    } catch (error) {
-      // 401 = not authenticated or expired cookie
+      const res = await api.get("/api/auth/me")
+      setUser(res.data.user)
+    } catch {
       setUser(null)
     }
   }, [])
 
-  // Check auth on mount
   useEffect(() => {
-    const initAuth = async () => {
-      setIsLoading(true)
-      await refreshUser()
-      setIsLoading(false)
-    }
-    initAuth()
+    refreshUser().finally(() => setIsLoading(false))
   }, [refreshUser])
 
-  // Request OTP
-  const requestOtp = async (phone: string, termsAccepted?: boolean, ageConfirmed?: boolean) => {
-    const response = await api.post('/api/auth/request-otp', { phone, termsAccepted, ageConfirmed })
-    return {
-      isNewUser: response.data.isNewUser,
-      code: response.data.code, // Only in development
-    }
+  const login = async (credentials: LoginCredentials) => {
+    const res = await api.post("/api/auth/login", credentials)
+    const { accessToken, user: userData } = res.data
+    if (accessToken) storeToken(accessToken)
+    setUser(userData)
   }
 
-  // Verify OTP and login — server sets httpOnly cookies automatically
-  const verifyOtp = async (phone: string, code: string) => {
-    const response = await api.post('/api/auth/verify-otp', { phone, code })
-    // No need to store tokens — httpOnly cookies are set by the server
-    setUser(response.data.user)
+  const requestOtp = async (phone: string) => {
+    await api.post("/api/auth/request-otp", { phone })
   }
 
-  // Logout — server clears httpOnly cookies
+  const loginWithOtp = async (phone: string, code: string) => {
+    const res = await api.post("/api/auth/verify-otp", { phone, code })
+    const { accessToken, user: userData } = res.data
+    if (accessToken) storeToken(accessToken)
+    setUser(userData)
+  }
+
+  const register = async (data: RegisterData) => {
+    const res = await api.post("/api/auth/register", data)
+    const { accessToken, user: userData } = res.data
+    if (accessToken) storeToken(accessToken)
+    setUser(userData)
+  }
+
   const logout = async () => {
     try {
-      await api.post('/api/auth/logout')
-    } catch (error) {
-      console.error('Logout error:', error)
+      await api.post("/api/auth/logout")
     } finally {
       setUser(null)
+      clearToken()
     }
   }
 
-  // Update profile
-  const updateProfile = async (data: Partial<User>) => {
-    const response = await api.put('/api/users/me', data)
+  const updateUser = (data: Partial<AuthUser>) => {
+    setUser((prev) => (prev ? { ...prev, ...data } : null))
+  }
+
+  const updateProfile = async (data: Partial<AuthUser>) => {
+    const response = await api.put("/api/users/me", data)
     setUser(response.data.user)
   }
 
@@ -104,13 +154,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        isLoggedIn: !!user,
         isLoading,
+        isAuthenticated: !!user,
+        isLoggedIn: !!user,
+        login,
+        loginWithOtp,
         requestOtp,
-        verifyOtp,
+        register,
         logout,
-        updateProfile,
         refreshUser,
+        updateUser,
+        updateProfile,
       }}
     >
       {children}
@@ -119,9 +173,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error("useAuth deve ser usado dentro de AuthProvider")
-  }
-  return context
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider")
+  return ctx
 }

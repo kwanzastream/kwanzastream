@@ -1,86 +1,98 @@
-import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
+import axios from "axios"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 
-// ============== Cookie-based Auth ==============
-// Tokens are stored in httpOnly cookies (set by the server).
-// JavaScript NEVER has access to tokens — this prevents XSS token theft.
-// The browser sends cookies automatically with every request.
-
-// Create axios instance with credentials (sends cookies automatically)
-const api: AxiosInstance = axios.create({
+export const api = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 30000,
-    withCredentials: true, // CRITICAL: sends httpOnly cookies with every request
+    timeout: 15000,
+    withCredentials: true,
     headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
     },
-});
+})
 
-// Response interceptor - handle token refresh via cookies
-let isRefreshing = false;
+// Attach Bearer token from localStorage (dual: cookie + header)
+api.interceptors.request.use((config) => {
+    if (typeof window !== "undefined") {
+        const token = localStorage.getItem("ks_token")
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`
+        }
+    }
+    return config
+})
+
+// Queue-based 401 refresh
+let isRefreshing = false
 let failedQueue: Array<{
-    resolve: (value?: unknown) => void;
-    reject: (reason?: unknown) => void;
-}> = [];
+    resolve: (value?: unknown) => void
+    reject: (reason?: unknown) => void
+}> = []
 
 const processQueue = (error: unknown) => {
     failedQueue.forEach((prom) => {
-        if (error) {
-            prom.reject(error);
-        } else {
-            prom.resolve();
-        }
-    });
-    failedQueue = [];
-};
+        if (error) prom.reject(error)
+        else prom.resolve()
+    })
+    failedQueue = []
+}
 
 api.interceptors.response.use(
-    (response: AxiosResponse) => response,
+    (response) => response,
     async (error) => {
-        const originalRequest = error.config;
+        const originalRequest = error.config
 
-        // If 401, try to refresh via cookie-based endpoint
         if (error.response?.status === 401 && !originalRequest._retry) {
             if (isRefreshing) {
-                // Queue this request while refreshing
                 return new Promise((resolve, reject) => {
-                    failedQueue.push({ resolve, reject });
+                    failedQueue.push({ resolve, reject })
                 })
-                    .then(() => {
-                        // Retry with cookies (no token header needed)
-                        return api(originalRequest);
-                    })
-                    .catch((err) => Promise.reject(err));
+                    .then(() => api(originalRequest))
+                    .catch((err) => Promise.reject(err))
             }
 
-            originalRequest._retry = true;
-            isRefreshing = true;
+            originalRequest._retry = true
+            isRefreshing = true
 
             try {
-                // Refresh endpoint reads refresh_token from cookie
-                await axios.post(`${API_BASE_URL}/api/auth/refresh`, {}, {
-                    withCredentials: true,
-                });
+                const res = await axios.post(
+                    `${API_BASE_URL}/api/auth/refresh`,
+                    {},
+                    { withCredentials: true }
+                )
 
-                processQueue(null);
-
-                // Retry original request (new access_token cookie is set)
-                return api(originalRequest);
-            } catch (refreshError) {
-                processQueue(refreshError);
-                // Redirect to auth page on refresh failure — but NOT if already there (avoids infinite loop)
-                if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
-                    window.location.href = '/auth';
+                // If server returns a new access token, store it
+                const newToken = res.data?.accessToken
+                if (newToken && typeof window !== "undefined") {
+                    localStorage.setItem("ks_token", newToken)
+                    document.cookie = `ks_token=${newToken}; path=/; max-age=${60 * 60 * 24 * 7}`
+                    originalRequest.headers.Authorization = `Bearer ${newToken}`
                 }
-                return Promise.reject(refreshError);
+
+                processQueue(null)
+                return api(originalRequest)
+            } catch (refreshError) {
+                processQueue(refreshError)
+                if (typeof window !== "undefined") {
+                    localStorage.removeItem("ks_token")
+                    document.cookie = "ks_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
+                    if (
+                        !window.location.pathname.startsWith("/entrar") &&
+                        !window.location.pathname.startsWith("/registar") &&
+                        !window.location.pathname.startsWith("/auth")
+                    ) {
+                        window.location.href = "/entrar"
+                    }
+                }
+                return Promise.reject(refreshError)
             } finally {
-                isRefreshing = false;
+                isRefreshing = false
             }
         }
 
-        return Promise.reject(error);
+        return Promise.reject(error)
     }
-);
+)
 
-export default api;
+// Backward compat default export
+export default api

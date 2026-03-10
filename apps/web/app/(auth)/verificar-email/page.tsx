@@ -1,11 +1,11 @@
 "use client"
 
-import * as React from "react"
-import { Suspense } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Card, CardContent } from "@/components/ui/card"
+import { api } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, XCircle, Loader2, Mail } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Loader2, Check, X } from "lucide-react"
 import Link from "next/link"
 
 function VerificarEmailContent() {
@@ -13,83 +13,54 @@ function VerificarEmailContent() {
     const router = useRouter()
     const token = searchParams.get("token")
 
-    const [status, setStatus] = React.useState<"loading" | "success" | "error">("loading")
-    const [message, setMessage] = React.useState("")
+    const [status, setStatus] = useState<"loading" | "success" | "error" | "idle">(
+        token ? "loading" : "idle"
+    )
 
-    React.useEffect(() => {
-        if (!token) {
-            setStatus("error")
-            setMessage("Token de verificação não encontrado.")
-            return
-        }
-
-        const verify = async () => {
-            try {
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-                const res = await fetch(`${apiUrl}/api/auth/verify-email`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ token }),
-                })
-
-                const data = await res.json()
-
-                if (res.ok && data.success) {
-                    setStatus("success")
-                    setMessage(data.message || "Email verificado com sucesso!")
-                } else {
-                    setStatus("error")
-                    setMessage(data.error || "Token inválido ou expirado.")
-                }
-            } catch {
-                setStatus("error")
-                setMessage("Erro de ligação. Tenta novamente.")
-            }
-        }
-
-        verify()
+    useEffect(() => {
+        if (!token) return
+        api
+            .post("/api/auth/verify-email", { token })
+            .then(() => setStatus("success"))
+            .catch(() => setStatus("error"))
     }, [token])
 
     return (
-        <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
-            <Card className="w-full max-w-md border-white/10 bg-card/50 backdrop-blur">
-                <CardContent className="p-8 text-center space-y-6">
+        <div className="w-full max-w-md px-4">
+            <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold text-primary">Kwanza Stream</h1>
+            </div>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Verificação de email</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center space-y-4">
                     {status === "loading" && (
                         <>
-                            <Loader2 className="h-16 w-16 text-primary mx-auto animate-spin" />
-                            <h2 className="text-xl font-bold text-white">A verificar email...</h2>
-                            <p className="text-sm text-muted-foreground">Aguarda um momento.</p>
+                            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+                            <p className="text-sm text-muted-foreground">A verificar o teu email...</p>
                         </>
                     )}
-
                     {status === "success" && (
                         <>
-                            <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto">
-                                <CheckCircle2 className="h-10 w-10 text-green-400" />
+                            <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
+                                <Check className="w-6 h-6 text-green-500" />
                             </div>
-                            <h2 className="text-xl font-bold text-white">Email Verificado! ✅</h2>
-                            <p className="text-sm text-muted-foreground">{message}</p>
-                            <Link href="/feed">
-                                <Button className="w-full bg-primary hover:bg-primary/90 font-bold h-12">
-                                    Ir para o Feed
-                                </Button>
-                            </Link>
+                            <p className="text-sm">Email verificado com sucesso!</p>
+                            <Button className="w-full" onClick={() => router.push("/feed")}>Ir para o feed</Button>
                         </>
                     )}
-
                     {status === "error" && (
                         <>
-                            <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto">
-                                <XCircle className="h-10 w-10 text-red-400" />
+                            <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+                                <X className="w-6 h-6 text-destructive" />
                             </div>
-                            <h2 className="text-xl font-bold text-white">Verificação Falhou</h2>
-                            <p className="text-sm text-muted-foreground">{message}</p>
-                            <Link href="/auth">
-                                <Button variant="outline" className="w-full border-white/10 font-bold h-12">
-                                    Voltar ao Login
-                                </Button>
-                            </Link>
+                            <p className="text-sm text-muted-foreground">Link inválido ou expirado.</p>
+                            <Link href="/entrar"><Button variant="outline" className="w-full">Voltar para entrar</Button></Link>
                         </>
+                    )}
+                    {status === "idle" && (
+                        <p className="text-sm text-muted-foreground">Verifica o teu email para o link de confirmação.</p>
                     )}
                 </CardContent>
             </Card>
@@ -100,8 +71,8 @@ function VerificarEmailContent() {
 export default function VerificarEmailPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-                <Loader2 className="h-10 w-10 text-primary animate-spin" />
+            <div className="w-full max-w-md px-4 flex justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
         }>
             <VerificarEmailContent />
