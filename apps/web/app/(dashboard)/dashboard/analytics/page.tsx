@@ -1,211 +1,109 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import { Navbar } from '@/components/navbar'
-import { StatCard } from '@/components/stat-card'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useAuth } from '@/lib/auth-context'
-import { useRouter } from 'next/navigation'
-import {
-    BarChart3, Eye, Users, Clock, TrendingUp, ArrowLeft,
-    Calendar
-} from 'lucide-react'
+import { useEffect, useState } from "react"
+import { api } from "@/lib/api"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
+import { Users, Eye, Zap, Clock } from "lucide-react"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+export default function AnalyticsPage() {
+  const [period, setPeriod] = useState("30d")
+  const [stats, setStats] = useState<any>(null)
+  const [earningsChart, setEarningsChart] = useState<any[]>([])
+  const [followerGrowth, setFollowerGrowth] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-export default function StudioAnalyticsPage() {
-    const { user, isLoggedIn, isLoading } = useAuth()
-    const router = useRouter()
-    const [period, setPeriod] = useState<'7' | '30' | '90'>('7')
-    const [stats, setStats] = useState<any>(null)
-    const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    setLoading(true)
+    Promise.allSettled([
+      api.get("/api/creator/stats"),
+      api.get(`/api/creator/earnings-chart?period=${period}`),
+      api.get(`/api/creator/followers/growth?period=${period}`),
+    ]).then(([statsRes, earningsRes, followersRes]) => {
+      if (statsRes.status === "fulfilled") setStats(statsRes.value.data)
+      if (earningsRes.status === "fulfilled") setEarningsChart(earningsRes.value.data?.chart || earningsRes.value.data || [])
+      if (followersRes.status === "fulfilled") setFollowerGrowth(followersRes.value.data?.growth || followersRes.value.data || [])
+    }).finally(() => setLoading(false))
+  }, [period])
 
-    useEffect(() => {
-        if (!isLoading && !isLoggedIn) router.push('/auth')
-    }, [isLoggedIn, isLoading, router])
+  const formatKz = (val: number) => `${(val / 100).toLocaleString("pt-AO")} Kz`
 
-    useEffect(() => {
-        const fetchAnalytics = async () => {
-            try {
-                const token = localStorage.getItem('token')
-                const res = await fetch(`${API_URL}/api/creator/stats`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                    credentials: 'include',
-                })
-                if (res.ok) setStats(await res.json())
-            } catch (err) {
-                console.error('Erro ao carregar analytics:', err)
-            } finally {
-                setLoading(false)
-            }
-        }
-        if (isLoggedIn) fetchAnalytics()
-    }, [isLoggedIn, period])
+  return (
+    <div className="max-w-6xl space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold">Analytics</h1>
+        <Select value={period} onValueChange={setPeriod}><SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="7d">Últimos 7 dias</SelectItem><SelectItem value="30d">Últimos 30 dias</SelectItem><SelectItem value="90d">Últimos 3 meses</SelectItem></SelectContent></Select>
+      </div>
 
-    if (isLoading || !isLoggedIn) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-background">
-                <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary/20 border-t-primary" />
-            </div>
-        )
-    }
-
-    return (
-        <div className="min-h-dvh bg-background pb-mobile-nav">
-            <Navbar />
-            <div className="max-w-6xl mx-auto px-4 md:px-6 pt-20 md:pt-24 pb-12">
-                {/* Header */}
-                <div className="flex items-center gap-4 mb-8">
-                    <Button variant="ghost" size="icon" onClick={() => router.push('/studio')} className="rounded-xl">
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Analytics</h1>
-                        <p className="text-sm text-muted-foreground">Acompanha o desempenho do teu canal</p>
-                    </div>
-                </div>
-
-                {/* Period Selector */}
-                <Tabs value={period} onValueChange={(v) => setPeriod(v as any)} className="mb-8">
-                    <TabsList className="bg-surface-1 border border-border rounded-xl">
-                        <TabsTrigger value="7" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white text-xs">
-                            7 dias
-                        </TabsTrigger>
-                        <TabsTrigger value="30" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white text-xs">
-                            30 dias
-                        </TabsTrigger>
-                        <TabsTrigger value="90" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white text-xs">
-                            90 dias
-                        </TabsTrigger>
-                    </TabsList>
-                </Tabs>
-
-                {/* KPI Grid */}
-                {loading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                        {[1, 2, 3, 4].map(i => (
-                            <div key={i} className="p-5 rounded-2xl card-surface space-y-3">
-                                <Skeleton className="h-10 w-10 rounded-xl" />
-                                <Skeleton className="h-8 w-24" />
-                                <Skeleton className="h-3 w-16" />
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                        <StatCard
-                            icon={<Eye className="h-5 w-5" />}
-                            label="Total de Viewers"
-                            value={stats?.data?.totalViewers?.toLocaleString('pt-AO') || '0'}
-                            trend={{ value: '+12%', direction: 'up' }}
-                            accentColor="bg-primary/10"
-                            iconColor="text-primary"
-                        />
-                        <StatCard
-                            icon={<Clock className="h-5 w-5" />}
-                            label="Horas Assistidas"
-                            value={stats?.data?.totalHoursWatched?.toFixed(1) || '0'}
-                            trend={{ value: '+8%', direction: 'up' }}
-                            accentColor="bg-secondary/10"
-                            iconColor="text-secondary"
-                        />
-                        <StatCard
-                            icon={<Users className="h-5 w-5" />}
-                            label="Novos Seguidores"
-                            value={stats?.data?.newFollowers?.toLocaleString('pt-AO') || '0'}
-                            trend={{ value: '+23%', direction: 'up' }}
-                            accentColor="bg-accent/10"
-                            iconColor="text-accent"
-                        />
-                        <StatCard
-                            icon={<BarChart3 className="h-5 w-5" />}
-                            label="Pico de Viewers"
-                            value={stats?.data?.peakViewers?.toLocaleString('pt-AO') || '0'}
-                            trend={{ value: '+5%', direction: 'up' }}
-                            accentColor="bg-green-500/10"
-                            iconColor="text-green-400"
-                        />
-                    </div>
-                )}
-
-                {/* Charts Area */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    <Card className="card-surface rounded-2xl">
-                        <CardHeader>
-                            <CardTitle className="text-lg flex items-center gap-2">
-                                <TrendingUp className="h-5 w-5 text-primary" />
-                                Viewers por Dia
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
-                                {/* Placeholder para gráfico — integrar Recharts quando disponível */}
-                                <div className="flex items-end gap-1 h-32">
-                                    {Array.from({ length: Number(period) > 30 ? 30 : Number(period) }).map((_, i) => (
-                                        <div
-                                            key={i}
-                                            className="w-2 bg-primary/40 rounded-t hover:bg-primary transition-colors"
-                                            style={{ height: `${Math.random() * 100 + 20}%` }}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="card-surface rounded-2xl">
-                        <CardHeader>
-                            <CardTitle className="text-lg flex items-center gap-2">
-                                <Users className="h-5 w-5 text-accent" />
-                                Crescimento de Followers
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
-                                <div className="flex items-end gap-1 h-32">
-                                    {Array.from({ length: Number(period) > 30 ? 30 : Number(period) }).map((_, i) => (
-                                        <div
-                                            key={i}
-                                            className="w-2 bg-accent/40 rounded-t hover:bg-accent transition-colors"
-                                            style={{ height: `${Math.min(100, (i / Number(period)) * 100 + Math.random() * 30)}%` }}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Top Categories */}
-                <Card className="card-surface rounded-2xl">
-                    <CardHeader>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                            <Calendar className="h-5 w-5 text-secondary" />
-                            Top Categorias por Performance
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-3">
-                            {['Gaming', 'Música', 'Conversa & IRL', 'Kuduro'].map((cat, i) => (
-                                <div key={cat} className="flex items-center gap-4 p-3 rounded-xl hover:surface-3 transition-colors">
-                                    <span className="text-xl font-bold text-muted-foreground w-8">#{i + 1}</span>
-                                    <div className="flex-1">
-                                        <p className="font-semibold text-sm">{cat}</p>
-                                        <p className="text-xs text-muted-foreground">{Math.floor(Math.random() * 500 + 100)} viewers médios</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-sm font-bold text-primary">{Math.floor(Math.random() * 20 + 5)}h</p>
-                                        <p className="text-[10px] text-muted-foreground">streaming</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+      {loading ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: "Seguidores", value: stats?.totalFollowers ?? 0, icon: Users, format: (v: number) => v.toLocaleString("pt-AO") },
+            { label: "Total Views", value: stats?.totalViewers ?? 0, icon: Eye, format: (v: number) => v.toLocaleString("pt-AO") },
+            { label: "Ganhos totais", value: stats?.totalEarnings ?? 0, icon: Zap, format: formatKz },
+            { label: "Streams", value: stats?.totalStreams ?? 0, icon: Clock, format: (v: number) => v.toLocaleString("pt-AO") },
+          ].map((card) => (
+            <Card key={card.label} className="border-border/50">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center justify-between mb-2"><p className="text-xs text-muted-foreground">{card.label}</p><card.icon className="w-4 h-4 text-muted-foreground" /></div>
+                <p className="text-xl font-bold">{card.format(card.value)}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
-    )
+      )}
+
+      <Tabs defaultValue="ganhos">
+        <TabsList><TabsTrigger value="ganhos">Ganhos</TabsTrigger><TabsTrigger value="seguidores">Seguidores</TabsTrigger></TabsList>
+
+        <TabsContent value="ganhos">
+          <Card className="border-border/50">
+            <CardHeader><CardTitle className="text-base">Ganhos (Salos recebidos)</CardTitle></CardHeader>
+            <CardContent>
+              {loading ? <Skeleton className="h-64 w-full" /> : earningsChart.length === 0 ? (
+                <div className="h-64 flex items-center justify-center"><p className="text-sm text-muted-foreground">Sem dados para este período</p></div>
+              ) : (
+                <ResponsiveContainer width="100%" height={250}>
+                  <AreaChart data={earningsChart}>
+                    <defs><linearGradient id="colorEarnings" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#CE1126" stopOpacity={0.3} /><stop offset="95%" stopColor="#CE1126" stopOpacity={0} /></linearGradient></defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11 }} tickLine={false} tickFormatter={(v) => `${(v / 100).toLocaleString("pt-AO")}Kz`} />
+                    <Tooltip formatter={(v: number) => [formatKz(v), "Ganhos"]} />
+                    <Area type="monotone" dataKey="amount" stroke="#CE1126" strokeWidth={2} fill="url(#colorEarnings)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="seguidores">
+          <Card className="border-border/50">
+            <CardHeader><CardTitle className="text-base">Crescimento de seguidores</CardTitle></CardHeader>
+            <CardContent>
+              {loading ? <Skeleton className="h-64 w-full" /> : followerGrowth.length === 0 ? (
+                <div className="h-64 flex items-center justify-center"><p className="text-sm text-muted-foreground">Sem dados para este período</p></div>
+              ) : (
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={followerGrowth}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11 }} tickLine={false} />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="#CE1126" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
 }
