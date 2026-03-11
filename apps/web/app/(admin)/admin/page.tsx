@@ -1,409 +1,54 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts'
-import {
-  Users,
-  TrendingUp,
-  DollarSign,
-  Eye,
-  AlertCircle,
-  Settings,
-  LogOut,
-  Filter,
-  Search,
-  Radio,
-  Shield,
-  ChevronRight,
-} from 'lucide-react'
-import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useEffect, useState } from "react"
+import { api } from "@/lib/api"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Button } from "@/components/ui/button"
+import { Users, Radio, DollarSign, AlertTriangle, RefreshCw } from "lucide-react"
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import Link from "next/link"
 
+export default function AdminPage() {
+  const [stats, setStats] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
-// Mock data
-const dashboardStats = {
-  totalUsers: 15234,
-  activeCreators: 892,
-  totalRevenue: 52500000,
-  totalTransactions: 148734,
-  platformShare: 15750000,
-  creatorEarnings: 36750000,
-}
+  const fetchStats = async (silent = false) => {
+    if (!silent) setLoading(true); else setRefreshing(true)
+    try {
+      const [pRes, rRes] = await Promise.allSettled([api.get("/api/analytics/platform"), api.get("/api/analytics/revenue")])
+      const p = pRes.status === "fulfilled" ? pRes.value.data : {}
+      const r = rRes.status === "fulfilled" ? rRes.value.data : {}
+      setStats({ ...p, ...r })
+    } catch {} finally { setLoading(false); setRefreshing(false) }
+  }
 
-const revenueData = [
-  { date: '01/Jan', revenue: 1200000, transactions: 340 },
-  { date: '02/Jan', revenue: 1890000, transactions: 521 },
-  { date: '03/Jan', revenue: 2390000, transactions: 654 },
-  { date: '04/Jan', revenue: 2490000, transactions: 712 },
-  { date: '05/Jan', revenue: 2000000, transactions: 589 },
-  { date: '06/Jan', revenue: 2181000, transactions: 698 },
-  { date: '07/Jan', revenue: 2500000, transactions: 745 },
-]
+  useEffect(() => { fetchStats(); const t = setInterval(() => fetchStats(true), 60000); return () => clearInterval(t) }, [])
 
-const transactionBreakdown = [
-  { name: 'Salos', value: 60, color: '#ef4444' },
-  { name: 'Deposits', value: 25, color: '#3b82f6' },
-  { name: 'Withdrawals', value: 10, color: '#10b981' },
-  { name: 'Fees', value: 5, color: '#f59e0b' },
-]
+  const formatKz = (n: number) => `${((n || 0) / 100).toLocaleString("pt-AO")} Kz`
 
-const flaggedContent = [
-  {
-    id: 1,
-    creator: 'Ninja Angolano',
-    streamTitle: 'Gaming Tournament Ep. 5',
-    reason: 'Inappropriate language',
-    timestamp: '2 hours ago',
-    status: 'pending',
-  },
-  {
-    id: 2,
-    creator: 'DJ Beats',
-    streamTitle: 'Live DJ Set',
-    reason: 'Copyright complaint',
-    timestamp: '5 hours ago',
-    status: 'reviewed',
-  },
-  {
-    id: 3,
-    creator: 'Tech Talk',
-    streamTitle: 'Crypto Discussion',
-    reason: 'Potential scam content',
-    timestamp: '1 day ago',
-    status: 'resolved',
-  },
-]
-
-const topCreators = [
-  { id: 1, name: 'Ninja Angolano', earnings: 5200000, streams: 48, followers: 125000 },
-  { id: 2, name: 'Preto Show', earnings: 4800000, streams: 42, followers: 98000 },
-  { id: 3, name: 'DJ Anselmo', earnings: 3900000, streams: 35, followers: 87000 },
-  { id: 4, name: 'Tech Angola', earnings: 2100000, streams: 28, followers: 45000 },
-]
-
-export default function AdminDashboard() {
-  const [selectedTab, setSelectedTab] = useState<'overview' | 'moderation' | 'users' | 'analytics'>('overview')
-  const [searchQuery, setSearchQuery] = useState('')
-  const searchParams = useSearchParams()
+  const CARDS = [
+    { label: "Utilizadores totais", value: stats?.totalUsers?.toLocaleString("pt-AO") ?? "0", sub: `+${stats?.newUsersToday ?? 0} hoje`, icon: Users, color: "text-blue-400", href: "/admin/utilizadores" },
+    { label: "Streams ao vivo", value: stats?.liveStreams?.toLocaleString("pt-AO") ?? "0", sub: `${stats?.totalViewers?.toLocaleString("pt-AO") ?? 0} viewers`, icon: Radio, color: "text-[#CE1126]", href: "/admin/streams" },
+    { label: "Receita total", value: formatKz(stats?.totalRevenue ?? 0), sub: `${formatKz(stats?.revenueToday ?? 0)} hoje`, icon: DollarSign, color: "text-green-400", href: "/admin/pagamentos" },
+    { label: "Reports pendentes", value: stats?.pendingReports?.toLocaleString("pt-AO") ?? "0", sub: "a aguardar revisão", icon: AlertTriangle, color: (stats?.pendingReports ?? 0) > 0 ? "text-yellow-500" : "text-muted-foreground", href: "/admin/moderacao" },
+  ]
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-50 border-b border-white/10 bg-background/80 backdrop-blur">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div>
-            <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Platform management & analytics</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="icon" className="bg-transparent">
-              <Settings className="h-5 w-5" />
-            </Button>
-            <Button variant="outline" size="icon" className="bg-transparent">
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-1 border-t border-white/10 px-6">
-          {(['overview', 'moderation', 'users', 'analytics'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setSelectedTab(tab)}
-              className={`px-4 py-3 border-b-2 text-sm font-medium transition-colors ${selectedTab === tab
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
-        </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between"><div><h1 className="text-lg font-bold">Overview</h1><p className="text-xs text-muted-foreground">Estado da plataforma em tempo real</p></div><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => fetchStats(true)} disabled={refreshing}><RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} /></Button></div>
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        {CARDS.map((card) => loading ? <Skeleton key={card.label} className="h-24 rounded-xl" /> : (
+          <Link key={card.label} href={card.href}><Card className="border-border/50 hover:border-primary/30 transition-colors cursor-pointer h-24"><CardContent className="pt-3 pb-3"><div className="flex items-start justify-between"><p className="text-[11px] text-muted-foreground">{card.label}</p><card.icon className={`w-3.5 h-3.5 ${card.color}`} /></div><p className="text-xl font-bold mt-1.5">{card.value}</p><p className="text-[10px] text-muted-foreground mt-0.5">{card.sub}</p></CardContent></Card></Link>
+        ))}
       </div>
-
-      <div className="p-6 space-y-6">
-        {selectedTab === 'overview' && (
-          <>
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="border-white/10">
-                <CardContent className="pt-6">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Total Users</span>
-                      <Users className="h-4 w-4 text-primary" />
-                    </div>
-                    <p className="text-3xl font-bold">{dashboardStats.totalUsers.toLocaleString()}</p>
-                    <p className="text-xs text-emerald-400">+12% this month</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-white/10">
-                <CardContent className="pt-6">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Active Creators</span>
-                      <TrendingUp className="h-4 w-4 text-secondary" />
-                    </div>
-                    <p className="text-3xl font-bold">{dashboardStats.activeCreators.toLocaleString()}</p>
-                    <p className="text-xs text-emerald-400">+8% this month</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-white/10">
-                <CardContent className="pt-6">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Platform Revenue</span>
-                      <DollarSign className="h-4 w-4 text-emerald-400" />
-                    </div>
-                    <p className="text-3xl font-bold">
-                      {(dashboardStats.platformShare / 1000000).toFixed(1)}M
-                    </p>
-                    <p className="text-xs text-emerald-400">+15% this month</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-white/10">
-                <CardContent className="pt-6">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Total Transactions</span>
-                      <Eye className="h-4 w-4 text-amber-400" />
-                    </div>
-                    <p className="text-3xl font-bold">{(dashboardStats.totalTransactions / 1000).toFixed(0)}k</p>
-                    <p className="text-xs text-emerald-400">+22% this month</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="col-span-2 border-white/10">
-                <CardHeader>
-                  <CardTitle className="text-base">Revenue Trend</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={revenueData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                      <XAxis dataKey="date" stroke="rgba(255,255,255,0.5)" />
-                      <YAxis stroke="rgba(255,255,255,0.5)" />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)' }}
-                      />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="revenue"
-                        stroke="#ef4444"
-                        dot={false}
-                        name="Revenue (Kz)"
-                      />
-                      <Line type="monotone" dataKey="transactions" stroke="#3b82f6" dot={false} name="Transactions" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card className="border-white/10">
-                <CardHeader>
-                  <CardTitle className="text-base">Transaction Breakdown</CardTitle>
-                </CardHeader>
-                <CardContent className="flex items-center justify-center">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={transactionBreakdown}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        dataKey="value"
-                      >
-                        {transactionBreakdown.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Top Creators */}
-            <Card className="border-white/10">
-              <CardHeader>
-                <CardTitle className="text-base">Top Creators</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {topCreators.map((creator, index) => (
-                    <div key={creator.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-sm font-bold">
-                          {index + 1}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-sm">{creator.name}</p>
-                          <p className="text-xs text-muted-foreground">{creator.followers.toLocaleString()} followers</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-primary">{(creator.earnings / 1000000).toFixed(1)}M Kz</p>
-                        <p className="text-xs text-muted-foreground">{creator.streams} streams</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Admin Quick Navigation */}
-            <Card className="border-white/10">
-              <CardHeader>
-                <CardTitle className="text-base">Gestão Rápida</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {[
-                    { href: '/admin/users', icon: <Users className="h-5 w-5" />, label: 'Utilizadores', desc: 'Gerir contas e acessos', color: 'text-blue-400 bg-blue-500/10' },
-                    { href: '/admin/streams', icon: <Radio className="h-5 w-5" />, label: 'Streams', desc: 'Monitorizar lives', color: 'text-red-400 bg-red-500/10' },
-                    { href: '/admin/kyc', icon: <Shield className="h-5 w-5" />, label: 'KYC', desc: 'Verificações pendentes', color: 'text-amber-400 bg-amber-500/10' },
-                    { href: '/admin/settings', icon: <Settings className="h-5 w-5" />, label: 'Configurações', desc: 'Feature flags e taxas', color: 'text-purple-400 bg-purple-500/10' },
-                  ].map(item => (
-                    <Link key={item.href} href={item.href}
-                      className="flex items-center gap-4 p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all group">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.color}`}>
-                        {item.icon}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold">{item.label}</p>
-                        <p className="text-xs text-muted-foreground">{item.desc}</p>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-                    </Link>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </>
-        )}
-
-        {selectedTab === 'moderation' && (
-          <>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="search"
-                  placeholder="Search flagged content..."
-                  className="w-full pl-9 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-primary focus:border-transparent"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <Button variant="outline" size="sm" className="gap-2 bg-transparent">
-                <Filter className="h-4 w-4" />
-                Filter
-              </Button>
-            </div>
-
-            <Card className="border-white/10">
-              <CardHeader>
-                <CardTitle className="text-base">Flagged Content</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {flaggedContent.map((item) => (
-                    <div key={item.id} className="border border-white/10 rounded-lg p-4 space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-semibold">{item.streamTitle}</p>
-                          <p className="text-sm text-muted-foreground">by {item.creator}</p>
-                        </div>
-                        <Badge
-                          className={
-                            item.status === 'pending'
-                              ? 'bg-amber-500/20 text-amber-300'
-                              : item.status === 'reviewed'
-                                ? 'bg-blue-500/20 text-blue-300'
-                                : 'bg-emerald-500/20 text-emerald-300'
-                          }
-                        >
-                          {item.status}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <div>
-                          <p className="text-muted-foreground">
-                            <AlertCircle className="inline h-4 w-4 mr-2" />
-                            {item.reason}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">{item.timestamp}</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" className="bg-transparent">
-                            Review
-                          </Button>
-                          <Button size="sm" variant="outline" className="bg-red-500/10 text-red-400 hover:bg-red-500/20">
-                            Remove
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </>
-        )}
-
-        {selectedTab === 'users' && (
-          <Card className="border-white/10">
-            <CardHeader>
-              <CardTitle className="text-base">User Management</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">User management tools coming soon...</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {selectedTab === 'analytics' && (
-          <Card className="border-white/10">
-            <CardHeader>
-              <CardTitle className="text-base">Advanced Analytics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Detailed analytics coming soon...</p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      {!loading && stats?.revenueChart && stats.revenueChart.length > 0 && (
+        <Card className="border-border/50"><CardHeader className="pb-2 pt-4"><CardTitle className="text-sm">Receita — últimos 30 dias</CardTitle></CardHeader><CardContent>
+          <ResponsiveContainer width="100%" height={180}><AreaChart data={stats.revenueChart}><defs><linearGradient id="adminRevenue" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#CE1126" stopOpacity={0.3} /><stop offset="95%" stopColor="#CE1126" stopOpacity={0} /></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" /><XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} /><YAxis tick={{ fontSize: 10 }} tickLine={false} tickFormatter={(v) => `${(v / 100).toLocaleString("pt-AO")}Kz`} /><Tooltip formatter={(v: number) => [formatKz(v), "Receita"]} /><Area type="monotone" dataKey="amount" stroke="#CE1126" strokeWidth={2} fill="url(#adminRevenue)" /></AreaChart></ResponsiveContainer>
+        </CardContent></Card>
+      )}
+      <div className="grid grid-cols-3 gap-3">{[{ label: "Ver todos os streams ao vivo", href: "/admin/streams" }, { label: "Reports por resolver", href: "/admin/moderacao" }, { label: "Novos utilizadores hoje", href: "/admin/utilizadores" }].map((a) => <Link key={a.href} href={a.href}><div className="p-3 rounded-xl border border-border/50 hover:border-primary/30 hover:bg-muted/20 transition-all cursor-pointer"><p className="text-xs font-medium leading-snug">{a.label}</p></div></Link>)}</div>
     </div>
   )
 }
