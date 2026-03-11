@@ -1,433 +1,109 @@
-'use client'
+"use client"
 
-import * as React from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Wallet,
-  ArrowDownLeft,
-  ArrowUpRight,
-  Plus,
-  Minus,
-  TrendingUp,
-  TrendingDown,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  ArrowLeft,
-  CreditCard,
-  Smartphone,
-  Building2,
-  Gift,
-  AlertCircle,
-} from 'lucide-react'
-import { useAuth } from '@/lib/auth-context'
-import { walletService } from '@/lib/services'
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
+import { api } from "@/lib/api"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Skeleton } from "@/components/ui/skeleton"
+import { ArrowDownLeft, ArrowUpRight, Zap, AlertCircle, CheckCircle, Clock, Plus, Minus, RefreshCw, Shield } from "lucide-react"
+import Link from "next/link"
 
-interface WalletData {
-  balance: number
-  stats: { totalEarned: number; totalSpent: number }
-  recentTransactions: Transaction[]
-}
+interface Transaction { id: string; type: string; amount: number; status: string; reference?: string; createdAt: string }
 
-interface Transaction {
-  id: string
-  amount: number
-  type: string
-  status: string
-  description?: string
-  reference?: string
-  createdAt: string
-}
+const TX_ICONS: Record<string, any> = { DEPOSIT: ArrowDownLeft, WITHDRAWAL: ArrowUpRight, DONATION_SENT: Zap, DONATION_RECEIVED: Zap, REFUND: RefreshCw }
+const TX_COLORS: Record<string, string> = { DEPOSIT: "text-green-500", WITHDRAWAL: "text-red-400", DONATION_SENT: "text-yellow-500", DONATION_RECEIVED: "text-yellow-400", REFUND: "text-blue-400" }
+const TX_LABELS: Record<string, string> = { DEPOSIT: "Depósito", WITHDRAWAL: "Levantamento", DONATION_SENT: "Salos enviados", DONATION_RECEIVED: "Salos recebidos", REFUND: "Reembolso" }
+const STATUS_BADGE: Record<string, { label: string; cls: string }> = { COMPLETED: { label: "Concluído", cls: "bg-green-500/10 text-green-500" }, PENDING: { label: "Pendente", cls: "bg-yellow-500/10 text-yellow-500" }, FAILED: { label: "Falhado", cls: "bg-red-500/10 text-red-500" }, CANCELLED: { label: "Cancelado", cls: "bg-muted text-muted-foreground" } }
 
 export default function WalletPage() {
-  const { isLoggedIn, isLoading: authLoading } = useAuth()
+  const { user, refreshUser } = useAuth()
   const router = useRouter()
+  const [balance, setBalance] = useState(0)
+  const [kycTier, setKycTier] = useState(0)
+  const [pendingDeposits, setPendingDeposits] = useState(0)
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
-  const [wallet, setWallet] = React.useState<WalletData | null>(null)
-  const [transactions, setTransactions] = React.useState<Transaction[]>([])
-  const [loading, setLoading] = React.useState(true)
-  const [activeTab, setActiveTab] = React.useState<'overview' | 'deposit' | 'withdraw' | 'history'>('overview')
-
-  // Deposit state
-  const [depositAmount, setDepositAmount] = React.useState('')
-  const [depositMethod, setDepositMethod] = React.useState<'multicaixa' | 'unitel_money' | 'bank_transfer'>('multicaixa')
-  const [isDepositing, setIsDepositing] = React.useState(false)
-  const [depositSuccess, setDepositSuccess] = React.useState('')
-
-  // Withdraw state
-  const [withdrawAmount, setWithdrawAmount] = React.useState('')
-  const [bankName, setBankName] = React.useState('')
-  const [accountNumber, setAccountNumber] = React.useState('')
-  const [accountName, setAccountName] = React.useState('')
-  const [isWithdrawing, setIsWithdrawing] = React.useState(false)
-  const [withdrawSuccess, setWithdrawSuccess] = React.useState('')
-
-  const [error, setError] = React.useState('')
-
-  React.useEffect(() => {
-    if (!authLoading && !isLoggedIn) router.push('/auth')
-  }, [authLoading, isLoggedIn, router])
-
-  React.useEffect(() => {
-    if (isLoggedIn) fetchWallet()
-  }, [isLoggedIn])
-
-  const fetchWallet = async () => {
+  const fetchData = async (silent = false) => {
+    if (!silent) setLoading(true); else setRefreshing(true)
     try {
-      const [walletRes, txRes] = await Promise.all([
-        walletService.getWallet(),
-        walletService.getTransactions(1, 20),
-      ])
-      setWallet(walletRes.data)
-      setTransactions(txRes.data.transactions || [])
-    } catch (err) {
-      console.error('Wallet fetch error:', err)
-    } finally {
-      setLoading(false)
-    }
+      const [wRes, txRes] = await Promise.allSettled([api.get("/api/wallet/"), api.get("/api/wallet/transactions")])
+      if (wRes.status === "fulfilled") { const d = wRes.value.data; setBalance(Number(d.balance ?? d.wallet?.balance ?? 0)); setKycTier(d.kycTier ?? (user as any)?.kycTier ?? 0); setPendingDeposits(d.pendingDeposits ?? 0) }
+      if (txRes.status === "fulfilled") setTransactions(txRes.value.data?.transactions || txRes.value.data || [])
+    } catch {} finally { setLoading(false); setRefreshing(false) }
   }
 
-  const handleDeposit = async () => {
-    const amount = Number(depositAmount)
-    if (amount < 100 || amount > 1000000) {
-      setError('Montante deve ser entre 100 e 1.000.000 Kz')
-      return
-    }
-    setIsDepositing(true)
-    setError('')
-    try {
-      await walletService.deposit({ amount, paymentMethod: depositMethod })
-      setDepositSuccess(`${amount.toLocaleString()} Kz depositado com sucesso!`)
-      setDepositAmount('')
-      fetchWallet()
-      setTimeout(() => setDepositSuccess(''), 4000)
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao depositar')
-    } finally {
-      setIsDepositing(false)
-    }
-  }
+  useEffect(() => { fetchData() }, [])
 
-  const handleWithdraw = async () => {
-    const amount = Number(withdrawAmount)
-    if (amount < 1000 || amount > 500000) {
-      setError('Montante deve ser entre 1.000 e 500.000 Kz')
-      return
-    }
-    if (!bankName || !accountNumber || !accountName) {
-      setError('Preenche todos os dados bancários')
-      return
-    }
-    setIsWithdrawing(true)
-    setError('')
-    try {
-      await walletService.withdraw({
-        amount,
-        bankAccount: { bank: bankName, accountNumber, accountName },
-      })
-      setWithdrawSuccess('Pedido de saque submetido! Processamento em 1-3 dias úteis.')
-      setWithdrawAmount('')
-      setBankName('')
-      setAccountNumber('')
-      setAccountName('')
-      fetchWallet()
-      setTimeout(() => setWithdrawSuccess(''), 5000)
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao sacar')
-    } finally {
-      setIsWithdrawing(false)
-    }
-  }
-
-  const statusIcon = (status: string) => {
-    switch (status) {
-      case 'COMPLETED': return <CheckCircle2 className="h-4 w-4 text-green-400" />
-      case 'PENDING': return <Clock className="h-4 w-4 text-yellow-400" />
-      case 'FAILED': return <XCircle className="h-4 w-4 text-red-400" />
-      default: return <Clock className="h-4 w-4 text-muted-foreground" />
-    }
-  }
-
-  const typeIcon = (type: string) => {
-    switch (type) {
-      case 'DEPOSIT': return <ArrowDownLeft className="h-4 w-4 text-green-400" />
-      case 'WITHDRAWAL': return <ArrowUpRight className="h-4 w-4 text-red-400" />
-      case 'DONATION_SENT': return <Gift className="h-4 w-4 text-orange-400" />
-      case 'DONATION_RECEIVED': return <Gift className="h-4 w-4 text-green-400" />
-      default: return <Wallet className="h-4 w-4 text-muted-foreground" />
-    }
-  }
-
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-[#050505] text-white p-6 max-w-4xl mx-auto space-y-6">
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-48 w-full rounded-2xl" />
-        <div className="grid grid-cols-2 gap-4">
-          {[1, 2].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
-        </div>
-      </div>
-    )
-  }
-
-  const paymentMethods = [
-    { id: 'multicaixa' as const, name: 'Multicaixa Express', icon: <CreditCard className="h-5 w-5" />, color: 'text-blue-400' },
-    { id: 'unitel_money' as const, name: 'Unitel Money', icon: <Smartphone className="h-5 w-5" />, color: 'text-orange-400' },
-    { id: 'bank_transfer' as const, name: 'Transferência Bancária', icon: <Building2 className="h-5 w-5" />, color: 'text-green-400' },
-  ]
+  const formatKz = (c: number) => `${(c / 100).toLocaleString("pt-AO", { minimumFractionDigits: 2 })} Kz`
+  const isDebit = (t: string) => ["WITHDRAWAL", "DONATION_SENT"].includes(t)
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white">
-      <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push('/feed')} className="text-muted-foreground hover:text-white">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Wallet className="h-6 w-6 text-primary" /> Carteira
-            </h1>
-            <p className="text-sm text-muted-foreground">Gere o teu saldo e transações</p>
-          </div>
-        </div>
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div className="flex items-center justify-between"><h1 className="text-xl font-bold">Carteira</h1>
+        <Button variant="ghost" size="icon" onClick={() => { fetchData(true); refreshUser() }} disabled={refreshing}><RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} /></Button>
+      </div>
 
-        {/* Balance Card */}
-        <Card className="border-white/10 bg-gradient-to-br from-primary/20 via-secondary/10 to-transparent overflow-hidden">
-          <CardContent className="p-8">
-            <p className="text-sm text-muted-foreground font-medium mb-1">Saldo Disponível</p>
-            <p className="text-5xl font-black tracking-tight">
-              {(wallet?.balance || 0).toLocaleString()} <span className="text-2xl text-muted-foreground font-normal">Kz</span>
-            </p>
-            <div className="flex gap-3 mt-6">
-              <Button onClick={() => setActiveTab('deposit')} className="bg-green-600 hover:bg-green-700 gap-2 font-bold">
-                <Plus className="h-4 w-4" /> Depositar
-              </Button>
-              <Button onClick={() => setActiveTab('withdraw')} variant="outline" className="border-white/20 bg-transparent gap-2 font-bold">
-                <Minus className="h-4 w-4" /> Sacar
-              </Button>
+      {/* KYC Banner */}
+      {(kycTier || (user as any)?.kycTier || 0) === 0 && (
+        <div className="flex items-start gap-3 p-4 rounded-xl border border-yellow-500/30 bg-yellow-500/5">
+          <AlertCircle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
+          <div className="flex-1"><p className="text-sm font-medium">Verifica a tua identidade</p><p className="text-xs text-muted-foreground mt-0.5">Para depositar ou levantar dinheiro, precisas de completar a verificação KYC.</p></div>
+          <Link href="/kyc"><Button size="sm" variant="outline" className="text-xs h-7 shrink-0"><Shield className="w-3 h-3 mr-1.5" />Verificar</Button></Link>
+        </div>
+      )}
+
+      {/* Balance Card */}
+      {loading ? <Skeleton className="h-40 rounded-2xl" /> : (
+        <Card className="border-border/50 bg-gradient-to-br from-primary/10 via-background to-background overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-8 translate-x-8" />
+          <CardContent className="pt-6 pb-6">
+            <p className="text-sm text-muted-foreground mb-1">Saldo disponível</p>
+            <p className="text-4xl font-bold tracking-tight">{formatKz(balance)}</p>
+            {pendingDeposits > 0 && <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1"><Clock className="w-3 h-3" />{formatKz(pendingDeposits)} pendente</p>}
+            <div className="flex items-center gap-2 mt-4">
+              {kycTier > 0 ? <Badge className="bg-green-500/10 text-green-500 gap-1"><CheckCircle className="w-3 h-3" />Verificado KYC Tier {kycTier}</Badge> : <Badge variant="outline" className="gap-1"><Shield className="w-3 h-3" />Não verificado</Badge>}
+            </div>
+            <div className="flex gap-3 mt-5">
+              <Button className="flex-1 gap-1.5" onClick={() => router.push("/wallet/depositar")} disabled={kycTier === 0}><Plus className="w-4 h-4" />Depositar</Button>
+              <Button variant="outline" className="flex-1 gap-1.5" onClick={() => router.push("/wallet/levantar")} disabled={kycTier === 0}><Minus className="w-4 h-4" />Levantar</Button>
+              <Button variant="outline" className="gap-1.5" onClick={() => router.push("/salos/comprar")}><Zap className="w-4 h-4 text-[#F9D616]" />Salos</Button>
             </div>
           </CardContent>
         </Card>
+      )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card className="border-white/10 bg-card/50">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-green-400" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Total Ganho</p>
-                <p className="text-lg font-bold text-green-400">{(wallet?.stats?.totalEarned || 0).toLocaleString()} Kz</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-white/10 bg-card/50">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
-                <TrendingDown className="h-5 w-5 text-red-400" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Total Gasto</p>
-                <p className="text-lg font-bold text-red-400">{(wallet?.stats?.totalSpent || 0).toLocaleString()} Kz</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      {/* Transactions */}
+      <Tabs defaultValue="historico">
+        <TabsList className="w-full"><TabsTrigger value="historico" className="flex-1">Histórico</TabsTrigger><TabsTrigger value="salos-enviados" className="flex-1">Salos enviados</TabsTrigger><TabsTrigger value="salos-recebidos" className="flex-1">Salos recebidos</TabsTrigger></TabsList>
+        <TabsContent value="historico"><TxList txs={transactions} loading={loading} formatKz={formatKz} isDebit={isDebit} /></TabsContent>
+        <TabsContent value="salos-enviados"><TxList txs={transactions.filter(t => t.type === "DONATION_SENT")} loading={loading} formatKz={formatKz} isDebit={isDebit} /></TabsContent>
+        <TabsContent value="salos-recebidos"><TxList txs={transactions.filter(t => t.type === "DONATION_RECEIVED")} loading={loading} formatKz={formatKz} isDebit={isDebit} /></TabsContent>
+      </Tabs>
+    </div>
+  )
+}
 
-        {/* Tabs */}
-        <div className="flex gap-1 p-1 bg-white/5 rounded-lg">
-          {(['overview', 'deposit', 'withdraw', 'history'] as const).map(tab => (
-            <button
-              key={tab}
-              onClick={() => { setActiveTab(tab); setError('') }}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-bold transition-all ${activeTab === tab ? 'bg-primary text-white' : 'text-muted-foreground hover:text-white'
-                }`}
-            >
-              {tab === 'overview' ? 'Resumo' : tab === 'deposit' ? 'Depositar' : tab === 'withdraw' ? 'Sacar' : 'Histórico'}
-            </button>
-          ))}
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-            <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
-            <p className="text-sm text-red-300">{error}</p>
-            <Button variant="ghost" size="sm" onClick={() => setError('')} className="ml-auto text-red-400 h-6 px-2">✕</Button>
+function TxList({ txs, loading, formatKz, isDebit }: { txs: Transaction[]; loading: boolean; formatKz: (n: number) => string; isDebit: (t: string) => boolean }) {
+  if (loading) return <div className="space-y-3 mt-3">{Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}</div>
+  if (txs.length === 0) return <div className="text-center py-12"><p className="text-2xl mb-2">💳</p><p className="text-sm text-muted-foreground">Sem transacções ainda</p></div>
+  return (
+    <div className="space-y-2 mt-3">
+      {txs.map((tx) => {
+        const Icon = TX_ICONS[tx.type] ?? Zap; const color = TX_COLORS[tx.type] ?? "text-primary"; const st = STATUS_BADGE[tx.status] ?? STATUS_BADGE.PENDING; const debit = isDebit(tx.type)
+        return (
+          <div key={tx.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-border/50 hover:bg-muted/30 transition-colors">
+            <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0"><Icon className={`w-4 h-4 ${color}`} /></div>
+            <div className="flex-1 min-w-0"><p className="text-sm font-medium">{TX_LABELS[tx.type] ?? tx.type}</p><p className="text-xs text-muted-foreground">{new Date(tx.createdAt).toLocaleDateString("pt-AO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p></div>
+            <div className="text-right shrink-0"><p className={`text-sm font-bold ${debit ? "text-red-400" : "text-green-400"}`}>{debit ? "−" : "+"}{formatKz(Number(tx.amount))}</p><Badge className={`text-[10px] h-4 px-1.5 ${st.cls}`}>{st.label}</Badge></div>
           </div>
-        )}
-
-        {/* Deposit Tab */}
-        {activeTab === 'deposit' && (
-          <Card className="border-white/10 bg-card/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Plus className="h-5 w-5 text-green-400" /> Depositar Fundos</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-bold">Método de Pagamento</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {paymentMethods.map(pm => (
-                    <button
-                      key={pm.id}
-                      onClick={() => setDepositMethod(pm.id)}
-                      className={`p-3 rounded-lg border text-center transition-all ${depositMethod === pm.id
-                        ? 'border-primary bg-primary/10'
-                        : 'border-white/10 hover:border-white/30'
-                        }`}
-                    >
-                      <div className={`mx-auto mb-1 ${pm.color}`}>{pm.icon}</div>
-                      <p className="text-xs font-bold">{pm.name}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold">Montante (Kz)</label>
-                <Input
-                  type="number"
-                  value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
-                  placeholder="Ex: 5000"
-                  className="bg-white/5 border-white/10 h-12 text-lg font-bold"
-                  min={100}
-                  max={1000000}
-                />
-                <div className="flex gap-2">
-                  {[500, 1000, 5000, 10000].map(v => (
-                    <Button key={v} variant="outline" size="sm" onClick={() => setDepositAmount(String(v))} className="border-white/10 bg-transparent text-xs flex-1">
-                      {v.toLocaleString()} Kz
-                    </Button>
-                  ))}
-                </div>
-                {depositAmount && Number(depositAmount) >= 100 && (
-                  <div className="p-3 rounded-lg bg-white/5 border border-white/10 space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Montante</span>
-                      <span>{Number(depositAmount).toLocaleString()} Kz</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Taxa plataforma (0%)</span>
-                      <span className="text-green-400">Grátis</span>
-                    </div>
-                    <div className="border-t border-white/10 pt-1 flex justify-between text-sm font-bold">
-                      <span>Total creditado</span>
-                      <span className="text-green-400">{Number(depositAmount).toLocaleString()} Kz</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-              {depositSuccess && (
-                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-center">
-                  <p className="text-sm font-bold text-green-300">{depositSuccess}</p>
-                </div>
-              )}
-              <Button onClick={handleDeposit} disabled={isDepositing || !depositAmount} className="w-full h-12 bg-green-600 hover:bg-green-700 font-bold text-base gap-2">
-                {isDepositing ? <><Loader2 className="h-4 w-4 animate-spin" /> A processar...</> : <><Plus className="h-4 w-4" /> Depositar {depositAmount ? `${Number(depositAmount).toLocaleString()} Kz` : ''}</>}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Withdraw Tab */}
-        {activeTab === 'withdraw' && (
-          <Card className="border-white/10 bg-card/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Minus className="h-5 w-5 text-red-400" /> Sacar Fundos</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-bold">Montante (Kz)</label>
-                <Input
-                  type="number"
-                  value={withdrawAmount}
-                  onChange={(e) => setWithdrawAmount(e.target.value)}
-                  placeholder="Ex: 10000"
-                  className="bg-white/5 border-white/10 h-12 text-lg font-bold"
-                  min={1000}
-                  max={500000}
-                />
-              </div>
-              <Separator className="bg-white/10" />
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold">Banco</label>
-                  <Input value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="BFA, BAI, BIC..." className="bg-white/5 border-white/10" />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold">Nº da Conta</label>
-                  <Input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} placeholder="AO06 0000 0000 0000 0000 0000 0" className="bg-white/5 border-white/10" />
-                  <p className="text-[10px] text-muted-foreground">Formato IBAN angolano: AO06 seguido de 21 dígitos</p>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold">Titular</label>
-                  <Input value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="Nome completo" className="bg-white/5 border-white/10" />
-                </div>
-              </div>
-              {withdrawSuccess && (
-                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-center">
-                  <p className="text-sm font-bold text-green-300">{withdrawSuccess}</p>
-                </div>
-              )}
-              <Button onClick={handleWithdraw} disabled={isWithdrawing || !withdrawAmount} className="w-full h-12 bg-red-600 hover:bg-red-700 font-bold text-base gap-2">
-                {isWithdrawing ? <><Loader2 className="h-4 w-4 animate-spin" /> A processar...</> : <><Minus className="h-4 w-4" /> Sacar {withdrawAmount ? `${Number(withdrawAmount).toLocaleString()} Kz` : ''}</>}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Overview / History Tab */}
-        {(activeTab === 'overview' || activeTab === 'history') && (
-          <Card className="border-white/10 bg-card/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-muted-foreground" />
-                {activeTab === 'overview' ? 'Transações Recentes' : 'Todas as Transações'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {(activeTab === 'overview' ? (wallet?.recentTransactions || []) : transactions).length === 0 ? (
-                <div className="text-center py-8">
-                  <Wallet className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">Sem transações ainda</p>
-                  <p className="text-xs text-muted-foreground mt-1">Faz um depósito para começar!</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {(activeTab === 'overview' ? (wallet?.recentTransactions || []) : transactions).map(tx => (
-                    <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-                      <div className="flex items-center gap-3">
-                        {typeIcon(tx.type)}
-                        <div>
-                          <p className="text-sm font-medium">{tx.description || tx.type}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(tx.createdAt).toLocaleDateString('pt-AO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`font-bold text-sm ${tx.amount >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          {tx.amount >= 0 ? '+' : ''}{tx.amount.toLocaleString()} Kz
-                        </span>
-                        {statusIcon(tx.status)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-      </div>
+        )
+      })}
     </div>
   )
 }
