@@ -1,22 +1,30 @@
 import NodeMediaServer from 'node-media-server';
 import prisma from '../config/prisma';
 import { io } from '../index';
+import path from 'path';
+import fs from 'fs';
 
 // CDN URL for stream playback (used by frontend)
-const STREAM_CDN_URL = process.env.STREAM_CDN_URL || 'http://localhost:8000';
+const STREAM_CDN_URL = process.env.STREAM_CDN_URL || `http://localhost:${process.env.RTMP_HTTP_PORT || '8000'}`;
 const STREAM_RECORDING_ENABLED = process.env.STREAM_RECORDING_ENABLED === 'true';
+const HLS_PATH = process.env.HLS_PATH || './media';
+
+// Ensure HLS directory exists
+if (!fs.existsSync(HLS_PATH)) {
+    fs.mkdirSync(HLS_PATH, { recursive: true });
+}
 
 const config = {
     rtmp: {
-        port: 1935,
+        port: parseInt(process.env.RTMP_PORT || '1935'),
         chunk_size: 60000,
         gop_cache: true,
         ping: 30,
         ping_timeout: 60,
     },
     http: {
-        port: 8000,
-        mediaroot: './media',
+        port: parseInt(process.env.RTMP_HTTP_PORT || '8000'),
+        mediaroot: HLS_PATH,
         allow_origin: '*',
     },
     trans: {
@@ -77,6 +85,13 @@ export const startMediaServer = () => {
 
         if (!user) {
             console.log('[RTMP] Invalid stream key, rejecting');
+            const session = (nms as any)?.getSession(id);
+            session?.reject();
+            return;
+        }
+
+        if (user.isBanned) {
+            console.warn(`[RTMP] Banned user @${user.username} attempted to stream — rejecting`);
             const session = (nms as any)?.getSession(id);
             session?.reject();
             return;
@@ -160,6 +175,17 @@ export const startMediaServer = () => {
             io.to(`stream:${stream.id}`).emit('stream-ended', { streamId: stream.id });
             console.log(`[RTMP] Stream ${stream.id} has ENDED (duration: ${activeStream ? Math.round((Date.now() - activeStream.startTime.getTime()) / 1000) : 'unknown'}s)`);
         }
+
+        // Clean up HLS files after 30 seconds
+        if (streamKey) {
+            const hlsDir = path.join(HLS_PATH, 'live', streamKey);
+            setTimeout(() => {
+                if (fs.existsSync(hlsDir)) {
+                    fs.rmSync(hlsDir, { recursive: true, force: true });
+                    console.log(`[RTMP] HLS cleaned up: ${hlsDir}`);
+                }
+            }, 30000);
+        }
     });
 
     // Player connects to watch
@@ -175,8 +201,9 @@ export const startMediaServer = () => {
     nms.run();
     console.log(`
 📹 RTMP Media Server Started
-🎬 RTMP: rtmp://localhost:1935/live/{streamKey}
+🎬 RTMP: rtmp://localhost:${process.env.RTMP_PORT || '1935'}/live/{streamKey}
 🌐 HLS: ${STREAM_CDN_URL}/live/{streamKey}/index.m3u8
+📂 HLS Path: ${HLS_PATH}
 📼 Recording: ${STREAM_RECORDING_ENABLED ? 'ENABLED' : 'DISABLED'}
   `);
 };

@@ -17,6 +17,36 @@ interface SendSmsResult {
 
 const SMS_PROVIDER = process.env.SMS_PROVIDER || 'mock';
 
+// ============== PHONE NORMALIZATION ==============
+
+/**
+ * Normalize Angolan phone numbers to international format (+244XXXXXXXXX)
+ * Handles: 912345678, 0912345678, 244912345678, +244912345678
+ */
+function normalizeAngolanPhone(phone: string): string {
+    // Remove spaces, dashes, parentheses
+    let cleaned = phone.replace(/[\s\-\(\)]/g, '');
+
+    // Already in +244 format
+    if (cleaned.startsWith('+244')) return cleaned;
+
+    // Starts with 244 (no +)
+    if (cleaned.startsWith('244') && cleaned.length === 12) return '+' + cleaned;
+
+    // Starts with 0 (local format: 0912345678)
+    if (cleaned.startsWith('0') && cleaned.length === 10) {
+        return '+244' + cleaned.slice(1);
+    }
+
+    // Starts with 9 (short format: 912345678)
+    if (cleaned.startsWith('9') && cleaned.length === 9) {
+        return '+244' + cleaned;
+    }
+
+    // Fallback: return as-is (may be international number)
+    return cleaned.startsWith('+') ? cleaned : '+' + cleaned;
+}
+
 // ============== PROVIDER IMPLEMENTATIONS ==============
 
 /**
@@ -51,15 +81,16 @@ const sendSmsAfricasTalking = async (phone: string, message: string): Promise<Se
     }
 
     try {
+        const normalized = normalizeAngolanPhone(phone);
         const baseUrl = username === 'sandbox'
             ? 'https://api.sandbox.africastalking.com'
             : 'https://api.africastalking.com';
 
         const body = new URLSearchParams({
             username,
-            to: phone,
+            to: normalized,
             message,
-            from: 'KwanzaStream',
+            ...(username !== 'sandbox' && { from: process.env.AT_SMS_SENDER || 'KwanzaStream' }),
         });
 
         const response = await fetch(`${baseUrl}/version1/messaging`, {
@@ -83,6 +114,13 @@ const sendSmsAfricasTalking = async (phone: string, message: string): Promise<Se
         if (recipients && recipients.length > 0) {
             const recipient = recipients[0];
             const success = recipient.statusCode === 101; // 101 = sent to network
+            
+            // In sandbox mode, treat any response as success
+            if (username === 'sandbox') {
+                console.log('[SMS Sandbox]', { to: normalized, status: recipient.status, messageId: recipient.messageId });
+                return { success: true, messageId: recipient.messageId || `sandbox-${Date.now()}` };
+            }
+
             return {
                 success,
                 messageId: recipient.messageId,
@@ -90,9 +128,22 @@ const sendSmsAfricasTalking = async (phone: string, message: string): Promise<Se
             };
         }
 
+        // Sandbox may return empty recipients — still success
+        if (username === 'sandbox') {
+            console.log('[SMS Sandbox] No recipients in response, but sandbox mode — treating as success');
+            return { success: true, messageId: `sandbox-${Date.now()}` };
+        }
+
         return { success: false, error: 'No recipients in response' };
     } catch (error: any) {
         console.error('[SMS] Africa\'s Talking exception:', error);
+
+        // In development, don't block flow if SMS fails
+        if (process.env.NODE_ENV !== 'production') {
+            console.warn(`[SMS Dev Fallback] OTP seria enviado para ${phone}`);
+            return { success: true, messageId: 'dev-fallback' };
+        }
+
         return { success: false, error: error.message };
     }
 };
@@ -116,6 +167,7 @@ const sendSmsTwilio = async (phone: string, message: string): Promise<SendSmsRes
     }
 
     try {
+        const normalized = normalizeAngolanPhone(phone);
         const response = await fetch(
             `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
             {
@@ -125,7 +177,7 @@ const sendSmsTwilio = async (phone: string, message: string): Promise<SendSmsRes
                     'Authorization': `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString('base64')}`,
                 },
                 body: new URLSearchParams({
-                    To: phone,
+                    To: normalized,
                     From: fromNumber,
                     Body: message,
                 }).toString(),
@@ -167,6 +219,10 @@ export const sendSms = async (phone: string, message: string): Promise<SendSmsRe
  * Send OTP SMS with standard message format.
  */
 export const sendOtpSms = async (phone: string, code: string): Promise<SendSmsResult> => {
-    const message = `Seu código Kwanza Stream é: ${code}. Válido por 5 minutos. Não partilhe este código.`;
+    const message = `O teu código de verificação Kwanza Stream é: ${code}. Válido por 5 minutos. Não partilhes este código.`;
     return sendSms(phone, message);
 };
+
+/** Re-export for use in other services */
+export { normalizeAngolanPhone };
+
