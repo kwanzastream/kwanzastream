@@ -1,262 +1,86 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Bell, UserPlus, Gift, Radio, Wallet, CheckCheck, Loader2, ArrowLeft, Inbox } from "lucide-react"
-import Link from "next/link"
+import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { notificationService } from "@/lib/services"
+import { api } from "@/lib/api"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
+import { Bell, Users, Zap, Crown, Radio, AtSign, Info, Trash2, CheckCheck, Swords, Star } from "lucide-react"
+import { formatDistanceToNow } from "date-fns"
+import { pt } from "date-fns/locale"
 
-interface Notification {
-  id: string
-  type: string
-  title: string
-  body: string
-  imageUrl?: string
-  linkUrl?: string
-  read: boolean
-  createdAt: string
+interface Notification { id: string; type: string; isRead: boolean; createdAt: string; data: { actorName?: string; actorUsername?: string; actorAvatar?: string; streamTitle?: string; amount?: number; message?: string; clipTitle?: string; channelUrl?: string } }
+
+const NC: Record<string, { icon: any; color: string; label: (d: Notification["data"]) => string; href: (d: Notification["data"]) => string }> = {
+  FOLLOW: { icon: Users, color: "text-blue-400", label: (d) => `@${d.actorUsername} começou a seguir-te`, href: (d) => `/${d.actorUsername}` },
+  DONATION: { icon: Zap, color: "text-[#F9D616]", label: (d) => `@${d.actorUsername} enviou-te ${d.amount} Salos${d.message ? ` — "${d.message}"` : ""}`, href: (d) => `/${d.actorUsername}` },
+  SUBSCRIPTION: { icon: Crown, color: "text-purple-400", label: (d) => `@${d.actorUsername} subscreveu o teu canal`, href: (d) => `/${d.actorUsername}` },
+  STREAM_LIVE: { icon: Radio, color: "text-[#CE1126]", label: (d) => `@${d.actorUsername} está ao vivo${d.streamTitle ? ` — ${d.streamTitle}` : ""}`, href: (d) => `/stream/${d.actorUsername}` },
+  MENTION: { icon: AtSign, color: "text-green-400", label: (d) => `@${d.actorUsername} mencionou-te no chat`, href: (d) => d.channelUrl || `/${d.actorUsername}` },
+  RAID: { icon: Swords, color: "text-orange-400", label: (d) => `@${d.actorUsername} fez raid para o teu canal`, href: (d) => `/stream/${d.actorUsername}` },
+  CLIP_FEATURED: { icon: Star, color: "text-yellow-400", label: (d) => `O teu clip "${d.clipTitle}" foi destacado`, href: () => `/dashboard/content/clips` },
+  SYSTEM: { icon: Info, color: "text-muted-foreground", label: (d) => d.message || "Notificação do sistema", href: () => `/` },
 }
 
-export default function NotificationsPage() {
+export default function NotificacoesPage() {
+  const router = useRouter()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("all")
-  const [unreadCount, setUnreadCount] = useState(0)
-  const router = useRouter()
+  const [marking, setMarking] = useState(false)
 
-  const fetchNotifications = useCallback(async () => {
-    setLoading(true)
-    try {
-      const { data } = await notificationService.getAll()
-      setNotifications(data.notifications || [])
-    } catch {
-      // If API fails, show empty state
-      setNotifications([])
-    }
-    setLoading(false)
+  const fetchNotifs = useCallback(async () => {
+    try { const res = await api.get("/api/notifications/"); setNotifications(res.data?.notifications || res.data || []) }
+    catch {} finally { setLoading(false) }
   }, [])
 
-  const fetchUnreadCount = useCallback(async () => {
-    try {
-      const { data } = await notificationService.getUnreadCount()
-      setUnreadCount(data.count || 0)
-    } catch {
-      // silently fail
-    }
-  }, [])
+  useEffect(() => { fetchNotifs() }, [fetchNotifs])
 
-  useEffect(() => {
-    fetchNotifications()
-    fetchUnreadCount()
-  }, [fetchNotifications, fetchUnreadCount])
-
-  const handleMarkAsRead = async (id: string) => {
-    try {
-      await notificationService.markAsRead(id)
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
-      setUnreadCount(prev => Math.max(0, prev - 1))
-    } catch {
-      // silently fail
-    }
+  const handleMarkAllRead = async () => {
+    setMarking(true)
+    try { await api.post("/api/notifications/mark-read", { ids: notifications.filter((n) => !n.isRead).map((n) => n.id) }); setNotifications((p) => p.map((n) => ({ ...n, isRead: true }))); toast.success("Marcadas como lidas") }
+    catch { toast.error("Erro ao marcar") } finally { setMarking(false) }
   }
 
-  const handleMarkAllAsRead = async () => {
-    try {
-      await notificationService.markAllAsRead()
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })))
-      setUnreadCount(0)
-    } catch {
-      // silently fail
-    }
-  }
+  const handleMarkRead = async (id: string) => { try { await api.post("/api/notifications/mark-read", { ids: [id] }); setNotifications((p) => p.map((n) => n.id === id ? { ...n, isRead: true } : n)) } catch {} }
+  const handleDelete = async (id: string) => { try { await api.delete(`/api/notifications/${id}`); setNotifications((p) => p.filter((n) => n.id !== id)) } catch { toast.error("Erro ao apagar") } }
 
-  const getIcon = (type: string) => {
-    switch (type) {
-      case "LIVE_STARTED": return <Radio className="h-3.5 w-3.5 text-red-500" />
-      case "DONATION_RECEIVED": return <Gift className="h-3.5 w-3.5 text-yellow-500" />
-      case "NEW_FOLLOWER": return <UserPlus className="h-3.5 w-3.5 text-blue-400" />
-      case "SYSTEM": return <Bell className="h-3.5 w-3.5 text-muted-foreground" />
-      default: return <Bell className="h-3.5 w-3.5 text-muted-foreground" />
-    }
-  }
+  const unreadCount = notifications.filter((n) => !n.isRead).length
 
-  const getIconEmoji = (type: string) => {
-    switch (type) {
-      case "LIVE_STARTED": return "🔴"
-      case "DONATION_RECEIVED": return "💰"
-      case "NEW_FOLLOWER": return "👤"
-      default: return "🔔"
-    }
-  }
-
-  const timeAgo = (date: string) => {
-    const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
-    if (seconds < 60) return "agora"
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`
-    return `${Math.floor(seconds / 86400)}d`
-  }
-
-  const filtered = activeTab === "unread"
-    ? notifications.filter(n => !n.read)
-    : notifications
-
-  return (
-    <div className="min-h-screen bg-background flex flex-col max-w-2xl mx-auto w-full md:border-x border-white/10">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-white/10 p-4 md:px-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => router.back()}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-black tracking-tight flex items-center gap-2 uppercase">
-            <Bell className="h-5 w-5 text-primary" /> Notificações
-            {unreadCount > 0 && (
-              <span className="text-xs bg-red-500 text-white rounded-full px-2 py-0.5 font-bold">
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </span>
-            )}
-          </h1>
-        </div>
-        {unreadCount > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground hover:text-primary font-bold text-xs flex items-center gap-1"
-            onClick={handleMarkAllAsRead}
-          >
-            <CheckCheck className="h-3.5 w-3.5" />
-            Marcar tudo
-          </Button>
-        )}
-      </header>
-
-      <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="w-full bg-background border-b border-white/10 rounded-none h-14 p-0">
-          <TabsTrigger
-            value="all"
-            className="flex-1 rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary h-full font-bold"
-          >
-            Todas
-          </TabsTrigger>
-          <TabsTrigger
-            value="unread"
-            className="flex-1 rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary h-full font-bold"
-          >
-            Não Lidas
-            {unreadCount > 0 && (
-              <span className="ml-1.5 text-[10px] bg-primary/20 text-primary rounded-full px-1.5 py-0.5 font-bold">
-                {unreadCount}
-              </span>
-            )}
-          </TabsTrigger>
-        </TabsList>
-
-        <ScrollArea className="flex-1 h-[calc(100vh-120px)]">
-          <TabsContent value="all" className="mt-0 pb-20">
-            {renderContent()}
-          </TabsContent>
-          <TabsContent value="unread" className="mt-0 pb-20">
-            {renderContent()}
-          </TabsContent>
-        </ScrollArea>
-      </Tabs>
-    </div>
-  )
-
-  function renderContent() {
-    if (loading) {
-      return (
-        <div className="space-y-1">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="p-4 md:px-6 flex gap-4 animate-pulse">
-              <div className="w-12 h-12 rounded-full bg-white/5 flex-shrink-0" />
-              <div className="flex-1 space-y-2">
-                <div className="h-4 bg-white/5 rounded w-3/4" />
-                <div className="h-3 bg-white/5 rounded w-1/2" />
-                <div className="h-2 bg-white/5 rounded w-16" />
-              </div>
-            </div>
-          ))}
-        </div>
-      )
-    }
-
-    if (filtered.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center p-20 text-center space-y-4">
-          <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center">
-            <Inbox className="h-10 w-10 text-muted-foreground/30" />
-          </div>
-          <h3 className="font-bold text-lg">
-            {activeTab === "unread" ? "Tudo lido!" : "Sem notificações"}
-          </h3>
-          <p className="text-sm text-muted-foreground max-w-xs">
-            {activeTab === "unread"
-              ? "Não tens notificações por ler. Bom trabalho!"
-              : "Quando alguém te seguir, enviar Salos ou começar uma live, vais ver aqui."}
-          </p>
-          <Link href="/feed">
-            <Button variant="outline" size="sm" className="border-white/10">
-              Explorar Feed
-            </Button>
-          </Link>
-        </div>
-      )
-    }
-
+  const NotifItem = ({ notif }: { notif: Notification }) => {
+    const cfg = NC[notif.type] ?? NC.SYSTEM; const Icon = cfg.icon
     return (
-      <div className="divide-y divide-white/5">
-        {filtered.map(n => (
-          <button
-            key={n.id}
-            onClick={() => {
-              if (!n.read) handleMarkAsRead(n.id)
-              if (n.linkUrl) router.push(n.linkUrl)
-            }}
-            className={`w-full p-4 md:px-6 flex gap-4 text-left transition-colors cursor-pointer group ${!n.read ? "bg-primary/5 border-l-2 border-primary" : "hover:bg-white/5"
-              }`}
-          >
-            <div className="relative shrink-0">
-              {n.imageUrl ? (
-                <Avatar className="h-12 w-12 border border-white/10">
-                  <AvatarImage src={n.imageUrl} alt="" />
-                  <AvatarFallback>{getIconEmoji(n.type)}</AvatarFallback>
-                </Avatar>
-              ) : (
-                <div className="h-12 w-12 rounded-full bg-white/5 flex items-center justify-center border border-white/10 text-lg">
-                  {getIconEmoji(n.type)}
-                </div>
-              )}
-              <div className="absolute -bottom-1 -right-1 bg-background border border-white/10 rounded-full p-1 shadow-lg">
-                {getIcon(n.type)}
-              </div>
-            </div>
-
-            <div className="flex-1 min-w-0 space-y-1">
-              <div className="flex justify-between items-start gap-2">
-                <p className="text-sm leading-relaxed">
-                  <span className={`${!n.read ? "text-white font-medium" : "text-foreground/90"}`}>
-                    {n.title}
-                  </span>
-                </p>
-                <span className="text-[10px] text-muted-foreground uppercase font-black shrink-0 mt-1">
-                  {timeAgo(n.createdAt)}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground truncate">{n.body}</p>
-            </div>
-
-            {!n.read && (
-              <span className="w-2 h-2 bg-blue-500 rounded-full mt-5 flex-shrink-0 animate-pulse" />
-            )}
-          </button>
-        ))}
+      <div className={`flex items-start gap-3 p-3.5 rounded-xl transition-colors group cursor-pointer ${notif.isRead ? "opacity-70 hover:opacity-100" : "bg-primary/5 border border-primary/10"}`} onClick={() => { if (!notif.isRead) handleMarkRead(notif.id); router.push(cfg.href(notif.data)) }}>
+        {notif.data.actorAvatar ? <div className="relative shrink-0"><Avatar className="w-9 h-9"><AvatarImage src={notif.data.actorAvatar} /><AvatarFallback className="text-xs">{notif.data.actorName?.slice(0, 2)}</AvatarFallback></Avatar><div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-background flex items-center justify-center"><Icon className={`w-2.5 h-2.5 ${cfg.color}`} /></div></div>
+        : <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0"><Icon className={`w-4 h-4 ${cfg.color}`} /></div>}
+        <div className="flex-1 min-w-0"><p className="text-sm leading-snug">{cfg.label(notif.data)}</p><p className="text-xs text-muted-foreground mt-0.5">{formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true, locale: pt })}</p></div>
+        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => handleDelete(notif.id)}><Trash2 className="w-3.5 h-3.5" /></Button></div>
+        {!notif.isRead && <div className="w-2 h-2 bg-primary rounded-full shrink-0 mt-1.5" />}
       </div>
     )
   }
+
+  const unread = notifications.filter((n) => !n.isRead)
+  const social = notifications.filter((n) => ["FOLLOW", "MENTION", "RAID"].includes(n.type))
+  const financial = notifications.filter((n) => ["DONATION", "SUBSCRIPTION"].includes(n.type))
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2"><h1 className="text-xl font-bold">Notificações</h1>{unreadCount > 0 && <Badge className="bg-primary text-primary-foreground">{unreadCount}</Badge>}</div>
+        {unreadCount > 0 && <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={handleMarkAllRead} disabled={marking}><CheckCheck className="w-3.5 h-3.5" />Marcar todas</Button>}
+      </div>
+      <Tabs defaultValue="todas">
+        <TabsList className="w-full"><TabsTrigger value="todas" className="flex-1 text-xs">Todas</TabsTrigger><TabsTrigger value="nao-lidas" className="flex-1 text-xs">Não lidas{unreadCount > 0 && <Badge className="ml-1.5 h-4 text-[10px] px-1">{unreadCount}</Badge>}</TabsTrigger><TabsTrigger value="social" className="flex-1 text-xs">Social</TabsTrigger><TabsTrigger value="financeiro" className="flex-1 text-xs">Ganhos</TabsTrigger></TabsList>
+        {[{ v: "todas", d: notifications }, { v: "nao-lidas", d: unread }, { v: "social", d: social }, { v: "financeiro", d: financial }].map(({ v, d }) => (
+          <TabsContent key={v} value={v}>
+            {loading ? <div className="space-y-2 mt-3">{Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}</div> : d.length === 0 ? <div className="text-center py-16"><Bell className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-30" /><p className="text-sm text-muted-foreground">Sem notificações</p></div> : <div className="space-y-1 mt-3">{d.map((n) => <NotifItem key={n.id} notif={n} />)}</div>}
+          </TabsContent>
+        ))}
+      </Tabs>
+    </div>
+  )
 }
