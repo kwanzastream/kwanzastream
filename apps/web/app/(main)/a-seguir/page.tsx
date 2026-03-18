@@ -1,12 +1,11 @@
-﻿export default function ASeguirPage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-      <h1 className="text-2xl font-bold text-muted-foreground">
-        ASeguir
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Em construÃ§Ã£o
-      </p>
-    </div>
-  )
+"use client"
+
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { Loader2 } from "lucide-react"
+
+export default function ASeguirPage() {
+  const router = useRouter()
+  useEffect(() => { router.replace("/a-seguir/canais") }, [router])
+  return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
 }

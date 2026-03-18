@@ -1,12 +1,8 @@
-﻿export default function TendenciasStreamsPage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-      <h1 className="text-2xl font-bold text-muted-foreground">
-        TendenciasStreams
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Em construÃ§Ã£o
-      </p>
-    </div>
-  )
+import { TrendingSubPage } from "@/components/public/trending-sub-page"
+const ITEMS = Array.from({ length: 15 }, (_, i) => ({
+  rank: i + 1, title: `Stream de pico #${i + 1}`, subtitle: `@streamer${i} · ${["Gaming", "Música", "Futebol", "Just Talking"][i % 4]}`,
+  change: Math.floor(Math.random() * 200) - 20, metric: `${Math.floor(Math.random() * 5) + 1}k viewers`, href: `/stream/streamer${i}`,
+}))
+export default function TrendingStreamsPage() {
+  return <TrendingSubPage type="streams" title="Trending Streams" description="Streams com mais pico de audiência" items={ITEMS} />
 }

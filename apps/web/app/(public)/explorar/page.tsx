@@ -5,10 +5,39 @@ import { api } from "@/lib/api"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Search, Eye } from "lucide-react"
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { StreamCard, CategoryCard, ChannelCard, ContentGrid, GridSkeleton, EmptyContent, SectionHeader } from "@/components/public/content-card"
+
+const EXPLORE_TABS = [
+  { value: "tudo", label: "Tudo" },
+  { value: "streams", label: "Streams", href: "/explorar/streams" },
+  { value: "videos", label: "Vídeos", href: "/explorar/videos" },
+  { value: "clips", label: "Clips", href: "/explorar/clips" },
+  { value: "shorts", label: "Shorts", href: "/explorar/shorts" },
+  { value: "categorias", label: "Categorias", href: "/explorar/categorias" },
+  { value: "canais", label: "Canais", href: "/explorar/canais" },
+  { value: "eventos", label: "Eventos", href: "/explorar/eventos" },
+  { value: "torneios", label: "Torneios", href: "/explorar/torneios" },
+  { value: "tribos", label: "Tribos", href: "/explorar/tribos" },
+  { value: "radio", label: "Rádio", href: "/explorar/radio" },
+]
+
+const ANGOLA_CATEGORIES = [
+  { slug: "gaming", name: "Gaming Angola", emoji: "🎮", angolaFirst: true },
+  { slug: "musica", name: "Música ao Vivo", emoji: "🎵", angolaFirst: true },
+  { slug: "futebol", name: "Futebol Angola", emoji: "⚽", angolaFirst: true },
+  { slug: "just-talking", name: "Just Talking PT-AO", emoji: "🎤", angolaFirst: true },
+  { slug: "irl", name: "IRL Angola", emoji: "📍", angolaFirst: true },
+  { slug: "radio", name: "Modo Rádio", emoji: "📻", angolaFirst: true },
+  { slug: "negocios", name: "Negócios & Empreendedorismo", emoji: "💼", angolaFirst: true },
+  { slug: "criatividade", name: "Criatividade & Arte", emoji: "🎨", angolaFirst: true },
+  { slug: "tech", name: "Tech & Dev", emoji: "💻", angolaFirst: false },
+  { slug: "comedia", name: "Comédia", emoji: "😂", angolaFirst: false },
+  { slug: "educacao", name: "Educação", emoji: "📚", angolaFirst: false },
+  { slug: "culinaria", name: "Culinária", emoji: "🍳", angolaFirst: false },
+]
 
 export default function ExplorarPage() {
   const [search, setSearch] = useState("")
@@ -32,151 +61,99 @@ export default function ExplorarPage() {
 
   return (
     <div className="max-w-screen-xl mx-auto px-4 py-6">
+      {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-4">Explorar</h1>
+        <h1 className="text-2xl font-bold mb-1">Explorar</h1>
+        <p className="text-sm text-muted-foreground mb-4">Descobre conteúdo, criadores e comunidades angolanas</p>
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Pesquisar streams, canais..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input placeholder="Pesquisar streams, canais, categorias..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
       </div>
 
-      <Tabs defaultValue="tudo">
-        <TabsList className="mb-6">
-          {["tudo", "streams", "categorias", "canais"].map((t) => (
-            <TabsTrigger key={t} value={t} className="capitalize">{t}</TabsTrigger>
-          ))}
-        </TabsList>
-
-        <TabsContent value="tudo">
-          {loading ? <ExplorarSkeleton /> : (
-            <div className="space-y-10">
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-2 h-2 bg-[#CE1126] rounded-full animate-pulse" />
-                  <h2 className="font-semibold">Ao Vivo Agora</h2>
-                  <Badge variant="secondary">{filteredStreams.length}</Badge>
-                </div>
-                {filteredStreams.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhum stream ao vivo</p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {filteredStreams.slice(0, 8).map((stream: any) => (
-                      <Link key={stream.id} href={`/stream/${stream.streamer?.username || stream.id}`} className="group rounded-xl overflow-hidden border border-border/50 hover:border-primary/50 transition-all">
-                        <div className="aspect-video bg-muted relative">
-                          {stream.thumbnailUrl && <img src={stream.thumbnailUrl} alt={stream.title} className="w-full h-full object-cover" />}
-                          <Badge className="absolute top-2 left-2 bg-[#CE1126] text-white text-[10px]">AO VIVO</Badge>
-                          <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/70 rounded px-1.5 py-0.5">
-                            <Eye className="w-3 h-3 text-white" /><span className="text-white text-[10px]">{stream.viewerCount || 0}</span>
-                          </div>
-                        </div>
-                        <div className="p-3">
-                          <p className="text-sm font-medium truncate">{stream.title}</p>
-                          <p className="text-xs text-muted-foreground">{stream.streamer?.displayName}</p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <h2 className="font-semibold mb-4">Categorias</h2>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { slug: "gaming", label: "🎮 Gaming" }, { slug: "musica", label: "🎵 Música" },
-                    { slug: "futebol", label: "⚽ Futebol" }, { slug: "just-talking", label: "💬 Just Talking" },
-                    { slug: "irl", label: "📍 IRL Angola" }, { slug: "comedia", label: "😂 Comédia" },
-                    { slug: "criatividade", label: "🎨 Criatividade" }, { slug: "tech", label: "💻 Tech" },
-                    { slug: "radio", label: "📻 Rádio" }, { slug: "educacao", label: "📚 Educação" },
-                  ].map((cat) => (
-                    <Link key={cat.slug} href={`/categoria/${cat.slug}`}>
-                      <Badge variant="outline" className="text-sm py-1.5 px-3 hover:border-primary cursor-pointer transition-colors">{cat.label}</Badge>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h2 className="font-semibold mb-4">Criadores em Destaque</h2>
-                {creators.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhum criador disponível</p>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    {creators.slice(0, 12).map((creator: any) => (
-                      <Link key={creator.id} href={`/${creator.username}`} className="text-center p-3 rounded-xl border border-border/50 hover:border-primary/50 transition-all group">
-                        <Avatar className="w-12 h-12 mx-auto mb-2">
-                          <AvatarImage src={creator.avatarUrl} />
-                          <AvatarFallback className="bg-primary/20 text-primary text-xs">{creator.displayName?.slice(0, 2)}</AvatarFallback>
-                        </Avatar>
-                        <p className="text-xs font-medium truncate">{creator.displayName}</p>
-                        <p className="text-[10px] text-muted-foreground truncate">@{creator.username}</p>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="streams">
-          {filteredStreams.length === 0 ? (
-            <p className="text-center text-muted-foreground py-12">Nenhum stream ao vivo</p>
+      {/* Tabs Navigation */}
+      <div className="scroll-tabs gap-2 mb-6">
+        {EXPLORE_TABS.map((tab) => (
+          tab.href ? (
+            <Link key={tab.value} href={tab.href} className="px-3.5 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors border border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground">
+              {tab.label}
+            </Link>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredStreams.map((stream: any) => (
-                <Link key={stream.id} href={`/stream/${stream.streamer?.username || stream.id}`} className="rounded-xl overflow-hidden border border-border/50 hover:border-primary/50">
-                  <div className="aspect-video bg-muted relative">
-                    {stream.thumbnailUrl && <img src={stream.thumbnailUrl} alt={stream.title} className="w-full h-full object-cover" />}
-                    <Badge className="absolute top-2 left-2 bg-[#CE1126] text-white text-[10px]">AO VIVO</Badge>
-                  </div>
-                  <div className="p-3"><p className="text-sm font-medium truncate">{stream.title}</p><p className="text-xs text-muted-foreground">{stream.streamer?.displayName}</p></div>
-                </Link>
+            <span key={tab.value} className="px-3.5 py-1.5 rounded-full text-sm whitespace-nowrap border border-primary bg-primary/10 text-primary font-medium">
+              {tab.label}
+            </span>
+          )
+        ))}
+      </div>
+
+      {/* Content */}
+      {loading ? <GridSkeleton count={8} /> : (
+        <div className="space-y-12">
+          {/* Live Streams */}
+          <section>
+            <SectionHeader title="Ao Vivo Agora" href="/ao-vivo" badge={`${filteredStreams.length}`} live />
+            {filteredStreams.length === 0 ? (
+              <EmptyContent emoji="📺" title="Nenhum stream ao vivo" description="Volta mais tarde ou sê o primeiro a transmitir!" />
+            ) : (
+              <ContentGrid>
+                {filteredStreams.slice(0, 8).map((stream: any) => (
+                  <StreamCard
+                    key={stream.id}
+                    id={stream.id}
+                    title={stream.title}
+                    category={stream.category}
+                    viewerCount={stream.viewerCount}
+                    thumbnailUrl={stream.thumbnailUrl}
+                    streamer={stream.streamer || { username: stream.id, displayName: "Streamer" }}
+                  />
+                ))}
+              </ContentGrid>
+            )}
+          </section>
+
+          {/* Angola-First Categories */}
+          <section>
+            <SectionHeader title="Categorias Angola-First 🇦🇴" href="/explorar/categorias" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {ANGOLA_CATEGORIES.filter(c => c.angolaFirst).map((cat) => (
+                <CategoryCard key={cat.slug} slug={cat.slug} name={cat.name} emoji={cat.emoji} angolaFirst />
               ))}
             </div>
-          )}
-        </TabsContent>
+          </section>
 
-        <TabsContent value="categorias">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {[
-              { slug: "gaming", label: "Gaming", emoji: "🎮" }, { slug: "musica", label: "Música", emoji: "🎵" },
-              { slug: "futebol", label: "Futebol", emoji: "⚽" }, { slug: "just-talking", label: "Just Talking", emoji: "💬" },
-              { slug: "irl", label: "IRL Angola", emoji: "📍" }, { slug: "comedia", label: "Comédia", emoji: "😂" },
-              { slug: "criatividade", label: "Criatividade", emoji: "🎨" }, { slug: "tech", label: "Tech & Negócios", emoji: "💻" },
-            ].map((cat) => (
-              <Link key={cat.slug} href={`/categoria/${cat.slug}`} className="aspect-video rounded-xl border border-border/50 hover:border-primary/50 flex flex-col items-center justify-center gap-2 bg-muted/30">
-                <span className="text-4xl">{cat.emoji}</span><span className="font-medium">{cat.label}</span>
-              </Link>
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="canais">
-          {creators.length === 0 ? (
-            <p className="text-center text-muted-foreground py-12">Nenhum canal disponível</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {creators.map((creator: any) => (
-                <Link key={creator.id} href={`/${creator.username}`} className="text-center p-4 rounded-xl border border-border/50 hover:border-primary/50">
-                  <Avatar className="w-16 h-16 mx-auto mb-3"><AvatarImage src={creator.avatarUrl} /><AvatarFallback className="bg-primary/20 text-primary">{creator.displayName?.slice(0, 2)}</AvatarFallback></Avatar>
-                  <p className="text-sm font-medium">{creator.displayName}</p><p className="text-xs text-muted-foreground">@{creator.username}</p>
-                </Link>
+          {/* Global Categories */}
+          <section>
+            <SectionHeader title="Outras Categorias" href="/explorar/categorias" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {ANGOLA_CATEGORIES.filter(c => !c.angolaFirst).map((cat) => (
+                <CategoryCard key={cat.slug} slug={cat.slug} name={cat.name} emoji={cat.emoji} />
               ))}
             </div>
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
-}
+          </section>
 
-function ExplorarSkeleton() {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-      {Array(8).fill(0).map((_, i) => (
-        <div key={i} className="space-y-2"><Skeleton className="aspect-video rounded-xl" /><Skeleton className="h-3 w-3/4" /><Skeleton className="h-3 w-1/2" /></div>
-      ))}
+          {/* Featured Creators */}
+          <section>
+            <SectionHeader title="Criadores em Destaque" href="/explorar/canais" />
+            {creators.length === 0 ? (
+              <EmptyContent emoji="👥" title="Nenhum criador disponível" description="Os criadores aparecerão aqui quando estiverem registados" />
+            ) : (
+              <ContentGrid cols={6}>
+                {creators.slice(0, 12).map((creator: any) => (
+                  <ChannelCard
+                    key={creator.id}
+                    username={creator.username}
+                    displayName={creator.displayName}
+                    avatarUrl={creator.avatarUrl}
+                    followers={creator.followersCount}
+                    verified={creator.verified}
+                    isLive={creator.isLive}
+                  />
+                ))}
+              </ContentGrid>
+            )}
+          </section>
+        </div>
+      )}
     </div>
   )
 }
