@@ -11,7 +11,6 @@ export const ANGOLA_PROVINCES = [
   { slug: "lunda-norte",   name: "Lunda-Norte",   capital: "Dundo",        cx: 310, cy: 110 },
   { slug: "lunda-sul",     name: "Lunda-Sul",     capital: "Saurimo",      cx: 330, cy: 195 },
   { slug: "moxico",        name: "Moxico",        capital: "Luena",        cx: 330, cy: 270 },
-  { slug: "moxico-leste",  name: "Moxico Leste",  capital: "Cazombo",      cx: 400, cy: 240 },
   { slug: "bie",           name: "Bié",           capital: "Cuíto",        cx: 230, cy: 255 },
   { slug: "huambo",        name: "Huambo",        capital: "Huambo",       cx: 175, cy: 265 },
   { slug: "benguela",      name: "Benguela",      capital: "Benguela",     cx: 118, cy: 288 },

@@ -7,7 +7,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { VodCard, type VodData } from "@/components/videos/vod-card"
 import { VodComments, type Comment } from "@/components/videos/vod-comments"
-import { Play, Heart, Share2, Bookmark, Flag, ChevronDown, ChevronUp, Clock, Eye, MessageSquare } from "lucide-react"
+import { VodChapters } from "@/components/videos/vod-chapters"
+import { VodShareButton } from "@/components/videos/vod-share-button"
+import { VideoProgressTracker } from "@/components/videos/video-progress-tracker"
+import { Play, Heart, Bookmark, ChevronDown, ChevronUp, Clock, Eye } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 
@@ -55,6 +58,9 @@ export default function VideoPage() {
             </div>
           </div>
 
+          {/* Progress tracker */}
+          <VideoProgressTracker videoId={id} duration={v.duration} />
+
           {/* Info */}
           <div className="space-y-3">
             <h1 className="text-lg font-bold">{v.title}</h1>
@@ -67,7 +73,7 @@ export default function VideoPage() {
                 <Button variant="outline" size="sm" className="text-xs" onClick={() => toast.success("A seguir!")}>Seguir</Button>
                 <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => toast.success("Salos enviados!")}><Heart className="w-3 h-3" />Salos</Button>
                 <Button variant="ghost" size="sm" className="text-xs gap-1" onClick={() => { setSaved(!saved); toast.success(saved ? "Removido" : "Guardado") }}><Bookmark className={`w-3 h-3 ${saved ? "fill-primary text-primary" : ""}`} />{saved ? "Guardado" : "Guardar"}</Button>
-                <Button variant="ghost" size="sm" className="text-xs gap-1" onClick={() => { navigator.clipboard.writeText(`${window.location.href}?t=4523`); toast.success("Link copiado!") }}><Share2 className="w-3 h-3" />Partilhar</Button>
+                <VodShareButton videoId={id} title={v.title} currentTime={4523} />
               </div>
             </div>
 
@@ -86,18 +92,7 @@ export default function VideoPage() {
             </button>
 
             {/* Chapters */}
-            {v.chapters.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="text-xs font-bold">Capítulos</h3>
-                <div className="flex flex-wrap gap-2">
-                  {v.chapters.map((ch, i) => (
-                    <button key={i} className="px-2 py-1 rounded-lg bg-white/[0.04] border border-white/10 text-xs hover:border-primary/30 transition-all">
-                      <span className="text-primary font-mono">{formatDuration(ch.time)}</span> {ch.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            <VodChapters chapters={v.chapters} duration={v.duration} />
 
             {/* Tags */}
             <div className="flex flex-wrap gap-1.5">{v.tags.map(t => <Badge key={t} variant="outline" className="text-[9px]">#{t}</Badge>)}</div>

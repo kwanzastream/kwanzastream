@@ -16,6 +16,15 @@ const nextConfig = {
         ],
       },
       {
+        // VOD embed routes — allow iframe embedding on external sites
+        source: "/videos/:id/embed",
+        headers: [
+          { key: "X-Frame-Options", value: "ALLOWALL" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+      {
         source: "/(.*)",
         headers: [
           { key: "X-Frame-Options", value: "DENY" },
