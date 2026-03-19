@@ -1,12 +1,9 @@
-﻿export default function TorneiosPage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-      <h1 className="text-2xl font-bold text-muted-foreground">
-        Torneios
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Em construÃ§Ã£o
-      </p>
-    </div>
-  )
+"use client"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
+
+export default function TorneiosPage() {
+  const router = useRouter()
+  useEffect(() => { router.replace("/torneios/proximos") }, [router])
+  return null
 }
