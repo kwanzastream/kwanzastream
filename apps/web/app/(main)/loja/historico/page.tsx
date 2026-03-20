@@ -1,8 +1,8 @@
 "use client"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
-export default function CheckoutPage() {
+export default function HistoricoPage() {
   const router = useRouter()
-  useEffect(() => { router.replace("/loja/checkout/pagamento") }, [router])
+  useEffect(() => { router.replace("/loja/pedidos") }, [router])
   return null
 }
