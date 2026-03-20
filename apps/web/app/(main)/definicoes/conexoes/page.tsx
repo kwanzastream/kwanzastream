@@ -1,28 +1,21 @@
 "use client"
+import { ConnectedServiceRow, type ConnectedServiceData } from "@/components/settings/connected-service-row"
+import { Link2 } from "lucide-react"
+import { toast } from "sonner"
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Smartphone, Monitor, Globe, Clock } from "lucide-react"
+const SERVICES: ConnectedServiceData[] = [
+  { id: "google", name: "Google", icon: "🔍", connected: true, detail: "streamer@gmail.com" },
+  { id: "whatsapp", name: "WhatsApp", icon: "💬", connected: true, detail: "+244 9XX XXX XXX" },
+  { id: "obs", name: "OBS Studio", icon: "🎥", connected: false, detail: "Plugin de integração" },
+  { id: "discord", name: "Discord", icon: "🎮", connected: false, detail: "Bot de notificações (v2)" },
+]
 
-export default function DispositivosPage() {
+export default function ConexoesPage() {
   return (
-    <div className="space-y-6 max-w-lg">
-      <Card className="border-border/50"><CardHeader><CardTitle className="text-base flex items-center gap-2"><Smartphone className="w-4 h-4" />Sessões activas</CardTitle><CardDescription>Dispositivos onde a tua conta está com sessão aberta</CardDescription></CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20">
-            <Monitor className="w-5 h-5 text-primary shrink-0" />
-            <div className="flex-1"><div className="flex items-center gap-2"><p className="text-sm font-medium">Este dispositivo</p><Badge className="bg-green-500/10 text-green-500 text-[10px] h-4">Activa</Badge></div><p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1"><Globe className="w-3 h-3" />Luanda, Angola · Windows</p><p className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" />Agora</p></div>
-          </div>
-          <div className="text-center py-4"><p className="text-xs text-muted-foreground">Não há outras sessões activas</p></div>
-        </CardContent>
-      </Card>
-      <Card className="border-border/50"><CardHeader><CardTitle className="text-base">Segurança de sessão</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">Termina todas as sessões excepto a actual. Útil se suspeitares de acesso não autorizado.</p>
-          <Button variant="outline" className="w-full text-xs">Terminar todas as outras sessões</Button>
-        </CardContent>
-      </Card>
+    <div className="max-w-lg space-y-5">
+      <h1 className="text-lg font-bold flex items-center gap-2"><Link2 className="w-5 h-5" />Conexões Externas</h1>
+      <p className="text-[10px] text-muted-foreground">Serviços ligados à tua conta.</p>
+      <div className="space-y-1.5">{SERVICES.map(s => <ConnectedServiceRow key={s.id} service={s} onToggle={() => toast.success(`${s.name}: ${s.connected ? "desligado" : "ligado"}`)} />)}</div>
     </div>
   )
 }
