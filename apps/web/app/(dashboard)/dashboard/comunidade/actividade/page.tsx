@@ -1,12 +1,8 @@
-﻿export default function ComunidadeActividadePage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-      <h1 className="text-2xl font-bold text-muted-foreground">
-        ComunidadeActividade
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Em construÃ§Ã£o
-      </p>
-    </div>
-  )
+"use client"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
+export default function ActividadeHub() {
+  const router = useRouter()
+  useEffect(() => { router.replace("/dashboard/comunidade/actividade/chat") }, [router])
+  return null
 }
