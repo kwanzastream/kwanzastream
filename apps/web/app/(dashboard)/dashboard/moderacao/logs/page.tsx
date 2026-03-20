@@ -1,12 +1,8 @@
-﻿export default function ModeracaoLogsPage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-      <h1 className="text-2xl font-bold text-muted-foreground">
-        ModeracaoLogs
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Em construÃ§Ã£o
-      </p>
-    </div>
-  )
+"use client"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
+export default function LogsHub() {
+  const router = useRouter()
+  useEffect(() => { router.replace("/dashboard/moderacao/logs/chat") }, [router])
+  return null
 }
