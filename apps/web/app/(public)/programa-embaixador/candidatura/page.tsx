@@ -1,12 +1,8 @@
-﻿export default function ProgramaEmbaixadorCandidaturaPage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-      <h1 className="text-2xl font-bold text-muted-foreground">
-        ProgramaEmbaixadorCandidatura
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Em construÃ§Ã£o
-      </p>
-    </div>
-  )
+"use client"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
+export default function CandidaturaEmbaixadorPage() {
+  const router = useRouter()
+  useEffect(() => { router.replace("/programa-embaixador") }, [router])
+  return null
 }
