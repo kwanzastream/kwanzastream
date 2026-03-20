@@ -1,57 +1,22 @@
 "use client"
-
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
-import { api } from "@/lib/api"
+import { ArrowLeft, ArrowUpRight, Shield, Smartphone, Banknote } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { toast } from "sonner"
-import { ArrowLeft, Loader2, AlertCircle } from "lucide-react"
+import { KYCStatusCard } from "@/components/wallet/kyc-status-card"
 import Link from "next/link"
 
+const METHODS = [
+  { id: "multicaixa", name: "Multicaixa Express", desc: "Transferência para conta bancária", icon: Smartphone, href: "/wallet/levantar/multicaixa" },
+  { id: "banco", name: "Transferência Bancária", desc: "Directamente para o banco", icon: Banknote, href: "/wallet/levantar/banco" },
+  { id: "unitel", name: "Unitel Money", desc: "Para número Unitel", icon: Smartphone, href: "/wallet/levantar/unitel-money" },
+]
+
 export default function LevantarPage() {
-  const { user, refreshUser } = useAuth()
-  const router = useRouter()
-  const [amount, setAmount] = useState("")
-  const [iban, setIban] = useState("")
-  const [loading, setLoading] = useState(false)
-  const balance = (user as any)?.balance ?? 0
-
-  if (((user as any)?.kycTier ?? 0) === 0) {
-    return <div className="max-w-md mx-auto text-center py-16"><p className="text-3xl mb-4">🔒</p><h2 className="font-bold text-lg mb-2">KYC necessário</h2><p className="text-sm text-muted-foreground mb-6">Verifica a tua identidade para levantar fundos.</p><Link href="/kyc"><Button>Verificar identidade</Button></Link></div>
-  }
-
-  const handleWithdraw = async () => {
-    const amountKz = parseFloat(amount)
-    if (!amountKz || amountKz < 1000) { toast.error("Mínimo de levantamento: 1.000 Kz"); return }
-    if (amountKz * 100 > balance) { toast.error("Saldo insuficiente"); return }
-    if (!iban.trim()) { toast.error("Introduz os dados bancários"); return }
-    setLoading(true)
-    try {
-      await api.post("/api/wallet/withdraw", { amount: Math.round(amountKz * 100), method: "BANK_TRANSFER", bankDetails: { iban } })
-      await refreshUser()
-      toast.success("Pedido de levantamento submetido! Processado em 1-3 dias úteis.")
-      router.push("/wallet")
-    } catch (err: any) { toast.error(err?.response?.data?.message || "Erro ao processar levantamento") }
-    finally { setLoading(false) }
-  }
-
   return (
-    <div className="max-w-md mx-auto space-y-4">
-      <div className="flex items-center gap-3"><Button variant="ghost" size="icon" onClick={() => router.push("/wallet")}><ArrowLeft className="w-4 h-4" /></Button><h1 className="text-xl font-bold">Levantar</h1></div>
-      <Card className="border-border/50">
-        <CardHeader><CardTitle className="text-base">Transferência bancária</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="p-3 rounded-lg bg-muted/30 flex items-center justify-between"><p className="text-xs text-muted-foreground">Saldo disponível</p><p className="font-bold">{(balance / 100).toLocaleString("pt-AO", { minimumFractionDigits: 2 })} Kz</p></div>
-          <div className="space-y-1.5"><Label>Valor a levantar (Kz)</Label><Input type="number" placeholder="Mínimo 1.000 Kz" value={amount} onChange={(e) => setAmount(e.target.value)} min={1000} /><p className="text-xs text-muted-foreground">Mínimo: 1.000 Kz · Taxa: 0%</p></div>
-          <div className="space-y-1.5"><Label>NIB / IBAN</Label><Input placeholder="AO06 0000 0000 0000 0000 000" value={iban} onChange={(e) => setIban(e.target.value)} className="font-mono" /></div>
-          <div className="flex items-start gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3"><AlertCircle className="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" /><p className="text-xs text-yellow-600 dark:text-yellow-400">Os levantamentos são processados em 1 a 3 dias úteis. Certifica-te que o NIB está correcto.</p></div>
-          <Button className="w-full" onClick={handleWithdraw} disabled={loading || !amount || !iban}>{loading ? <Loader2 className="w-4 h-4 animate-spin" /> : `Levantar ${amount ? `${parseFloat(amount).toLocaleString("pt-AO")} Kz` : ""}`}</Button>
-        </CardContent>
-      </Card>
+    <div className="max-w-lg mx-auto py-6 px-4 space-y-5">
+      <div className="flex items-center gap-3"><Link href="/wallet/saldo"><Button variant="ghost" size="icon"><ArrowLeft className="w-4 h-4" /></Button></Link><h1 className="text-lg font-bold flex items-center gap-2"><ArrowUpRight className="w-5 h-5 text-red-400" />Levantar</h1></div>
+      <KYCStatusCard kyc={{ status: "none" }} />
+      <div className="p-3 rounded-xl border border-white/10 text-[10px] text-muted-foreground space-y-1"><p className="font-bold flex items-center gap-1"><Shield className="w-3 h-3 text-primary" />Requisitos:</p><ul className="list-disc list-inside space-y-0.5"><li>KYC verificado</li><li>Saldo mínimo: 5.000 Kz</li><li>Conta activa há mais de 30 dias</li></ul></div>
+      <div className="space-y-1.5">{METHODS.map(m => <Link key={m.id} href={m.href} className="flex items-center gap-3 p-3 rounded-xl border border-white/10 hover:border-primary/30 transition-all"><div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center"><m.icon className="w-4 h-4 text-primary" /></div><div><p className="text-sm font-bold">{m.name}</p><p className="text-[9px] text-muted-foreground">{m.desc}</p></div></Link>)}</div>
     </div>
   )
 }
