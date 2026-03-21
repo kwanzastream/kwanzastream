@@ -30,4 +30,19 @@ router.get('/streams/:id/analytics', getStreamAnalytics as any);
 router.get('/subscribers/analytics', getSubscriberAnalytics as any);
 router.get('/followers/growth', getFollowerGrowth as any);
 
+// Grupo 35: Featured & Shelf
+import {
+    getFeaturedSettings,
+    updateSuggestedChannels,
+    updateShelf,
+    updateBanner,
+    updateTrailer,
+} from '../controllers/creator/featuredController';
+
+router.get('/featured', getFeaturedSettings as any);
+router.patch('/featured/suggested-channels', updateSuggestedChannels as any);
+router.patch('/featured/shelf', updateShelf as any);
+router.patch('/featured/banner', updateBanner as any);
+router.patch('/featured/trailer', updateTrailer as any);
+
 export default router;

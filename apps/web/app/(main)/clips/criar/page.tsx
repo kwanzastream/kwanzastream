@@ -4,7 +4,7 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Navbar } from "@/components/navbar"
+
 import { MobileNav } from "@/components/mobile-nav"
 import { clipsService, streamService } from "@/lib/services"
 import { useAuth } from "@/lib/auth-context"
@@ -82,7 +82,6 @@ export default function CreateClipPage() {
     if (!isLoggedIn) {
         return (
             <div className="min-h-screen bg-background flex flex-col">
-                <Navbar />
                 <main className="flex-1 flex items-center justify-center">
                     <div className="text-center space-y-4">
                         <Scissors className="w-16 h-16 text-muted-foreground/20 mx-auto" />
@@ -97,7 +96,6 @@ export default function CreateClipPage() {
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
-            <Navbar />
             <main className="flex-1 overflow-y-auto pb-20 md:pb-8">
                 <div className="max-w-2xl mx-auto px-4 md:px-6 py-6 space-y-6">
                     {/* Header */}

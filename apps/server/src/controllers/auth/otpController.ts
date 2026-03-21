@@ -4,11 +4,14 @@
 
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import jwt from 'jsonwebtoken';
 import prisma from '../../config/prisma';
 import { createOtp, verifyOtp, incrementOtpAttempts, OtpCooldownError } from '../../services/otpService';
 import { sendOtpSms } from '../../services/smsService';
 import { generateTokenPair } from '../../services/jwtService';
-import { requestOtpSchema, verifyOtpSchema, setAuthCookies } from './authHelpers';
+import { requestOtpSchema, verifyOtpSchema, completePhoneRegSchema, setAuthCookies } from './authHelpers';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 
 export const requestOtp = async (req: Request, res: Response) => {
     try {
@@ -83,23 +86,23 @@ export const verifyOtpAndLogin = async (req: Request, res: Response) => {
         }
 
         if (!user) {
-            user = await prisma.user.create({
-                data: {
-                    phone,
-                    isVerified: true,
-                    termsAcceptedAt: new Date(),
-                    minAgeConfirmedAt: new Date(),
-                },
-            });
-        } else {
-            await prisma.user.update({
-                where: { id: user.id },
-                data: {
-                    lastLoginAt: new Date(),
-                    isVerified: true,
-                },
+            // New user — don't create yet, require email first
+            const tempToken = jwt.sign({ phone, purpose: 'phone-reg' }, JWT_SECRET, { expiresIn: '10m' });
+            return res.json({
+                success: true,
+                requiresEmail: true,
+                tempToken,
             });
         }
+
+        // Existing user — login normally
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                lastLoginAt: new Date(),
+                isVerified: true,
+            },
+        });
 
         const tokens = await generateTokenPair(user.id, user.role);
         setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
@@ -123,6 +126,77 @@ export const verifyOtpAndLogin = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Validation error', details: error.errors });
         }
         console.error('Verify OTP error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
+ * Complete phone registration — creates user with phone + email
+ * Called after OTP verification for new users
+ */
+export const completePhoneRegistration = async (req: Request, res: Response) => {
+    try {
+        const { tempToken, email } = completePhoneRegSchema.parse(req.body);
+
+        // Verify temp token
+        let payload: any;
+        try {
+            payload = jwt.verify(tempToken, JWT_SECRET);
+        } catch {
+            return res.status(401).json({ error: 'Token expirado. Recomeça o registo.' });
+        }
+
+        if (payload.purpose !== 'phone-reg' || !payload.phone) {
+            return res.status(400).json({ error: 'Token inválido.' });
+        }
+
+        const phone = payload.phone;
+
+        // Check phone not already taken (race condition guard)
+        const existingByPhone = await prisma.user.findUnique({ where: { phone } });
+        if (existingByPhone) {
+            return res.status(400).json({ error: 'Este número já está registado.' });
+        }
+
+        // Check email not already taken
+        const existingByEmail = await prisma.user.findUnique({ where: { email } });
+        if (existingByEmail) {
+            return res.status(400).json({ error: 'Este email já está registado.' });
+        }
+
+        // Create user with phone + email
+        const user = await prisma.user.create({
+            data: {
+                phone,
+                email,
+                isVerified: true,
+                termsAcceptedAt: new Date(),
+                minAgeConfirmedAt: new Date(),
+            },
+        });
+
+        const tokens = await generateTokenPair(user.id, user.role);
+        setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+
+        res.status(201).json({
+            success: true,
+            user: {
+                id: user.id,
+                phone: user.phone,
+                email: user.email,
+                username: user.username,
+                displayName: user.displayName,
+                avatarUrl: user.avatarUrl,
+                role: user.role,
+                isVerified: user.isVerified,
+                balance: Number(user.balance),
+            },
+        });
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ error: 'Erro de validação', details: error.errors });
+        }
+        console.error('Complete phone registration error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };

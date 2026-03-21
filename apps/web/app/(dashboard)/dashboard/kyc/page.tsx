@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Navbar } from '@/components/navbar'
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -153,7 +153,6 @@ export default function StudioKYCPage() {
 
     return (
         <div className="min-h-dvh bg-background pb-mobile-nav">
-            <Navbar />
             <div className="max-w-4xl mx-auto px-4 md:px-6 pt-20 md:pt-24 pb-12">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8">

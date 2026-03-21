@@ -7,6 +7,7 @@ export interface RegState {
   phoneVerified?: boolean
   email?: string
   emailVerified?: boolean
+  tempToken?: string
   username?: string
   displayName?: string
   password?: string

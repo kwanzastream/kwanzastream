@@ -68,4 +68,9 @@ export const loginSchema = z.object({
     password: z.string().min(1, 'Senha é obrigatória'),
 });
 
+export const completePhoneRegSchema = z.object({
+    tempToken: z.string().min(1, 'Token temporário é obrigatório'),
+    email: z.string().email('Email inválido'),
+});
+
 export const SALT_ROUNDS = 12;

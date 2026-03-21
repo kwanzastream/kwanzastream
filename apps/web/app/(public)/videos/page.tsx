@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Navbar } from "@/components/navbar"
+
 import { MobileNav } from "@/components/mobile-nav"
 import { useAuth } from "@/lib/auth-context"
 import {
@@ -87,8 +87,6 @@ export default function VodsPage() {
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
-            <Navbar />
-
             <main className="flex-1 overflow-y-auto pb-20 md:pb-8">
                 <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-6">
                     {/* Header */}

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { CheckCircle2, AlertCircle, XCircle, Clock } from "lucide-react"
-import { Navbar } from "@/components/navbar"
+
 
 const services = [
   {
@@ -85,8 +85,6 @@ export default function StatusPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto px-4 md:px-6 py-12 space-y-8">
           <div className="text-center space-y-4">

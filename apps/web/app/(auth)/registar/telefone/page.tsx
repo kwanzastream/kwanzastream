@@ -14,8 +14,9 @@ import { setRegState } from "@/lib/registration-state"
 import Link from "next/link"
 
 const REG_STEPS = [
-  { label: "Telefone" }, { label: "Verificação" }, { label: "Username" },
-  { label: "Nascimento" }, { label: "Interesses" }, { label: "Canais" }, { label: "Concluído" },
+  { label: "Telefone" }, { label: "Verificação" }, { label: "Email" },
+  { label: "Username" }, { label: "Nascimento" }, { label: "Interesses" },
+  { label: "Canais" }, { label: "Concluído" },
 ]
 
 export default function RegistarTelefonePage() {

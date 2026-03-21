@@ -11,8 +11,9 @@ import { ArrowLeft, ArrowRight } from "lucide-react"
 import { getRegState, setRegState, requireRegStep } from "@/lib/registration-state"
 
 const REG_STEPS = [
-  { label: "Telefone" }, { label: "Verificação" }, { label: "Username" },
-  { label: "Nascimento" }, { label: "Interesses" }, { label: "Canais" }, { label: "Concluído" },
+  { label: "Telefone" }, { label: "Verificação" }, { label: "Email" },
+  { label: "Username" }, { label: "Nascimento" }, { label: "Interesses" },
+  { label: "Canais" }, { label: "Concluído" },
 ]
 
 const MONTHS = [
@@ -54,7 +55,7 @@ export default function RegistarDataNascimentoPage() {
 
   const handleContinue = () => {
     const dob = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`
-    setRegState({ dateOfBirth: dob, step: 4 })
+    setRegState({ dateOfBirth: dob, step: 5 })
     router.push("/registar/interesses")
   }
 
@@ -65,7 +66,7 @@ export default function RegistarDataNascimentoPage() {
   return (
     <AuthLayout>
       <div className="mb-6">
-        <ProgressSteps steps={REG_STEPS} currentStep={3} />
+        <ProgressSteps steps={REG_STEPS} currentStep={4} />
       </div>
       <Card>
         <CardHeader>

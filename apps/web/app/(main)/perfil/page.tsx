@@ -18,7 +18,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import Link from "next/link"
-import { Navbar } from "@/components/navbar"
+
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import {
@@ -100,8 +100,6 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-
       {/* Profile Header / Cover */}
       <div className="relative h-48 md:h-64 lg:h-80 bg-linear-to-br from-primary via-secondary to-black">
         <div className="absolute inset-0 angola-pattern opacity-10" />

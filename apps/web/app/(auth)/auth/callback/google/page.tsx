@@ -22,14 +22,18 @@ function GoogleCallbackContent() {
         }
 
         if (token) {
+            // Store token for Next.js middleware (ks_token cookie + localStorage)
             localStorage.setItem("ks_token", token)
-            document.cookie = `ks_token=${token}; path=/; max-age=${60 * 60 * 24 * 7}`
+            document.cookie = `ks_token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
             refreshUser().then(() => {
+                toast.success("Bem-vindo ao Kwanza Stream!")
+                router.push("/feed")
+            }).catch(() => {
                 toast.success("Bem-vindo!")
                 router.push("/feed")
             })
         } else {
-            // No token in URL means backend set httpOnly cookies directly
+            // No token in URL — try refreshing from httpOnly cookies
             refreshUser().then(() => {
                 router.push("/feed")
             }).catch(() => {

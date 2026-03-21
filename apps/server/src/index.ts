@@ -115,6 +115,7 @@ app.use(requestLogger);
 
 // ============== RATE LIMITING ==============
 // Auth endpoints: strict limit to prevent OTP/login brute-force
+// Skips /me and /refresh since those are session-check endpoints called on every page load
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 10,                   // 10 attempts per 15 min
@@ -122,6 +123,11 @@ const authLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     validate: { xForwardedForHeader: false, ip: false },
+    skip: (req) => {
+        // Don't rate-limit session checks and token refreshes
+        const path = req.path;
+        return path === '/me' || path === '/refresh' || path === '/google' || path === '/google/callback';
+    },
     keyGenerator: (req) => {
         // Combine IP + userId (if present) for shared networks
         const ip = req.ip || req.socket.remoteAddress || 'unknown';

@@ -18,13 +18,10 @@ import {
   MapPin
 } from "lucide-react"
 import Link from "next/link"
-import { Navbar } from "@/components/navbar"
 
 export default function InstitutionalPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-
       <main className="flex-1 overflow-y-auto">
         {/* Hero Section */}
         <section className="relative pt-20 pb-16 px-6 max-w-7xl mx-auto text-center">

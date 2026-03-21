@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Send } from "lucide-react"
 import Link from "next/link"
-import { Navbar } from "@/components/navbar"
+
 
 export default function TicketPage() {
   const [category, setCategory] = React.useState("")
@@ -25,8 +25,6 @@ export default function TicketPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-4 md:px-6 py-8 space-y-8">
           <Link href="/ajuda">

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
     requestOtp,
     verifyOtpAndLogin,
+    completePhoneRegistration,
     register,
     loginWithPassword,
     refreshAccessToken,
@@ -23,6 +24,7 @@ router.post('/register', register);
 router.post('/login', loginWithPassword);
 router.post('/request-otp', requestOtp);
 router.post('/verify-otp', verifyOtpAndLogin);
+router.post('/complete-phone-registration', completePhoneRegistration);
 router.post('/refresh', refreshAccessToken);
 router.post('/logout', logout);
 

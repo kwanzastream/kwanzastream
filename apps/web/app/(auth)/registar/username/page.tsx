@@ -16,8 +16,9 @@ import { getRegState, setRegState, requireRegStep } from "@/lib/registration-sta
 import { isReservedUsername } from "@/lib/reserved-usernames"
 
 const REG_STEPS = [
-  { label: "Telefone" }, { label: "Verificação" }, { label: "Username" },
-  { label: "Nascimento" }, { label: "Interesses" }, { label: "Canais" }, { label: "Concluído" },
+  { label: "Telefone" }, { label: "Verificação" }, { label: "Email" },
+  { label: "Username" }, { label: "Nascimento" }, { label: "Interesses" },
+  { label: "Canais" }, { label: "Concluído" },
 ]
 
 type UsernameStatus = "idle" | "checking" | "available" | "taken" | "invalid" | "reserved"
@@ -34,8 +35,8 @@ export default function RegistarUsernamePage() {
   useEffect(() => {
     const state = getRegState()
     const redirect = requireRegStep(state, ["phoneVerified"], "/registar/telefone")
-    // Also allow email verified
-    if (redirect && !state?.emailVerified) { router.replace(redirect); return }
+    // Also allow email verified (email registration path)
+    if (redirect && !state?.emailVerified && !state?.email) { router.replace("/registar/email-obrigatorio"); return }
     setReady(true)
   }, [router])
 
@@ -80,16 +81,16 @@ export default function RegistarUsernamePage() {
   }
 
   const handleContinue = () => {
-    setRegState({ username, displayName: displayName || username, step: 3 })
+    setRegState({ username, displayName: displayName || username, step: 4 })
     router.push("/registar/data-nascimento")
   }
 
   if (!ready) return null
 
   return (
-    <AuthLayout showBackLink backHref="/registar/verificar-telefone" backLabel="Voltar">
+    <AuthLayout showBackLink backHref="/registar/email-obrigatorio" backLabel="Voltar">
       <div className="mb-6">
-        <ProgressSteps steps={REG_STEPS} currentStep={2} />
+        <ProgressSteps steps={REG_STEPS} currentStep={3} />
       </div>
       <Card>
         <CardHeader>

@@ -4,7 +4,7 @@ import * as React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { Navbar } from "@/components/navbar"
+
 import { Shield, Database, Eye, Trash2, Lock, Globe } from "lucide-react"
 import Link from "next/link"
 
@@ -53,7 +53,6 @@ const sections = [
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto px-4 md:px-6 py-12 space-y-8">
           {/* Header */}

@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { LayoutDashboard, Radio, BarChart2, Film, Users, DollarSign, Shield, Settings2, ChevronLeft, Puzzle, Mic2, BookOpen, Handshake, Star } from "lucide-react"
+import { LayoutDashboard, Radio, BarChart2, Film, Users, DollarSign, Shield, Settings2, ChevronLeft, Puzzle, Mic2, BookOpen, Handshake, Star, Sparkles } from "lucide-react"
 
 const NAV_GROUPS = [
   { label: null, items: [
@@ -39,6 +39,12 @@ const NAV_GROUPS = [
       { href: "/dashboard/monetizacao/payouts", label: "Payouts" },
     ]},
     { href: "/dashboard/membership", icon: Star, label: "Memberships" },
+    { href: "/dashboard/featured", icon: Sparkles, label: "Featured", children: [
+      { href: "/dashboard/featured/canais-sugeridos", label: "Canais Sugeridos" },
+      { href: "/dashboard/featured/shelf", label: "Shelf" },
+      { href: "/dashboard/featured/banner-offline", label: "Banner Offline" },
+      { href: "/dashboard/featured/trailer-canal", label: "Trailer" },
+    ]},
   ]},
   { label: "Stream", items: [
     { href: "/dashboard/stream-config", icon: Settings2, label: "Stream Config", children: [

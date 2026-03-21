@@ -11,6 +11,6 @@
  * Route imports remain unchanged: import { ... } from '../controllers/authController'
  */
 
-export { requestOtp, verifyOtpAndLogin } from './auth/otpController';
+export { requestOtp, verifyOtpAndLogin, completePhoneRegistration } from './auth/otpController';
 export { register, loginWithPassword, refreshAccessToken, logout, logoutAll, getMe } from './auth/loginController';
 export { sendVerificationEmail, verifyEmail, requestPasswordReset, resetPassword } from './auth/passwordController';

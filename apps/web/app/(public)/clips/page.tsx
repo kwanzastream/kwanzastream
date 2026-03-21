@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Play, Eye, Flame, Clock, Scissors, TrendingUp, CalendarDays } from "lucide-react"
-import { Navbar } from "@/components/navbar"
+
 import { MobileNav } from "@/components/mobile-nav"
 import { clipsService } from "@/lib/services"
 import { useAuth } from "@/lib/auth-context"
@@ -68,7 +68,6 @@ export default function ClipsPage() {
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
-            <Navbar />
             <main className="flex-1 overflow-y-auto pb-20 md:pb-8">
                 <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 space-y-6">
                     {/* Header */}

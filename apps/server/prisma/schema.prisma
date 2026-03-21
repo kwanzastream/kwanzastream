@@ -75,6 +75,15 @@ model User {
   interests     String[] @default([])
   onboardingCompleted Boolean @default(false)
   
+  // Featured & Shelf (Dashboard — Grupo 35)
+  featuredMode      String   @default("auto")  // "auto" | "manual"
+  featuredChannels  String[] @default([])       // ordered list of user IDs (max 10)
+  shelfType         String   @default("disabled") // "channels" | "team" | "disabled"
+  shelfChannels     String[] @default([])       // shelf user IDs (max 6)
+  offlineBannerUrl  String?                     // custom offline banner
+  trailerUrl        String?                     // channel trailer video URL
+  isLive            Boolean  @default(false)    // live status flag
+  
   // Google OAuth
   googleId      String?  @unique
   

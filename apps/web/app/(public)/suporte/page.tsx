@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Search, HelpCircle, MessageSquare, FileText, Video, Wallet, Users, Calendar } from "lucide-react"
 import Link from "next/link"
-import { Navbar } from "@/components/navbar"
+
 
 const faqCategories = [
   {
@@ -93,8 +93,6 @@ export default function HelpPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-12 space-y-12">
           {/* Header */}

@@ -9,7 +9,7 @@ import {
   Calendar, Clock, Users, Flame, Plus, CheckCircle2
 } from "lucide-react"
 import Link from "next/link"
-import { Navbar } from "@/components/navbar"
+
 import { MobileNav } from "@/components/mobile-nav"
 import { eventsService } from "@/lib/services"
 
@@ -64,7 +64,6 @@ export default function EventsPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
       <main className="flex-1 overflow-y-auto pb-20 md:pb-8">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 space-y-8">
           {/* Header */}

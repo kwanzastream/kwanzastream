@@ -10,8 +10,9 @@ import { ArrowRight, Users, Eye } from "lucide-react"
 import { getRegState, setRegState, requireRegStep } from "@/lib/registration-state"
 
 const REG_STEPS = [
-  { label: "Telefone" }, { label: "Verificação" }, { label: "Username" },
-  { label: "Nascimento" }, { label: "Interesses" }, { label: "Canais" }, { label: "Concluído" },
+  { label: "Telefone" }, { label: "Verificação" }, { label: "Email" },
+  { label: "Username" }, { label: "Nascimento" }, { label: "Interesses" },
+  { label: "Canais" }, { label: "Concluído" },
 ]
 
 const MOCK_CHANNELS = [
@@ -51,14 +52,14 @@ export default function RegistarCanaisSugeridosPage() {
   const followAll = () => setFollowed(new Set(MOCK_CHANNELS.map((c) => c.username)))
 
   const handleContinue = () => {
-    setRegState({ step: 6 })
+    setRegState({ step: 7 })
     router.push("/registar/concluido")
   }
 
   return (
     <AuthLayout>
       <div className="mb-6">
-        <ProgressSteps steps={REG_STEPS} currentStep={5} />
+        <ProgressSteps steps={REG_STEPS} currentStep={6} />
       </div>
       <Card>
         <CardHeader>

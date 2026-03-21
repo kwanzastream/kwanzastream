@@ -16,8 +16,9 @@ function maskPhone(phone: string) {
 }
 
 const REG_STEPS = [
-  { label: "Telefone" }, { label: "Verificação" }, { label: "Username" },
-  { label: "Nascimento" }, { label: "Interesses" }, { label: "Canais" }, { label: "Concluído" },
+  { label: "Telefone" }, { label: "Verificação" }, { label: "Email" },
+  { label: "Username" }, { label: "Nascimento" }, { label: "Interesses" },
+  { label: "Canais" }, { label: "Concluído" },
 ]
 
 export default function RegistarVerificarTelefonePage() {
@@ -39,9 +40,10 @@ export default function RegistarVerificarTelefonePage() {
   const handleVerify = async (code: string) => {
     // In production, this would call /api/auth/verify-otp
     // For now, we trust the OTP flow and just mark as verified
+    // The response may include a tempToken for new users
     setRegState({ phoneVerified: true, step: 2 })
     toast.success("Número verificado!")
-    router.push("/registar/username")
+    router.push("/registar/email-obrigatorio")
   }
 
   const handleResend = async () => {

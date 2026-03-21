@@ -130,10 +130,10 @@ export const handleGoogleCallback = async (req: Request, res: Response) => {
         const tokens = await generateTokenPair(user.id, user.role);
         setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 
-        // Redirect to frontend
+        // Redirect to frontend callback page with token
+        // The frontend callback sets ks_token in localStorage + cookie (needed by Next.js middleware)
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-        const redirectPath = user.onboardingCompleted ? '/feed' : '/onboarding';
-        res.redirect(`${frontendUrl}${redirectPath}`);
+        res.redirect(`${frontendUrl}/auth/callback/google?token=${tokens.accessToken}`);
 
     } catch (error) {
         console.error('Google OAuth callback error:', error);
