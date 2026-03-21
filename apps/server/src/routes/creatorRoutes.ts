@@ -60,4 +60,25 @@ router.patch('/tournaments/:id/participants/:userId', updateParticipant as any);
 router.patch('/tournaments/:id/matches/:matchId', updateMatchResult as any);
 router.get('/tournaments/inscriptions/:id', getInscriptionDetail as any);
 
+// Grupo 37: Radio
+import {
+    getRadioOverview,
+    updateRadioConfig,
+    updateRadioArtwork,
+    addScheduleSlot,
+    removeScheduleSlot,
+    getRadioAnalytics,
+    getRadioStreamKey,
+    rotateRadioStreamKey,
+} from '../controllers/creator/radioController';
+
+router.get('/radio', getRadioOverview as any);
+router.patch('/radio/config', updateRadioConfig as any);
+router.patch('/radio/artwork', updateRadioArtwork as any);
+router.post('/radio/schedule', addScheduleSlot as any);
+router.delete('/radio/schedule/:id', removeScheduleSlot as any);
+router.get('/radio/analytics', getRadioAnalytics as any);
+router.get('/radio/stream-key', getRadioStreamKey as any);
+router.post('/radio/stream-key/rotate', rotateRadioStreamKey as any);
+
 export default router;

@@ -149,6 +149,8 @@ model User {
   subscriptions     Subscription[]     @relation("Subscriptions")
   subscribers       Subscription[]     @relation("Subscribers")
   vods              Vod[]              @relation("UserVods")
+  radioConfig       RadioConfig?
+  radioSchedules    RadioSchedule[]
   
   @@index([phone])
   @@index([email])
@@ -625,4 +627,35 @@ model Vod {
 
   @@index([creatorId, createdAt])
   @@index([viewCount])
+}
+
+// ============== RADIO CONFIG (Grupo 37) ==============
+
+model RadioConfig {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  programName   String?
+  description   String?
+  primaryGenre  String?
+  extraGenres   String[] @default([])
+  quality       Int      @default(128) // kbps: 64, 128, 320
+  artworkUrl    String?
+  streamKey     String   @unique @default(cuid())
+  isEnabled     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model RadioSchedule {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dayOfWeek       Int      // 0=Dom, 1=Seg, ..., 6=Sáb
+  startHour       Int      // hora WAT (0-23)
+  durationMin     Int      // duração em minutos
+  notifyFollowers Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  @@index([userId, dayOfWeek])
 }

@@ -71,7 +71,13 @@ const NAV_GROUPS = [
   ]},
   { label: "Extra", items: [
     { href: "/dashboard/extensoes", icon: Puzzle, label: "Extensões" },
-    { href: "/dashboard/radio", icon: Mic2, label: "Modo Rádio" },
+    { href: "/dashboard/radio", icon: Mic2, label: "Modo Rádio", children: [
+      { href: "/dashboard/radio/configurar", label: "Configurar" },
+      { href: "/dashboard/radio/artwork", label: "Artwork" },
+      { href: "/dashboard/radio/schedule", label: "Schedule" },
+      { href: "/dashboard/radio/analytics", label: "Analytics" },
+      { href: "/dashboard/radio/stream-key", label: "Stream Key" },
+    ]},
     { href: "/dashboard/kwanza-camp", icon: BookOpen, label: "Kwanza Camp" },
   ]},
 ]
