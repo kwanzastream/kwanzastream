@@ -153,6 +153,7 @@ model User {
   radioSchedules    RadioSchedule[]
   campProgress      UserCampProgress[]
   campCertificates  CampCertificate[]
+  adCampaigns       AdCampaign[]
   
   @@index([phone])
   @@index([email])
@@ -684,4 +685,33 @@ model CampCertificate {
   certCode String   @unique // "KWC-2026-001234"
 
   @@index([userId])
+}
+
+// ============== ADS & MARCAS (Grupo 39) ==============
+
+model AdCampaign {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name             String
+  objective        String   // "awareness" | "drops" | "conversion" | "sponsorship"
+  status           String   @default("draft") // "draft" | "review" | "active" | "paused" | "completed"
+  budget           Float    // Kz
+  spent            Float    @default(0)
+  startDate        DateTime
+  endDate          DateTime
+  targetProvinces  String[] @default([])
+  targetCategories String[] @default([])
+  targetInterests  String[] @default([])
+  creativeUrl      String?
+  destinationUrl   String?
+  ctaText          String?
+  impressions      Int      @default(0)
+  clicks           Int      @default(0)
+  reference        String   @unique // "ADS-2026-00234"
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
 }

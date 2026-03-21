@@ -1,143 +1,47 @@
-"use client";
+"use client"
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
-import { Loader2, Plus, Target, Users, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { Megaphone, Users, Smartphone, Globe, ArrowRight, Gift, Target, Tv } from "lucide-react"
 
-export default function AdsPage() {
-    const activeCampaigns = [
-        {
-            id: 1,
-            name: "Promoção de Verão",
-            status: "Ativo",
-            budget: "50,000 Kz",
-            spent: "12,500 Kz",
-            impressions: "15k",
-            clicks: "450",
-        },
-        {
-            id: 2,
-            name: "Lançamento de Produto",
-            status: "Pausado",
-            budget: "100,000 Kz",
-            spent: "80,000 Kz",
-            impressions: "95k",
-            clicks: "2,300",
-        },
-    ];
-
-    const data = [
-        { name: "Seg", clicks: 400 },
-        { name: "Ter", clicks: 300 },
-        { name: "Qua", clicks: 550 },
-        { name: "Qui", clicks: 450 },
-        { name: "Sex", clicks: 600 },
-        { name: "Sab", clicks: 700 },
-        { name: "Dom", clicks: 500 },
-    ];
-
-    return (
-        <div className="container mx-auto p-6 space-y-8">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Kwanza Ads</h1>
-                    <p className="text-muted-foreground mt-1">Gerencie suas campanhas publicitárias e alcance mais pessoas.</p>
-                </div>
-                <Button className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Nova Campanha
-                </Button>
+export default function AdsLandingPage() {
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8 space-y-10">
+      <div className="text-center space-y-4">
+        <Megaphone className="w-12 h-12 text-primary mx-auto" />
+        <h1 className="text-3xl font-bold">Publicita no Kwanza Stream</h1>
+        <p className="text-lg text-muted-foreground">Alcança a audiência jovem angolana</p>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[{ icon: Users, value: "50.000+", label: "Utilizadores" }, { icon: Tv, value: "1.000+", label: "Streams/mês" },
+          { icon: Smartphone, value: "68%", label: "Mobile" }, { icon: Globe, value: "78%", label: "Audiência AO" }].map((s, i) => (
+          <div key={i} className="p-4 rounded-xl border border-white/10 text-center">
+            <s.icon className="w-5 h-5 text-primary mx-auto mb-2" /><p className="text-xl font-bold">{s.value}</p><p className="text-[10px] text-muted-foreground">{s.label}</p>
+          </div>
+        ))}
+      </div>
+      <p className="text-xs text-muted-foreground text-center">85% entre 18–34 anos · Engagement rate 3× superior à média</p>
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold text-center">Formatos disponíveis</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[{ icon: Gift, title: "Drops", desc: "Recompensas para viewers" }, { icon: Target, title: "Reward Campaigns", desc: "Engagement premium" },
+            { icon: Megaphone, title: "Ads (Banner)", desc: "Impressões e cliques" }, { icon: Users, title: "Managed", desc: "Estratégia personalizada" }].map((f, i) => (
+            <div key={i} className="p-4 rounded-xl border border-white/10 hover:border-primary/20 transition-all text-center space-y-1">
+              <f.icon className="w-5 h-5 text-primary mx-auto" /><p className="text-sm font-semibold">{f.title}</p><p className="text-[10px] text-muted-foreground">{f.desc}</p>
             </div>
-
-            <div className="grid gap-4 md:grid-cols-3">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Impressões Totais</CardTitle>
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">+235k</div>
-                        <p className="text-xs text-muted-foreground">+180.1% em relação ao mês passado</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Cliques (CTR)</CardTitle>
-                        <Target className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">+12,234</div>
-                        <p className="text-xs text-muted-foreground">+19% em relação ao mês passado</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Custo Médio</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">25 Kz</div>
-                        <p className="text-xs text-muted-foreground">-4% em relação ao mês passado</p>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4">
-                    <CardHeader>
-                        <CardTitle>Desempenho Geral</CardTitle>
-                        <CardDescription>Visualização de cliques nos últimos 7 dias</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pl-2">
-                        <div className="h-[200px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={data}>
-                                    <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
-                                    <Tooltip
-                                        contentStyle={{ backgroundColor: 'var(--card)', borderRadius: '8px', border: '1px solid var(--border)' }}
-                                        itemStyle={{ color: 'var(--foreground)' }}
-                                    />
-                                    <Bar dataKey="clicks" fill="var(--primary)" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="col-span-3">
-                    <CardHeader>
-                        <CardTitle>Campanhas Ativas</CardTitle>
-                        <CardDescription>Suas campanhas em execução no momento.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            {activeCampaigns.map((campaign) => (
-                                <div key={campaign.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium leading-none">{campaign.name}</p>
-                                        <div className="flex items-center text-sm text-muted-foreground">
-                                            <Badge variant={campaign.status === "Ativo" ? "default" : "secondary"} className="mr-2 text-[10px] px-1 py-0 h-5">
-                                                {campaign.status}
-                                            </Badge>
-                                            <span>{campaign.spent} / {campaign.budget}</span>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-sm font-medium">{campaign.clicks} Cliques</p>
-                                        <p className="text-xs text-muted-foreground">{campaign.impressions} Impressões</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                    <CardFooter>
-                        <Button variant="outline" className="w-full">Ver Todas as Campanhas</Button>
-                    </CardFooter>
-                </Card>
-            </div>
+          ))}
         </div>
-    );
+      </div>
+      <div className="flex items-center justify-center gap-3">
+        <Link href="/ads/criar-campanha"><Button className="gap-1.5">Criar campanha <ArrowRight className="w-3 h-3" /></Button></Link>
+        <Link href="/ads/para-marcas/managed"><Button variant="outline">Falar com a equipa</Button></Link>
+      </div>
+      <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+        <Link href="/ads/para-marcas" className="hover:text-foreground">Para marcas</Link>
+        <Link href="/ads/politicas" className="hover:text-foreground">Políticas</Link>
+        <Link href="/ads/especificacoes" className="hover:text-foreground">Especificações</Link>
+        <Link href="/ads/casos-sucesso" className="hover:text-foreground">Casos de sucesso</Link>
+      </div>
+    </div>
+  )
 }

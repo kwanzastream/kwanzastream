@@ -263,6 +263,10 @@ app.use('/api/analytics', analyticsRoutes);
 import campRoutes from './routes/campRoutes';
 app.use('/api/camp', campRoutes);
 
+// Grupo 39: Ads & Marcas
+import adsRoutes from './routes/adsRoutes';
+app.use('/api/ads', adsRoutes);
+
 // Sentry test endpoint (dev/staging only)
 if (process.env.NODE_ENV !== 'production') {
     app.get('/api/debug-sentry', (_req, _res) => {
