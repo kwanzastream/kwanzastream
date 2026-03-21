@@ -259,6 +259,10 @@ app.use('/api/recommendations', recommendationRoutes);
 import analyticsRoutes from './routes/analyticsRoutes';
 app.use('/api/analytics', analyticsRoutes);
 
+// Grupo 38: Kwanza Camp
+import campRoutes from './routes/campRoutes';
+app.use('/api/camp', campRoutes);
+
 // Sentry test endpoint (dev/staging only)
 if (process.env.NODE_ENV !== 'production') {
     app.get('/api/debug-sentry', (_req, _res) => {

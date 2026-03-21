@@ -151,6 +151,8 @@ model User {
   vods              Vod[]              @relation("UserVods")
   radioConfig       RadioConfig?
   radioSchedules    RadioSchedule[]
+  campProgress      UserCampProgress[]
+  campCertificates  CampCertificate[]
   
   @@index([phone])
   @@index([email])
@@ -658,4 +660,28 @@ model RadioSchedule {
   createdAt       DateTime @default(now())
 
   @@index([userId, dayOfWeek])
+}
+
+// ============== KWANZA CAMP (Grupo 38) ==============
+
+model UserCampProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapterSlug String   // ex: "nivel-1/primeiro-stream/cap-2"
+  completedAt DateTime @default(now())
+
+  @@unique([userId, chapterSlug])
+  @@index([userId])
+}
+
+model CampCertificate {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level    Int      // 1, 2, 3
+  issuedAt DateTime @default(now())
+  certCode String   @unique // "KWC-2026-001234"
+
+  @@index([userId])
 }

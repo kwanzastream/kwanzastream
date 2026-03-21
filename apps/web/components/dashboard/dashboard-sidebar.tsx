@@ -78,7 +78,9 @@ const NAV_GROUPS = [
       { href: "/dashboard/radio/analytics", label: "Analytics" },
       { href: "/dashboard/radio/stream-key", label: "Stream Key" },
     ]},
-    { href: "/dashboard/kwanza-camp", icon: BookOpen, label: "Kwanza Camp" },
+    { href: "/dashboard/kwanza-camp", icon: BookOpen, label: "Kwanza Camp", children: [
+      { href: "/dashboard/kwanza-camp", label: "Progresso" },
+    ]},
   ]},
 ]
 
