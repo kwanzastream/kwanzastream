@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { LayoutDashboard, Radio, BarChart2, Film, Users, DollarSign, Shield, Settings2, ChevronLeft, Puzzle, Mic2, BookOpen, Handshake, Star, Sparkles } from "lucide-react"
+import { LayoutDashboard, Radio, BarChart2, Film, Users, DollarSign, Shield, Settings2, ChevronLeft, Puzzle, Mic2, BookOpen, Handshake, Star, Sparkles, Trophy } from "lucide-react"
 
 const NAV_GROUPS = [
   { label: null, items: [
@@ -44,6 +44,11 @@ const NAV_GROUPS = [
       { href: "/dashboard/featured/shelf", label: "Shelf" },
       { href: "/dashboard/featured/banner-offline", label: "Banner Offline" },
       { href: "/dashboard/featured/trailer-canal", label: "Trailer" },
+    ]},
+    { href: "/dashboard/torneios", icon: Trophy, label: "Torneios", children: [
+      { href: "/dashboard/torneios/meus", label: "Meus Torneios" },
+      { href: "/dashboard/torneios/organizados", label: "Organizados" },
+      { href: "/dashboard/torneios/inscricoes", label: "Inscrições" },
     ]},
   ]},
   { label: "Stream", items: [

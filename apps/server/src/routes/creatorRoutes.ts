@@ -45,4 +45,19 @@ router.patch('/featured/shelf', updateShelf as any);
 router.patch('/featured/banner', updateBanner as any);
 router.patch('/featured/trailer', updateTrailer as any);
 
+// Grupo 36: Tournaments
+import {
+    getCreatorTournaments,
+    getCreatorTournament,
+    updateParticipant,
+    updateMatchResult,
+    getInscriptionDetail,
+} from '../controllers/creator/tournamentController';
+
+router.get('/tournaments', getCreatorTournaments as any);
+router.get('/tournaments/:id', getCreatorTournament as any);
+router.patch('/tournaments/:id/participants/:userId', updateParticipant as any);
+router.patch('/tournaments/:id/matches/:matchId', updateMatchResult as any);
+router.get('/tournaments/inscriptions/:id', getInscriptionDetail as any);
+
 export default router;
