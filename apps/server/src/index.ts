@@ -51,7 +51,7 @@ import userRoutes from './routes/userRoutes';
 import donationRoutes from './routes/donationRoutes';
 import walletRoutes from './routes/walletRoutes';
 import streamRoutes from './routes/streamRoutes';
-import adminRoutes from './admin/adminRoutes';
+import adminRoutes_old from './admin/adminRoutes';
 import webhookRoutes from './payments/webhookRoutes';
 
 const app = express();
@@ -278,6 +278,10 @@ app.use('/api', angolaRoutes);
 // Grupo 42: Admin Panel
 import adminRoutes from './routes/adminRoutes';
 app.use('/api/admin', adminRoutes);
+
+// Grupo 43: Legais & Suporte
+import supportRoutes from './routes/supportRoutes';
+app.use('/api/support', supportRoutes);
 
 // Sentry test endpoint (dev/staging only)
 if (process.env.NODE_ENV !== 'production') {
