@@ -267,6 +267,10 @@ app.use('/api/camp', campRoutes);
 import adsRoutes from './routes/adsRoutes';
 app.use('/api/ads', adsRoutes);
 
+// Grupo 40: Developers
+import developerRoutes from './routes/developerRoutes';
+app.use('/api/developer', developerRoutes);
+
 // Sentry test endpoint (dev/staging only)
 if (process.env.NODE_ENV !== 'production') {
     app.get('/api/debug-sentry', (_req, _res) => {

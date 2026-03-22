@@ -154,6 +154,7 @@ model User {
   campProgress      UserCampProgress[]
   campCertificates  CampCertificate[]
   adCampaigns       AdCampaign[]
+  developerApps     DeveloperApp[]
   
   @@index([phone])
   @@index([email])
@@ -714,4 +715,43 @@ model AdCampaign {
 
   @@index([userId])
   @@index([status])
+}
+
+// ============== DEVELOPERS (Grupo 40) ==============
+
+model DeveloperApp {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  clientId      String   @unique
+  clientSecret  String
+  status        String   @default("sandbox") // "sandbox" | "review" | "production" | "suspended"
+  category      String   @default("other") // "bot" | "overlay" | "dashboard" | "mobile" | "other"
+  websiteUrl    String?
+  privacyUrl    String?
+  tosUrl        String?
+  redirectUris  String[] @default([])
+  logoUrl       String?
+  webhooks      DeveloperWebhook[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([clientId])
+}
+
+model DeveloperWebhook {
+  id           String       @id @default(cuid())
+  appId        String
+  app          DeveloperApp @relation(fields: [appId], references: [id], onDelete: Cascade)
+  url          String
+  events       String[]     @default([])
+  secret       String
+  isActive     Boolean      @default(true)
+  lastDelivery DateTime?
+  createdAt    DateTime     @default(now())
+
+  @@index([appId])
 }
