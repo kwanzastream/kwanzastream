@@ -159,6 +159,9 @@ model User {
   adminAuditLogs    AdminAuditLog[]
   adminSessions     AdminSession[]
   supportTickets    SupportTicket[]
+  viewHistory       ViewHistory[]
+  searchHistory     SearchHistory[]
+  channelVisits     ChannelVisitHistory[]
   
   @@index([phone])
   @@index([email])
@@ -858,4 +861,41 @@ model TicketMessage {
   createdAt   DateTime      @default(now())
 
   @@index([ticketId])
+}
+
+// ============== GRUPO 45: Histórico ==============
+
+model ViewHistory {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contentId   String
+  contentType String
+  watchedAt   DateTime @default(now())
+  watchedSecs Int      @default(0)
+  progress    Float    @default(0)
+
+  @@index([userId, watchedAt])
+  @@unique([userId, contentId])
+}
+
+model SearchHistory {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  query      String
+  searchedAt DateTime @default(now())
+
+  @@index([userId, searchedAt])
+}
+
+model ChannelVisitHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channelId String
+  visitedAt DateTime @default(now())
+
+  @@unique([userId, channelId])
+  @@index([userId, visitedAt])
 }

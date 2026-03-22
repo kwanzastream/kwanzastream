@@ -283,6 +283,10 @@ app.use('/api/admin', adminRoutes);
 import supportRoutes from './routes/supportRoutes';
 app.use('/api/support', supportRoutes);
 
+// Grupo 45: Histórico
+import historyRoutes from './routes/historyRoutes';
+app.use('/api/history', historyRoutes);
+
 // Sentry test endpoint (dev/staging only)
 if (process.env.NODE_ENV !== 'production') {
     app.get('/api/debug-sentry', (_req, _res) => {
