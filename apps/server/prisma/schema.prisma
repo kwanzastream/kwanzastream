@@ -155,6 +155,7 @@ model User {
   campCertificates  CampCertificate[]
   adCampaigns       AdCampaign[]
   developerApps     DeveloperApp[]
+  awardsVotes       AwardsVote[]
   
   @@index([phone])
   @@index([email])
@@ -754,4 +755,40 @@ model DeveloperWebhook {
   createdAt    DateTime     @default(now())
 
   @@index([appId])
+}
+
+// ============== ANGOLA-FIRST (Grupo 41) ==============
+
+model AwardsNominee {
+  id        String   @id @default(cuid())
+  year      Int
+  category  String
+  channelId String
+  votes     Int      @default(0)
+  isWinner  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([year, category])
+}
+
+model AwardsVote {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  year      Int
+  category  String
+  nomineeId String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, year, category])
+}
+
+model EducationWorkshop {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  date          DateTime
+  registrations String[] @default([])
+  maxAttendees  Int      @default(50)
+  createdAt     DateTime @default(now())
 }

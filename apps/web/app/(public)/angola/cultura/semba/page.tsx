@@ -1,0 +1,5 @@
+"use client"
+export default function SembaPage() { return (<div className="max-w-3xl mx-auto px-4 py-8 space-y-6"><span className="text-4xl">🎶</span><h1 className="text-2xl font-bold">Semba no Kwanza Stream</h1><p className="text-sm">O Semba é a raiz da música angolana — precursor da Samba brasileira. Ritmo de celebração que conta histórias do quotidiano angolano com guitarras, dikanzas e vozes inesquecíveis.</p>
+  <div className="grid grid-cols-3 gap-3">{[{ v: "8", l: "Streams ao vivo" }, { v: "23", l: "Criadores" }, { v: "120", l: "Clips" }].map((m,i) => <div key={i} className="p-3 rounded-xl border border-white/10 text-center"><p className="text-lg font-bold">{m.v}</p><p className="text-[9px] text-muted-foreground">{m.l}</p></div>)}</div>
+  <div className="p-4 rounded-xl border border-white/10 space-y-2"><h2 className="text-sm font-semibold">Artistas referência</h2><p className="text-xs text-muted-foreground">Bonga, Paulo Flores, Ruy Mingas, Waldemar Bastos. O Semba é a alma de Angola — e agora transmite-se ao vivo no Kwanza Stream.</p></div>
+</div>) }

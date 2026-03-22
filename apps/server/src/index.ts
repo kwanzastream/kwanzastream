@@ -271,6 +271,10 @@ app.use('/api/ads', adsRoutes);
 import developerRoutes from './routes/developerRoutes';
 app.use('/api/developer', developerRoutes);
 
+// Grupo 41: Angola-First
+import angolaRoutes from './routes/angolaRoutes';
+app.use('/api', angolaRoutes);
+
 // Sentry test endpoint (dev/staging only)
 if (process.env.NODE_ENV !== 'production') {
     app.get('/api/debug-sentry', (_req, _res) => {

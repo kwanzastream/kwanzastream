@@ -1,0 +1,3 @@
+"use client"
+export default function AfricaSulPage() { return (<div className="max-w-3xl mx-auto px-4 py-8 space-y-6"><span className="text-4xl">🇿🇦</span><h1 className="text-2xl font-bold">Angolanos na África do Sul</h1><p className="text-sm">18 criadores angolanos em Joanesburgo, Cape Town e Pretória. Conteúdo em PT-AO com crossover para a cena sul-africana de Amapiano e gaming.</p>
+  <div className="grid grid-cols-3 gap-3">{[{ v: "18", l: "Criadores" }, { v: "3", l: "Ao vivo" }, { v: "780", l: "Viewers" }].map((m,i) => <div key={i} className="p-3 rounded-xl border border-white/10 text-center"><p className="text-lg font-bold">{m.v}</p><p className="text-[9px] text-muted-foreground">{m.l}</p></div>)}</div></div>) }

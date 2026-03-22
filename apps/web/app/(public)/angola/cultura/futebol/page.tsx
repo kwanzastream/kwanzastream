@@ -1,0 +1,5 @@
+"use client"
+export default function FutebolPage() { return (<div className="max-w-3xl mx-auto px-4 py-8 space-y-6"><span className="text-4xl">⚽</span><h1 className="text-2xl font-bold">Futebol no Kwanza Stream</h1><p className="text-sm">O Girabola (liga angolana), a seleção nacional, e os angolanos na Europa — tudo transmitido ao vivo no Kwanza Stream. Comenta e reage com outros adeptos em tempo real.</p>
+  <div className="grid grid-cols-3 gap-3">{[{ v: "23", l: "Streams" }, { v: "56", l: "Casters" }, { v: "340", l: "Clips" }].map((m,i) => <div key={i} className="p-3 rounded-xl border border-white/10 text-center"><p className="text-lg font-bold">{m.v}</p><p className="text-[9px] text-muted-foreground">{m.l}</p></div>)}</div>
+  <div className="p-4 rounded-xl border border-white/10 space-y-2"><h2 className="text-sm font-semibold">Clubes em destaque</h2><p className="text-xs text-muted-foreground">1º de Agosto · Petro de Luanda · Sagrada Esperança · Kabuscorp. Cada jornada do Girabola tem cobertura ao vivo no Kwanza Stream.</p></div>
+</div>) }

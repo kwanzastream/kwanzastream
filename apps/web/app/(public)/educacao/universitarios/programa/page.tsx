@@ -1,0 +1,3 @@
+"use client"
+export default function ProgramaUnivPage() { return (<div className="max-w-3xl mx-auto px-4 py-8 space-y-6"><h1 className="text-xl font-bold">Programa Universitário</h1>
+  <div className="space-y-3">{[{ t: "Fase 1: Fundamentos", d: "Criar conta verificada, setup de equipamento, primeiro stream" }, { t: "Fase 2: Conteúdo Académico", d: "Tutoriais, estudo em grupo, revisão de matéria" }, { t: "Fase 3: Portfolio", d: "Compilar conteúdo para portfolio profissional" }].map((m,i) => <div key={i} className="p-3 rounded-xl border border-white/10"><p className="text-sm font-semibold">{m.t}</p><p className="text-[10px] text-muted-foreground">{m.d}</p></div>)}</div></div>) }
