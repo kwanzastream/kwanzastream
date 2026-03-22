@@ -287,6 +287,10 @@ app.use('/api/support', supportRoutes);
 import historyRoutes from './routes/historyRoutes';
 app.use('/api/history', historyRoutes);
 
+// Grupo 46: Guardados & Favoritos
+import savedRoutes from './routes/savedRoutes';
+app.use('/api', savedRoutes);
+
 // Sentry test endpoint (dev/staging only)
 if (process.env.NODE_ENV !== 'production') {
     app.get('/api/debug-sentry', (_req, _res) => {

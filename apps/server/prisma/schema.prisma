@@ -162,6 +162,9 @@ model User {
   viewHistory       ViewHistory[]
   searchHistory     SearchHistory[]
   channelVisits     ChannelVisitHistory[]
+  savedItems        SavedItem[]
+  collections       Collection[]
+  favoriteItems     FavoriteItem[]
   
   @@index([phone])
   @@index([email])
@@ -898,4 +901,53 @@ model ChannelVisitHistory {
 
   @@unique([userId, channelId])
   @@index([userId, visitedAt])
+}
+
+// ============== GRUPO 46: Guardados & Favoritos ==============
+
+model SavedItem {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contentId   String
+  contentType String
+  savedAt     DateTime @default(now())
+  collections CollectionItem[]
+
+  @@unique([userId, contentId, contentType])
+  @@index([userId, contentType])
+}
+
+model Collection {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  isPublic    Boolean          @default(false)
+  items       CollectionItem[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model CollectionItem {
+  id           String     @id @default(cuid())
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  savedItemId  String
+  savedItem    SavedItem  @relation(fields: [savedItemId], references: [id], onDelete: Cascade)
+  addedAt      DateTime   @default(now())
+
+  @@unique([collectionId, savedItemId])
+}
+
+model FavoriteItem {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetId   String
+  targetType String
+  addedAt    DateTime @default(now())
+
+  @@unique([userId, targetId, targetType])
 }
