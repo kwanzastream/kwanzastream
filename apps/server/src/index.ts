@@ -291,6 +291,10 @@ app.use('/api/history', historyRoutes);
 import savedRoutes from './routes/savedRoutes';
 app.use('/api', savedRoutes);
 
+// Grupo 47: Watch Party
+import watchPartyRoutes from './routes/watchPartyRoutes';
+app.use('/api/watch-parties', watchPartyRoutes);
+
 // Sentry test endpoint (dev/staging only)
 if (process.env.NODE_ENV !== 'production') {
     app.get('/api/debug-sentry', (_req, _res) => {

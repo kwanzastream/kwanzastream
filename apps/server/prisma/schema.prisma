@@ -165,6 +165,8 @@ model User {
   savedItems        SavedItem[]
   collections       Collection[]
   favoriteItems     FavoriteItem[]
+  watchParties      WatchParty[]
+  watchPartyJoins   WatchPartyParticipant[]
   
   @@index([phone])
   @@index([email])
@@ -950,4 +952,34 @@ model FavoriteItem {
   addedAt    DateTime @default(now())
 
   @@unique([userId, targetId, targetType])
+}
+
+// ============== GRUPO 47: Watch Party ==============
+
+model WatchParty {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  hostId          String
+  host            User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  streamId        String?
+  name            String?
+  isPublic        Boolean  @default(false)
+  maxParticipants Int      @default(10)
+  status          String   @default("active")
+  participants    WatchPartyParticipant[]
+  createdAt       DateTime @default(now())
+  endedAt         DateTime?
+}
+
+model WatchPartyParticipant {
+  id       String     @id @default(cuid())
+  partyId  String
+  party    WatchParty @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime   @default(now())
+  leftAt   DateTime?
+  isOnline Boolean    @default(true)
+
+  @@unique([partyId, userId])
 }
