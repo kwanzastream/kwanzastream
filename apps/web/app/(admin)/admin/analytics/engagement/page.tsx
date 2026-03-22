@@ -1,0 +1,3 @@
+"use client"
+export default function AnalyticsEngagementPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Analytics — Engagement</h1>
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{ l: "Avg watch time", v: "23min" }, { l: "Chat msgs/stream", v: "456" }, { l: "Follows/dia", v: "89" }, { l: "Clips criados/dia", v: "34" }, { l: "Shares/dia", v: "56" }, { l: "Emotes usados/dia", v: "12.300" }, { l: "Raids/dia", v: "12" }, { l: "Hosts/dia", v: "8" }].map(m => <div key={m.l} className="p-3 rounded-xl border border-white/10 text-center"><p className="text-sm font-bold">{m.v}</p><p className="text-[9px] text-muted-foreground">{m.l}</p></div>)}</div></div>) }

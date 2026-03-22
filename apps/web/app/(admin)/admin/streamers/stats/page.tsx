@@ -1,0 +1,3 @@
+"use client"
+export default function StatsStreamersPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Estatísticas de Streamers</h1>
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{ l: "Total streamers", v: "89" }, { l: "Afiliados", v: "23" }, { l: "Partners", v: "5" }, { l: "Activos 30d", v: "67" }, { l: "Avg viewers/stream", v: "45" }, { l: "Avg duration", v: "2h 30min" }, { l: "Top categoria", v: "Gaming" }, { l: "Província líder", v: "Luanda" }].map(m => <div key={m.l} className="p-3 rounded-xl border border-white/10 text-center"><p className="text-sm font-bold">{m.v}</p><p className="text-[9px] text-muted-foreground">{m.l}</p></div>)}</div></div>) }

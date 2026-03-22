@@ -1,0 +1,3 @@
+"use client"
+export default function AdminSessoesPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Sessões</h1>
+  <div className="space-y-2">{[{ ip: "41.x.x.x", device: "Chrome / Windows", start: "22 Mar 09:10", active: true }].map((s,i) => <div key={i} className="p-3 rounded-xl border border-white/10 flex items-center justify-between"><div><p className="text-xs font-semibold">{s.device}</p><p className="text-[10px] text-muted-foreground">{s.ip} · {s.start}</p></div><span className={`text-[9px] ${s.active ? "text-green-400" : "text-muted-foreground"}`}>{s.active ? "Activa" : "Expirada"}</span></div>)}</div></div>) }

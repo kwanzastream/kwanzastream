@@ -1,0 +1,3 @@
+"use client"
+export default function AppealsPendentesPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Apelos Pendentes</h1>
+  <div className="space-y-2">{[{ user: "ex-banned", reason: "Peço reconsideração, foi mal-entendido", banReason: "Spam", date: "há 2 dias" }].map(a => <div key={a.user} className="p-3 rounded-xl border border-yellow-500/20 bg-yellow-500/5"><p className="text-xs font-semibold">@{a.user}</p><p className="text-[10px] text-muted-foreground">Ban por: {a.banReason} · {a.date}</p><p className="text-[10px] mt-1">&ldquo;{a.reason}&rdquo;</p></div>)}</div></div>) }

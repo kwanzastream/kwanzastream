@@ -1,0 +1,3 @@
+"use client"
+export default function DevAppsPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Apps de Developers</h1>
+  <div className="space-y-2">{[{ name: "KS Bot", dev: "dev1", status: "Activa" }, { name: "Stream Stats", dev: "dev2", status: "Pendente" }].map(a => <div key={a.name} className="p-3 rounded-xl border border-white/10 flex items-center justify-between"><div><p className="text-xs font-semibold">{a.name}</p><p className="text-[10px] text-muted-foreground">@{a.dev}</p></div><span className={`text-[9px] ${a.status === "Activa" ? "text-green-400" : "text-yellow-400"}`}>{a.status}</span></div>)}</div></div>) }

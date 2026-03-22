@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { CampaignWizardSteps } from "@/components/ads/campaign-wizard-steps"
 import { Button } from "@/components/ui/button"
@@ -13,12 +13,23 @@ export default function RevisaoPage() {
   const router = useRouter()
   const [submitting, setSubmitting] = useState(false)
   const [accepted, setAccepted] = useState(false)
+  const [summary, setSummary] = useState({ objective: "awareness", budget: "10.000", cta: "Saber mais" })
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setSummary({
+        objective: sessionStorage.getItem("ads_objective") || "awareness",
+        budget: Number(sessionStorage.getItem("ads_budget") || 10000).toLocaleString(),
+        cta: sessionStorage.getItem("ads_cta") || "Saber mais",
+      })
+    }
+  }, [])
 
   const handleSubmit = async () => {
     setSubmitting(true)
     try {
-      const obj = sessionStorage.getItem("ads_objective") || "awareness"
-      const budget = Number(sessionStorage.getItem("ads_budget")) || 10000
+      const obj = typeof window !== "undefined" ? sessionStorage.getItem("ads_objective") || "awareness" : "awareness"
+      const budget = typeof window !== "undefined" ? Number(sessionStorage.getItem("ads_budget")) || 10000 : 10000
 
       await api.post("/api/ads/campaigns", {
         name: `Campanha ${obj} — ${new Date().toLocaleDateString("pt-AO")}`,
@@ -26,9 +37,11 @@ export default function RevisaoPage() {
         startDate: new Date(Date.now() + 86400000 * 3).toISOString(),
         endDate: new Date(Date.now() + 86400000 * 10).toISOString(),
       })
-      sessionStorage.removeItem("ads_objective")
-      sessionStorage.removeItem("ads_budget")
-      sessionStorage.removeItem("ads_cta")
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("ads_objective")
+        sessionStorage.removeItem("ads_budget")
+        sessionStorage.removeItem("ads_cta")
+      }
       router.push("/ads/criar-campanha/confirmacao")
     } catch {
       toast.error("Erro ao submeter. Inicia sessão primeiro.")
@@ -45,9 +58,9 @@ export default function RevisaoPage() {
 
       <div className="space-y-3">
         {[
-          { label: "Objectivo", value: sessionStorage?.getItem?.("ads_objective") || "awareness" },
-          { label: "Orçamento", value: `${Number(sessionStorage?.getItem?.("ads_budget") || 10000).toLocaleString()} Kz` },
-          { label: "CTA", value: sessionStorage?.getItem?.("ads_cta") || "Saber mais" },
+          { label: "Objectivo", value: summary.objective },
+          { label: "Orçamento", value: `${summary.budget} Kz` },
+          { label: "CTA", value: summary.cta },
           { label: "Período", value: "3–10 dias a partir de hoje" },
         ].map((r, i) => (
           <div key={i} className="flex items-center justify-between py-2 border-b border-white/5">

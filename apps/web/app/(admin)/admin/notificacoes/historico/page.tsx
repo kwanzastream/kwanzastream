@@ -1,0 +1,3 @@
+"use client"
+export default function NotificacoesHistoricoPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Histórico de Notificações</h1>
+  <div className="space-y-2">{[{ title: "Bem-vindo ao Kwanza Stream!", audience: "Todos", sent: "15 Mar 2026", reach: 1234 }, { title: "Novidades de Março", audience: "Streamers", sent: "1 Mar 2026", reach: 234 }].map(n => <div key={n.title} className="p-3 rounded-xl border border-white/10"><p className="text-xs font-semibold">{n.title}</p><p className="text-[10px] text-muted-foreground">{n.audience} · {n.sent} · {n.reach} enviados</p></div>)}</div></div>) }

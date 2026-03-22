@@ -1,0 +1,3 @@
+"use client"
+export default function EmRevisaoPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Conteúdo em Revisão</h1>
+  <div className="space-y-2">{[{ type: "VOD", title: "Stream flagado", user: "user1", reason: "Auto-detect: linguagem" }, { type: "Clip", title: "Clip reportado", user: "user2", reason: "Report: conteúdo inapropriado" }].map((c,i) => <div key={i} className="p-3 rounded-xl border border-yellow-500/20 bg-yellow-500/5"><p className="text-xs font-semibold">{c.type}: {c.title}</p><p className="text-[10px] text-muted-foreground">@{c.user} · {c.reason}</p></div>)}</div></div>) }

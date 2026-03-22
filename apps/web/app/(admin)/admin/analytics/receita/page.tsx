@@ -1,12 +1,3 @@
-﻿export default function AdminAnalyticsReceitaPage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-      <h1 className="text-2xl font-bold text-muted-foreground">
-        AdminAnalyticsReceita
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Em construÃ§Ã£o
-      </p>
-    </div>
-  )
-}
+"use client"
+export default function AnalyticsReceitaPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Analytics — Receita</h1>
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{ l: "Receita hoje", v: "46.800 Kz" }, { l: "Receita mês", v: "1.36M Kz" }, { l: "Comissão hoje", v: "9.360 Kz" }, { l: "IVA 14% hoje", v: "6.552 Kz" }, { l: "ARPU", v: "45 Kz" }, { l: "Salos vendidos", v: "12.400" }, { l: "Subs activas", v: "156" }, { l: "Crescimento MoM", v: "+23%" }].map(m => <div key={m.l} className="p-3 rounded-xl border border-white/10 text-center"><p className="text-sm font-bold">{m.v}</p><p className="text-[9px] text-muted-foreground">{m.l}</p></div>)}</div></div>) }

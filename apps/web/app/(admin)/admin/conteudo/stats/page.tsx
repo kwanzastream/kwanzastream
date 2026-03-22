@@ -1,0 +1,3 @@
+"use client"
+export default function ConteudoStatsPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Estatísticas de Conteúdo</h1>
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{ l: "VODs total", v: "1.234" }, { l: "Clips total", v: "5.670" }, { l: "Shorts total", v: "890" }, { l: "Armazenamento", v: "2.3 TB" }, { l: "Views totais", v: "234k" }, { l: "Avg views/VOD", v: "89" }, { l: "Conteúdo removido", v: "12" }, { l: "Em revisão", v: "3" }].map(m => <div key={m.l} className="p-3 rounded-xl border border-white/10 text-center"><p className="text-sm font-bold">{m.v}</p><p className="text-[9px] text-muted-foreground">{m.l}</p></div>)}</div></div>) }

@@ -1,0 +1,3 @@
+"use client"
+export default function LogsSegurancaPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Logs — Segurança</h1>
+  <div className="space-y-1">{[{ event: "2FA activado", admin: "kwanzastream", ip: "41.x.x.x", time: "22 Mar 09:10" }, { event: "IP whitelisted", admin: "kwanzastream", ip: "41.211.x.x", time: "21 Mar 18:00" }, { event: "Password changed", admin: "kwanzastream", ip: "41.x.x.x", time: "20 Mar 14:30" }].map((l,i) => <div key={i} className="p-2 rounded-lg border border-white/5 text-[10px] flex items-center justify-between"><span>🔐 {l.event} — @{l.admin}</span><span className="text-muted-foreground">{l.ip} · {l.time}</span></div>)}</div></div>) }

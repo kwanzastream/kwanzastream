@@ -1,0 +1,3 @@
+"use client"
+export default function StreamsStatsPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Estatísticas de Streams</h1>
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{ l: "Ao vivo agora", v: "12" }, { l: "Total hoje", v: "45" }, { l: "Peak CCU hoje", v: "3.456" }, { l: "Avg duração", v: "2h" }, { l: "Bitrate médio", v: "4.5 Mbps" }, { l: "720p+", v: "78%" }, { l: "RTMP health", v: "99.9%" }, { l: "Stream drops", v: "2" }].map(m => <div key={m.l} className="p-3 rounded-xl border border-white/10 text-center"><p className="text-sm font-bold">{m.v}</p><p className="text-[9px] text-muted-foreground">{m.l}</p></div>)}</div></div>) }

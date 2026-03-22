@@ -1,0 +1,3 @@
+"use client"
+export default function ConfigBackupsPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Backups</h1>
+  <div className="space-y-2">{[{ date: "22 Mar 03:00 WAT", size: "2.3 GB", status: "✅ Completo" }, { date: "21 Mar 03:00 WAT", size: "2.2 GB", status: "✅ Completo" }, { date: "20 Mar 03:00 WAT", size: "2.1 GB", status: "✅ Completo" }].map(b => <div key={b.date} className="p-3 rounded-xl border border-white/10 flex items-center justify-between"><div><p className="text-xs">{b.date}</p><p className="text-[10px] text-muted-foreground">{b.size}</p></div><span className="text-[10px] text-green-400">{b.status}</span></div>)}</div></div>) }

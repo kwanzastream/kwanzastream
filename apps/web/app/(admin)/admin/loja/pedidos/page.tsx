@@ -1,0 +1,3 @@
+"use client"
+export default function LojaPedidosPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Pedidos da Loja</h1>
+  <div className="space-y-2">{[{ id: "p1", buyer: "viewer1", item: "T-shirt Kwanza", amount: "3.500 Kz", status: "Enviado" }, { id: "p2", buyer: "viewer2", item: "Mug Angola", amount: "1.500 Kz", status: "Pendente" }].map(p => <div key={p.id} className="p-3 rounded-xl border border-white/10 flex items-center justify-between"><div><p className="text-xs font-semibold">{p.item}</p><p className="text-[10px] text-muted-foreground">@{p.buyer} · {p.status}</p></div><span className="text-xs font-bold">{p.amount}</span></div>)}</div></div>) }

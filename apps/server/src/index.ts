@@ -275,6 +275,10 @@ app.use('/api/developer', developerRoutes);
 import angolaRoutes from './routes/angolaRoutes';
 app.use('/api', angolaRoutes);
 
+// Grupo 42: Admin Panel
+import adminRoutes from './routes/adminRoutes';
+app.use('/api/admin', adminRoutes);
+
 // Sentry test endpoint (dev/staging only)
 if (process.env.NODE_ENV !== 'production') {
     app.get('/api/debug-sentry', (_req, _res) => {

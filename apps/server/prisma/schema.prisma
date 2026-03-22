@@ -156,6 +156,8 @@ model User {
   adCampaigns       AdCampaign[]
   developerApps     DeveloperApp[]
   awardsVotes       AwardsVote[]
+  adminAuditLogs    AdminAuditLog[]
+  adminSessions     AdminSession[]
   
   @@index([phone])
   @@index([email])
@@ -791,4 +793,35 @@ model EducationWorkshop {
   registrations String[] @default([])
   maxAttendees  Int      @default(50)
   createdAt     DateTime @default(now())
+}
+
+// ============== ADMIN PANEL (Grupo 42) ==============
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  admin      User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action     String
+  targetId   String?
+  targetType String?
+  details    Json?
+  ip         String
+  timestamp  DateTime @default(now())
+
+  @@index([adminId])
+  @@index([action])
+  @@index([timestamp])
+}
+
+model AdminSession {
+  id        String   @id @default(cuid())
+  adminId   String
+  admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  ip        String
+  userAgent String   @default("")
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  lastSeen  DateTime @updatedAt
+
+  @@index([adminId])
 }

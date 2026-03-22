@@ -1,0 +1,3 @@
+"use client"
+export default function BanidosPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Utilizadores Banidos</h1>
+  <div className="space-y-2">{[{ u: "banned-user-1", reason: "Conteúdo ilegal", date: "15 Mar 2026" }].map(b => <div key={b.u} className="p-3 rounded-xl border border-red-500/20 bg-red-500/5 flex items-center justify-between"><div><p className="text-xs font-semibold text-red-400">@{b.u}</p><p className="text-[10px] text-muted-foreground">Motivo: {b.reason} · Ban permanente</p></div><span className="text-[9px] text-muted-foreground">{b.date}</span></div>)}</div></div>) }

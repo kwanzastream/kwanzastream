@@ -1,0 +1,3 @@
+"use client"
+export default function ConfigGeralPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Configurações Gerais</h1>
+  <div className="space-y-3">{[{ l: "Nome da plataforma", v: "Kwanza Stream" }, { l: "URL", v: "kwanzastream.ao" }, { l: "Moeda", v: "AOA (Kwanza)" }, { l: "Timezone", v: "WAT (UTC+1)" }, { l: "Língua padrão", v: "Português (Angola)" }, { l: "Comissão padrão", v: "20%" }, { l: "IVA", v: "14%" }, { l: "Idade mínima", v: "13 anos" }].map(s => <div key={s.l} className="p-3 rounded-xl border border-white/10 flex items-center justify-between"><span className="text-xs">{s.l}</span><span className="text-xs font-mono text-muted-foreground">{s.v}</span></div>)}</div></div>) }

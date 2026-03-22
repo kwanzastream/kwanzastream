@@ -1,0 +1,3 @@
+"use client"
+export default function NovosUtilizadoresPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Novos Utilizadores</h1><p className="text-xs text-muted-foreground">Registados nos últimos 7 dias</p>
+  <div className="space-y-2">{[{ u: "user-novo-1", email: "novo1@ao.co", date: "há 2h" }, { u: "user-novo-2", email: "novo2@ao.co", date: "há 5h" }, { u: "user-novo-3", email: "novo3@ao.co", date: "há 1 dia" }].map(n => <div key={n.u} className="p-3 rounded-xl border border-white/10 flex items-center justify-between"><div><p className="text-xs font-semibold">@{n.u}</p><p className="text-[10px] text-muted-foreground">{n.email}</p></div><span className="text-[9px] text-muted-foreground">{n.date}</span></div>)}</div></div>) }

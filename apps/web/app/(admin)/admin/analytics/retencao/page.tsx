@@ -1,0 +1,3 @@
+"use client"
+export default function AnalyticsRetencaoPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Analytics — Retenção</h1>
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{ l: "D1 retenção", v: "45%" }, { l: "D7 retenção", v: "28%" }, { l: "D30 retenção", v: "15%" }, { l: "Churn mensal", v: "8%" }, { l: "Avg session", v: "23min" }, { l: "Bounce rate", v: "34%" }, { l: "Return rate", v: "67%" }, { l: "NPS score", v: "42" }].map(m => <div key={m.l} className="p-3 rounded-xl border border-white/10 text-center"><p className="text-sm font-bold">{m.v}</p><p className="text-[9px] text-muted-foreground">{m.l}</p></div>)}</div></div>) }

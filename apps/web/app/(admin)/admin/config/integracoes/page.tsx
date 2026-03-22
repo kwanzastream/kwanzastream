@@ -1,0 +1,3 @@
+"use client"
+export default function ConfigIntegracaoPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Integrações</h1>
+  <div className="space-y-2">{[{ name: "Multicaixa Express", status: true }, { name: "Unitel Money", status: true }, { name: "Africa's Talking (SMS)", status: true }, { name: "Sentry", status: true }, { name: "Discord", status: false }, { name: "WhatsApp Business", status: true }].map(i => <div key={i.name} className="p-3 rounded-xl border border-white/10 flex items-center justify-between"><span className="text-xs">{i.name}</span><span className={`text-[10px] ${i.status ? "text-green-400" : "text-red-400"}`}>{i.status ? "✅ Conectado" : "❌ Desconectado"}</span></div>)}</div></div>) }

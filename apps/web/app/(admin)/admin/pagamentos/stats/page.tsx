@@ -1,0 +1,3 @@
+"use client"
+export default function PagamentosStatsPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Estatísticas de Pagamentos</h1>
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{ l: "Volume hoje", v: "234k Kz" }, { l: "Volume mês", v: "6.8M Kz" }, { l: "Comissão mês", v: "1.36M Kz" }, { l: "KYC aprovados", v: "34" }, { l: "Multicaixa", v: "67%" }, { l: "Unitel Money", v: "23%" }, { l: "Bank transfer", v: "10%" }, { l: "Disputas abertas", v: "1" }].map(m => <div key={m.l} className="p-3 rounded-xl border border-white/10 text-center"><p className="text-sm font-bold">{m.v}</p><p className="text-[9px] text-muted-foreground">{m.l}</p></div>)}</div></div>) }

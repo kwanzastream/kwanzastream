@@ -1,0 +1,3 @@
+"use client"
+export default function PayoutsPendentesPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Payouts Pendentes</h1>
+  <div className="space-y-2">{[{ user: "streamer1", amount: "45.000 Kz", method: "Multicaixa" }, { user: "streamer2", amount: "23.000 Kz", method: "Unitel Money" }].map(p => <div key={p.user} className="p-3 rounded-xl border border-yellow-500/20 bg-yellow-500/5 flex items-center justify-between"><div><p className="text-xs font-semibold">@{p.user}</p><p className="text-[10px] text-muted-foreground">{p.method}</p></div><span className="text-xs font-bold">{p.amount}</span></div>)}</div></div>) }

@@ -1,0 +1,3 @@
+"use client"
+export default function AnalyticsMobileDesktopPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Analytics — Dispositivos</h1>
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{ l: "Mobile", v: "67%" }, { l: "Desktop", v: "28%" }, { l: "Tablet", v: "4%" }, { l: "Smart TV", v: "1%" }, { l: "Android", v: "58%" }, { l: "iOS", v: "9%" }, { l: "Chrome", v: "72%" }, { l: "Safari", v: "12%" }].map(m => <div key={m.l} className="p-3 rounded-xl border border-white/10 text-center"><p className="text-sm font-bold">{m.v}</p><p className="text-[9px] text-muted-foreground">{m.l}</p></div>)}</div></div>) }

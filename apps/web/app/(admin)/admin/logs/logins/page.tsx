@@ -1,0 +1,3 @@
+"use client"
+export default function LogsLoginsPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Logs — Logins</h1>
+  <div className="space-y-1">{[{ admin: "kwanzastream", ip: "41.x.x.x", time: "22 Mar 09:10", success: true }, { admin: "unknown", ip: "192.168.x.x", time: "22 Mar 03:45", success: false }].map((l,i) => <div key={i} className={`p-2 rounded-lg border ${l.success ? "border-white/5" : "border-red-500/20 bg-red-500/5"} text-[10px] flex items-center justify-between`}><span>{l.success ? "✅" : "❌"} @{l.admin}</span><span className="text-muted-foreground">{l.ip} · {l.time}</span></div>)}</div></div>) }

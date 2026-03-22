@@ -1,0 +1,3 @@
+"use client"
+export default function RelatorioMensalPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Relatório Mensal — Março 2026</h1>
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{ l: "Transacções total", v: "2.340" }, { l: "Volume total", v: "6.8M Kz" }, { l: "Comissão plataforma", v: "1.36M Kz" }, { l: "IVA 14%", v: "190.400 Kz" }, { l: "Levantamentos processados", v: "156" }, { l: "KYCs aprovados", v: "34" }, { l: "Disputas", v: "3" }, { l: "Reembolsos", v: "1" }].map(m => <div key={m.l} className="p-3 rounded-xl border border-white/10 text-center"><p className="text-sm font-bold">{m.v}</p><p className="text-[9px] text-muted-foreground">{m.l}</p></div>)}</div></div>) }

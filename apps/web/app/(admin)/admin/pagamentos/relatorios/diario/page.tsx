@@ -1,0 +1,3 @@
+"use client"
+export default function RelatorioDiarioPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Relatório Diário</h1>
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{ l: "Transacções", v: "89" }, { l: "Volume", v: "234.000 Kz" }, { l: "Depósitos", v: "45" }, { l: "Levantamentos", v: "12" }, { l: "Comissão", v: "46.800 Kz" }, { l: "IVA 14%", v: "6.552 Kz" }, { l: "Salos vendidos", v: "12.400" }, { l: "Subs novas", v: "23" }].map(m => <div key={m.l} className="p-3 rounded-xl border border-white/10 text-center"><p className="text-sm font-bold">{m.v}</p><p className="text-[9px] text-muted-foreground">{m.l}</p></div>)}</div></div>) }

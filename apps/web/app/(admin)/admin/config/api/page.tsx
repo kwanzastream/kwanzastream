@@ -1,0 +1,3 @@
+"use client"
+export default function ConfigApiPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">API</h1>
+  <div className="space-y-3">{[{ l: "Versão actual", v: "v1" }, { l: "Rate limit (público)", v: "100 req/min" }, { l: "Rate limit (autenticado)", v: "500 req/min" }, { l: "API keys activas", v: "12" }, { l: "Webhook URL", v: "https://api.kwanzastream.ao/webhook" }].map(s => <div key={s.l} className="p-3 rounded-xl border border-white/10 flex items-center justify-between"><span className="text-xs">{s.l}</span><span className="text-xs text-muted-foreground font-mono">{s.v}</span></div>)}</div></div>) }

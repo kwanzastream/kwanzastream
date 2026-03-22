@@ -1,0 +1,3 @@
+"use client"
+export default function SuspensosPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Utilizadores Suspensos</h1>
+  <div className="space-y-2">{[{ u: "spam-user", reason: "Spam no chat", exp: "24h", since: "há 3h" }].map(s => <div key={s.u} className="p-3 rounded-xl border border-yellow-500/20 bg-yellow-500/5 flex items-center justify-between"><div><p className="text-xs font-semibold">@{s.u}</p><p className="text-[10px] text-muted-foreground">Motivo: {s.reason} · {s.exp}</p></div><span className="text-[9px] text-muted-foreground">{s.since}</span></div>)}</div></div>) }

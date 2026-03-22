@@ -1,0 +1,3 @@
+"use client"
+export default function ActiveUsersPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Utilizadores Activos</h1><p className="text-xs text-muted-foreground">Online ou activos nas últimas 24h</p>
+  <div className="space-y-2">{[1,2,3,4,5].map(i => <div key={i} className="p-3 rounded-xl border border-white/10 flex items-center gap-3"><span className="w-2 h-2 rounded-full bg-green-500" /><div><p className="text-xs font-semibold">@user-activo-{i}</p><p className="text-[10px] text-muted-foreground">Última actividade: há {i*5}min</p></div></div>)}</div></div>) }

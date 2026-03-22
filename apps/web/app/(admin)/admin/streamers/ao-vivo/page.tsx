@@ -1,0 +1,3 @@
+"use client"
+export default function StreamersAoVivoPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Streamers Ao Vivo</h1>
+  <div className="space-y-2">{[{ u: "voz-angola", cat: "Gaming", viewers: 456, province: "Luanda" }, { u: "kuduro-king", cat: "Música", viewers: 234, province: "Benguela" }].map(s => <div key={s.u} className="p-3 rounded-xl border border-white/10 flex items-center gap-3"><span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /><div className="flex-1"><p className="text-xs font-semibold">@{s.u}</p><p className="text-[10px] text-muted-foreground">{s.cat} · {s.province}</p></div><span className="text-xs font-bold">{s.viewers} 👁</span></div>)}</div></div>) }

@@ -1,0 +1,3 @@
+"use client"
+export default function StreamsHistoricoPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Histórico de Streams</h1>
+  <div className="space-y-2">{[1,2,3,4,5].map(i => <div key={i} className="p-3 rounded-xl border border-white/10 flex items-center justify-between"><div><p className="text-xs font-semibold">Stream #{i}</p><p className="text-[10px] text-muted-foreground">@user-{i} · {20-i} Mar 2026 · {Math.floor(Math.random()*200)+50} peak viewers</p></div><span className="text-[9px] text-muted-foreground">{Math.floor(Math.random()*3)+1}h {Math.floor(Math.random()*50)}min</span></div>)}</div></div>) }

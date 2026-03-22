@@ -1,0 +1,3 @@
+"use client"
+export default function VerificadosPage() { return (<div className="space-y-4"><h1 className="text-xl font-bold">Utilizadores Verificados</h1><p className="text-xs text-muted-foreground">Utilizadores com email e/ou telefone verificados</p>
+  <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="p-3 rounded-xl border border-green-500/20 bg-green-500/5 flex items-center gap-3"><span className="text-green-400">✅</span><div><p className="text-xs font-semibold">@user-verificado-{i}</p><p className="text-[10px] text-muted-foreground">Email ✓ · Telefone ✓ · KYC ✓</p></div></div>)}</div></div>) }
