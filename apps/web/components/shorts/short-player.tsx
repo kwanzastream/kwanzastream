@@ -45,7 +45,7 @@ export function ShortPlayer({ videoUrl, thumbnailUrl, autoplay = true, fullscree
   const toggleMute = () => { if (videoRef.current) { videoRef.current.muted = !muted; setMuted(!muted) } }
   const togglePlay = (e: React.MouseEvent) => {
     e.stopPropagation()
-    if (videoRef.current) { playing ? videoRef.current.pause() : videoRef.current.play(); setPlaying(!playing) }
+    if (videoRef.current) { playing ? videoRef.current.pause() : videoRef.current.play().catch(() => {}); setPlaying(!playing) }
   }
 
   return (

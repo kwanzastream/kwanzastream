@@ -55,6 +55,11 @@ const PUBLIC_PATHS = [
     "/stream-offline",
     "/kwanza-awards",
     "/conquistas",
+    "/referral",
+    "/app",
+    "/download",
+    "/r",
+    "/impacto-social",
 ]
 
 const AUTH_PATHS = [
@@ -85,14 +90,26 @@ function isAuthPath(pathname: string): boolean {
     )
 }
 
+const ADMIN_ROLES = ['super_admin', 'admin', 'moderator', 'finance', 'support']
+const SUPER_ADMIN_ONLY = ['/admin/config', '/admin/feature-flags', '/admin/admins']
+
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl
     const token = request.cookies.get("ks_token")?.value
+    const userRole = request.cookies.get("ks_role")?.value
 
-    // Admin paths — requer token (verificação de role feita no guard)
+    // Admin paths — requer token + role admin
     if (ADMIN_PATHS.some((p) => pathname.startsWith(p))) {
         if (!token) {
             return NextResponse.redirect(new URL("/entrar", request.url))
+        }
+        // Role check via cookie (layout also checks server-side)
+        if (userRole && !ADMIN_ROLES.includes(userRole)) {
+            return NextResponse.redirect(new URL("/403", request.url))
+        }
+        // Super admin only sections
+        if (SUPER_ADMIN_ONLY.some(p => pathname.startsWith(p)) && userRole !== 'super_admin') {
+            return NextResponse.redirect(new URL("/403", request.url))
         }
         return NextResponse.next()
     }

@@ -67,8 +67,22 @@ export function AdminGuard({ children }: AdminGuardProps) {
         )
     }
 
+    // Session timeout — 2h max for admin sessions
+    const sessionStart = typeof window !== 'undefined' ? sessionStorage.getItem('ks_admin_session_start') : null
+    if (!sessionStart) {
+        if (typeof window !== 'undefined') sessionStorage.setItem('ks_admin_session_start', Date.now().toString())
+    } else {
+        const age = Date.now() - parseInt(sessionStart)
+        if (age > 2 * 60 * 60 * 1000) { // 2 hours
+            if (typeof window !== 'undefined') sessionStorage.removeItem('ks_admin_session_start')
+            router.push('/auth/sessao-expirada?admin=true')
+            return null
+        }
+    }
+
     // Logged in but NOT admin — access denied
-    if (user?.role !== 'ADMIN') {
+    const adminRoles = ['ADMIN', 'admin', 'super_admin', 'moderator', 'finance', 'support']
+    if (!user?.role || !adminRoles.includes(user.role)) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-background">
                 <div className="max-w-md text-center p-8 rounded-2xl card-surface space-y-6">
