@@ -295,6 +295,10 @@ app.use('/api', savedRoutes);
 import watchPartyRoutes from './routes/watchPartyRoutes';
 app.use('/api/watch-parties', watchPartyRoutes);
 
+// Grupo 48: Referral
+import referralRoutes from './routes/referralRoutes';
+app.use('/api/referral', referralRoutes);
+
 // Sentry test endpoint (dev/staging only)
 if (process.env.NODE_ENV !== 'production') {
     app.get('/api/debug-sentry', (_req, _res) => {
