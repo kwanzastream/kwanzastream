@@ -299,6 +299,10 @@ app.use('/api/watch-parties', watchPartyRoutes);
 import referralRoutes from './routes/referralRoutes';
 app.use('/api/referral', referralRoutes);
 
+// Grupo 49: App Download
+import appRoutes from './routes/appRoutes';
+app.use('/api/app', appRoutes);
+
 // Sentry test endpoint (dev/staging only)
 if (process.env.NODE_ENV !== 'production') {
     app.get('/api/debug-sentry', (_req, _res) => {

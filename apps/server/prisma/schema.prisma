@@ -1014,3 +1014,11 @@ model Referral {
   completedAt   DateTime?
   createdAt     DateTime     @default(now())
 }
+
+// ============== GRUPO 49: App Download ==============
+
+model IosWaitlist {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
