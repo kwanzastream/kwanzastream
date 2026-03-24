@@ -6,7 +6,7 @@ const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 export const redis = createClient({
     url: redisUrl,
     socket: {
-        reconnectStrategy: false, // Don't auto-reconnect — Redis is optional for dev
+        reconnectStrategy: (retries) => Math.min(retries * 500, 5000), // Exponential backoff, max 5s
     },
 });
 
@@ -14,7 +14,7 @@ export const redis = createClient({
 export const pubClient = createClient({
     url: redisUrl,
     socket: {
-        reconnectStrategy: false,
+        reconnectStrategy: (retries) => Math.min(retries * 500, 5000),
     },
 });
 export const subClient = pubClient.duplicate();

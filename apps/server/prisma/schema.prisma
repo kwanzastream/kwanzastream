@@ -1022,3 +1022,15 @@ model IosWaitlist {
   email     String   @unique
   createdAt DateTime @default(now())
 }
+
+// ============== PRE-LAUNCH EMAIL CAPTURE ==============
+
+model PreLaunchSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String   @default("web")   // "web" | "whatsapp" | "social"
+  notified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

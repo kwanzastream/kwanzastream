@@ -303,6 +303,10 @@ app.use('/api/referral', referralRoutes);
 import appRoutes from './routes/appRoutes';
 app.use('/api/app', appRoutes);
 
+// Pre-Launch Email Capture
+import prelaunchRoutes from './routes/prelaunchRoutes';
+app.use('/api/prelaunch', prelaunchRoutes);
+
 // Sentry test endpoint (dev/staging only)
 if (process.env.NODE_ENV !== 'production') {
     app.get('/api/debug-sentry', (_req, _res) => {

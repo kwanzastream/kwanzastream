@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Cookie } from "lucide-react"
 import Link from "next/link"
@@ -8,7 +9,11 @@ import Link from "next/link"
 const CONSENT_KEY = "kwanza-cookie-consent"
 
 export function CookieConsent() {
+    const pathname = usePathname()
     const [show, setShow] = useState(false)
+
+    // Hide on standalone pages
+    if (pathname === '/em-breve') return null
 
     useEffect(() => {
         const consent = localStorage.getItem(CONSENT_KEY)

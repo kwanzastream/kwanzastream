@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { MessageSquarePlus, X, Send, Star, Loader2 } from "lucide-react"
@@ -17,7 +18,11 @@ const feedbackTypes: { type: FeedbackType; label: string; emoji: string }[] = [
 ]
 
 export function BetaFeedback() {
+    const pathname = usePathname()
     const [open, setOpen] = useState(false)
+
+    // Hide on standalone pages
+    if (pathname === '/em-breve') return null
     const [type, setType] = useState<FeedbackType | null>(null)
     const [message, setMessage] = useState("")
     const [rating, setRating] = useState(0)

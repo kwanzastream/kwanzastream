@@ -60,6 +60,7 @@ const PUBLIC_PATHS = [
     "/download",
     "/r",
     "/impacto-social",
+    "/em-breve",
 ]
 
 const AUTH_PATHS = [

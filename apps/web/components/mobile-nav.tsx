@@ -21,6 +21,9 @@ export function MobileNav() {
     const [pressedIndex, setPressedIndex] = useState<number | null>(null)
     const navRef = useRef<HTMLDivElement>(null)
 
+    // Hide on standalone pages (pre-launch)
+    if (pathname === '/em-breve') return null
+
     // Fetch unread count
     useEffect(() => {
         notificationService.getUnreadCount()
