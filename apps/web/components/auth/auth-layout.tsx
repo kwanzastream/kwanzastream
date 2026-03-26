@@ -21,7 +21,7 @@ export function AuthLayout({ children, showBackLink, backHref = "/entrar", backL
       <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-block">
+          <Link href="/em-breve" className="inline-block">
             <h1 className="text-3xl font-bold tracking-tight">
               <span className="text-primary">Kwanza</span>{" "}
               <span className="text-foreground">Stream</span>

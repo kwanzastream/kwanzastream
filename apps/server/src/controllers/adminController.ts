@@ -16,9 +16,15 @@ export const getSession = async (req: Request, res: Response) => {
     const userId = (req as any).userId;
     if (!userId) return res.status(401).json({ error: 'Não autenticado' });
     try {
-        const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, username: true, displayName: true, role: true, email: true } });
-        if (!user || !['super_admin', 'admin', 'moderator', 'finance', 'support'].includes(user.role)) return res.status(403).json({ error: 'Sem permissão admin' });
-        res.json({ user, permissions: ROLE_PERMISSIONS[user.role as AdminRole] || [] });
+        const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, username: true, displayName: true, role: true, adminRole: true, email: true } });
+        if (!user || user.role !== 'ADMIN') return res.status(403).json({ error: 'Sem permissão admin' });
+        // Map adminRole to permission key, default to 'admin'
+        const mappedKey: AdminRole = user.adminRole === 'SUPER_ADMIN' ? 'super_admin'
+            : user.adminRole === 'CONTENT_MODERATOR' ? 'moderator'
+            : user.adminRole === 'FINANCIAL_ADMIN' ? 'finance'
+            : user.adminRole === 'SUPPORT_AGENT' ? 'support'
+            : 'admin';
+        res.json({ user: { ...user, adminRole: mappedKey }, permissions: ROLE_PERMISSIONS[mappedKey] || ROLE_PERMISSIONS['admin'] });
     } catch { res.status(500).json({ error: 'Erro' }); }
 };
 
@@ -65,7 +71,7 @@ export const suspendUser = async (req: Request, res: Response) => {
     try {
         const { reason, duration } = req.body;
         if (!reason) return res.status(400).json({ error: 'Motivo obrigatório' });
-        await prisma.user.update({ where: { id: req.params.id }, data: { status: 'suspended' } });
+        await prisma.user.update({ where: { id: req.params.id }, data: { isBanned: true, banReason: reason, bannedAt: new Date() } });
         await prisma.adminAuditLog.create({ data: { adminId: (req as any).userId, action: 'user.suspend', targetId: req.params.id, targetType: 'user', details: { reason, duration }, ip: req.ip || '' } });
         res.json({ ok: true });
     } catch { res.status(500).json({ error: 'Erro' }); }
@@ -75,7 +81,7 @@ export const banUser = async (req: Request, res: Response) => {
     try {
         const { reason } = req.body;
         if (!reason) return res.status(400).json({ error: 'Motivo obrigatório' });
-        await prisma.user.update({ where: { id: req.params.id }, data: { status: 'banned' } });
+        await prisma.user.update({ where: { id: req.params.id }, data: { isBanned: true, banReason: reason, bannedAt: new Date() } });
         await prisma.adminAuditLog.create({ data: { adminId: (req as any).userId, action: 'user.ban', targetId: req.params.id, targetType: 'user', details: { reason }, ip: req.ip || '' } });
         res.json({ ok: true });
     } catch { res.status(500).json({ error: 'Erro' }); }
@@ -179,7 +185,7 @@ export const rejectWithdrawal = async (req: Request, res: Response) => {
 // ===== ADMINS =====
 export const getAdmins = async (_req: Request, res: Response) => {
     try {
-        const admins = await prisma.user.findMany({ where: { role: { in: ['super_admin', 'admin', 'moderator', 'finance', 'support'] } }, select: { id: true, username: true, displayName: true, role: true, email: true, createdAt: true } });
+        const admins = await prisma.user.findMany({ where: { role: 'ADMIN' }, select: { id: true, username: true, displayName: true, role: true, adminRole: true, email: true, createdAt: true } });
         res.json(admins);
     } catch { res.status(500).json({ error: 'Erro' }); }
 };

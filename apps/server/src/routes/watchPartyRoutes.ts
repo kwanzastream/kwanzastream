@@ -4,7 +4,7 @@ import {
   joinParty, leaveParty, getParticipants, removeParticipant,
   inviteToParty, joinByCode,
 } from '../controllers/watchPartyController';
-import { authenticate } from '../middleware/auth';
+import { authMiddleware as authenticate } from '../middleware/authMiddleware';
 
 const router = Router();
 router.use(authenticate);

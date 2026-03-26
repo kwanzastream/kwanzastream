@@ -108,7 +108,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refreshUser])
 
   const login = async (credentials: LoginCredentials) => {
-    const res = await api.post("/api/auth/login", credentials)
+    const payload = {
+      identifier: credentials.email || credentials.phone || '',
+      password: credentials.password,
+    }
+    const res = await api.post("/api/auth/login", payload)
     const { accessToken, user: userData } = res.data
     if (accessToken) storeToken(accessToken)
     setUser(userData)

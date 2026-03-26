@@ -5,7 +5,7 @@ import {
   addToCollection, removeFromCollection,
   getFavorites, addFavorite, removeFavorite,
 } from '../controllers/savedController';
-import { authenticate } from '../middleware/auth';
+import { authMiddleware as authenticate } from '../middleware/authMiddleware';
 
 const router = Router();
 router.use(authenticate);

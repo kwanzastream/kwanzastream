@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getMyLink, generateNewLink, getFriends, getRewardsHistory, validateCode, registerReferral } from '../controllers/referralController';
-import { authenticate } from '../middleware/auth';
+import { authMiddleware as authenticate } from '../middleware/authMiddleware';
 
 const router = Router();
 

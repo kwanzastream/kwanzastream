@@ -31,7 +31,7 @@ export const RESERVED_USERNAMES = [
   // Error pages
   "403", "404", "500",
   // Brand
-  "kwanza", "kwanzastream", "admin", "bot", "live",
+  "kwanza", "admin", "bot", "live",
 ]
 
 export function isReservedUsername(username: string): boolean {

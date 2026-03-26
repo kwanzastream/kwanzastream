@@ -51,7 +51,7 @@ import userRoutes from './routes/userRoutes';
 import donationRoutes from './routes/donationRoutes';
 import walletRoutes from './routes/walletRoutes';
 import streamRoutes from './routes/streamRoutes';
-import adminRoutes_old from './admin/adminRoutes';
+// Legacy admin routes removed — see Grupo 42 below
 import webhookRoutes from './payments/webhookRoutes';
 
 const app = express();
@@ -203,7 +203,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/donations', financialLimiter, donationRoutes);
 app.use('/api/wallet', financialLimiter, walletRoutes);
 app.use('/api/streams', streamCreateLimiter, streamRoutes);
-app.use('/api/admin', adminRoutes);
+// Legacy admin routes removed — Grupo 42 adminRoutes used instead (line ~280)
 app.use('/api/webhooks', webhookRoutes); // Webhooks have their own HMAC auth
 
 // Phase 1: Upload routes + static file serving

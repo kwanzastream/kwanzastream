@@ -4,7 +4,7 @@ import {
   listArticles, getArticle, rateArticle,
   systemStatus, submitContact,
 } from '../controllers/supportController';
-import { authenticate } from '../middleware/auth';
+import { authMiddleware as authenticate } from '../middleware/authMiddleware';
 
 const router = Router();
 

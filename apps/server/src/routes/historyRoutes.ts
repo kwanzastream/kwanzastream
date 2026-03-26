@@ -5,7 +5,7 @@ import {
   getChannelVisits, recordChannelVisit,
   clearAllHistory, clearStreamHistory,
 } from '../controllers/historyController';
-import { authenticate } from '../middleware/auth';
+import { authMiddleware as authenticate } from '../middleware/authMiddleware';
 
 const router = Router();
 

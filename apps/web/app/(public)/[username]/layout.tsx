@@ -8,14 +8,17 @@ import { isReservedUsername } from "@/lib/reserved-usernames"
 
 async function getChannel(username: string): Promise<ChannelData | null> {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/users/${username}`,
-      { next: { revalidate: 60 } }
-    )
+    // Use 127.0.0.1 for SSR fetch to avoid IPv6 resolution issues
+    const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace('localhost', '127.0.0.1')
+    const url = `${apiBase}/api/users/${username}`
+    console.log('[ChannelLayout] Fetching:', url)
+    const res = await fetch(url, { cache: 'no-store' })
+    console.log('[ChannelLayout] Response:', res.status, res.statusText)
     if (!res.ok) return null
     const data = await res.json()
     return data.user || null
-  } catch {
+  } catch (err) {
+    console.error('[ChannelLayout] Fetch error:', err)
     return null
   }
 }
