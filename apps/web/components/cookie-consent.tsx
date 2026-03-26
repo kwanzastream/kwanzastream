@@ -12,9 +12,6 @@ export function CookieConsent() {
     const pathname = usePathname()
     const [show, setShow] = useState(false)
 
-    // Hide on standalone pages
-    if (pathname === '/em-breve') return null
-
     useEffect(() => {
         const consent = localStorage.getItem(CONSENT_KEY)
         if (!consent) {
@@ -23,6 +20,9 @@ export function CookieConsent() {
             return () => clearTimeout(timer)
         }
     }, [])
+
+    // Hide on standalone pages — must be AFTER all hooks
+    if (pathname === '/em-breve') return null
 
     const accept = () => {
         localStorage.setItem(CONSENT_KEY, "accepted")
