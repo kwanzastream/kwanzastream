@@ -1,12 +1,5 @@
-﻿export default function AoVivoCriatividadePage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-      <h1 className="text-2xl font-bold text-muted-foreground">
-        AoVivoCriatividade
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Em construÃ§Ã£o
-      </p>
-    </div>
-  )
+﻿import { LiveCategoryPage } from "@/components/live-category-page"
+
+export default function AoVivoCriatividadePage() {
+  return <LiveCategoryPage category="criatividade" title="Criatividade" emoji="🎨" description="Arte, design, música e criação de conteúdo ao vivo." />
 }

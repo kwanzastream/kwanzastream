@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
+import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { AuthLayout } from "@/components/auth/auth-layout"
 import { OtpPageWrapper } from "@/components/auth/otp-page-wrapper"
@@ -38,12 +39,32 @@ export default function RegistarVerificarTelefonePage() {
   if (!ready) return null
 
   const handleVerify = async (code: string) => {
-    // In production, this would call /api/auth/verify-otp
-    // For now, we trust the OTP flow and just mark as verified
-    // The response may include a tempToken for new users
-    setRegState({ phoneVerified: true, step: 2 })
-    toast.success("Número verificado!")
-    router.push("/registar/email-obrigatorio")
+    try {
+      const res = await api.post("/api/auth/verify-otp", { phone, code })
+      const { requiresEmail, tempToken, user, accessToken } = res.data
+
+      if (requiresEmail && tempToken) {
+        // New user — needs email to complete registration
+        setRegState({ phoneVerified: true, tempToken, step: 2 })
+        toast.success("Número verificado!")
+        router.push("/registar/email-obrigatorio")
+      } else if (user && accessToken) {
+        // Existing user — already logged in
+        localStorage.setItem("ks_token", accessToken)
+        document.cookie = `ks_token=${accessToken}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+        if (user.role) {
+          document.cookie = `ks_role=${user.role.toLowerCase()}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+        }
+        toast.success("Bem-vindo de volta!")
+        router.push("/feed")
+      } else {
+        toast.error("Resposta inesperada do servidor.")
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || err?.response?.data?.message || "Código inválido ou expirado"
+      toast.error(msg)
+      throw err // Let OtpPageWrapper handle retry state
+    }
   }
 
   const handleResend = async () => {
@@ -70,3 +91,4 @@ export default function RegistarVerificarTelefonePage() {
     </AuthLayout>
   )
 }
+

@@ -1,12 +1,5 @@
-﻿export default function AoVivoMusicaPage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-      <h1 className="text-2xl font-bold text-muted-foreground">
-        AoVivoMusica
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Em construÃ§Ã£o
-      </p>
-    </div>
-  )
+﻿import { LiveCategoryPage } from "@/components/live-category-page"
+
+export default function AoVivoMúsicaPage() {
+  return <LiveCategoryPage category="musica" title="Música" emoji="🎵" description="Performances ao vivo — kuduro, semba, kizomba, hip-hop e mais." />
 }

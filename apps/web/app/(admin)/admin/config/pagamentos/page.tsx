@@ -1,12 +1,7 @@
-﻿export default function AdminConfigPagamentosPage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-      <h1 className="text-2xl font-bold text-muted-foreground">
-        AdminConfigPagamentos
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Em construÃ§Ã£o
-      </p>
-    </div>
-  )
+﻿"use client"
+import { AdminPage } from "@/components/admin-page"
+const COLUMNS = [{key:"metodo",label:"Método"},{key:"provider",label:"Provider"},{key:"comissao",label:"Comissão"},{key:"estado",label:"Estado"}]
+const DATA = [{metodo:"Multicaixa Express",provider:"EMIS",comissao:"2.5%",estado:"Activo"},{metodo:"Transferência Bancária",provider:"BAI",comissao:"1.0%",estado:"Activo"},{metodo:"E-Kwanza",provider:"E-Kwanza",comissao:"1.5%",estado:"Em teste"},{metodo:"Unitel Money",provider:"Unitel",comissao:"2.0%",estado:"Desactivo"}]
+export default function AdminConfigPagamentosPage() {
+  return <AdminPage title="Métodos de pagamento e comissões." description="💳" icon="Configuração — Pagamentos" columns={COLUMNS} data={DATA} actions={[{label:"Guardar",variant:"primary"}]} />
 }

@@ -12,10 +12,10 @@ const FLAGS = {
     SALO_ENABLED: true,
 
     /** Enable clips creation */
-    CLIPS_ENABLED: false,
+    CLIPS_ENABLED: true,
 
     /** Enable direct messages */
-    DM_ENABLED: false,
+    DM_ENABLED: true,
 
     /** Enable Multicaixa payments (needs EMIS sandbox) */
     PAYMENTS_ENABLED: false,
@@ -30,7 +30,7 @@ const FLAGS = {
     LEADERBOARD_ENABLED: true,
 
     /** Enable events/scheduling */
-    EVENTS_ENABLED: false,
+    EVENTS_ENABLED: true,
 
     /** Enable ads system */
     ADS_ENABLED: false,

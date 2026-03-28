@@ -59,7 +59,7 @@ export default function HomePage() {
             </p>
             <div className="flex flex-wrap gap-3">
               <Link href="/explorar"><Button size="lg" className="gap-2"><Play className="w-4 h-4" />Explorar</Button></Link>
-              <Link href="/como-funciona/streamers"><Button size="lg" variant="outline" className="gap-2"><Radio className="w-4 h-4" />Começar a transmitir</Button></Link>
+              <Link href="/como-funciona"><Button size="lg" variant="outline" className="gap-2"><Radio className="w-4 h-4" />Começar a transmitir</Button></Link>
             </div>
             {/* Live indicator */}
             <div className="flex items-center gap-2 mt-8 text-sm text-muted-foreground">
@@ -106,7 +106,7 @@ export default function HomePage() {
               <h2 className="text-xl font-bold">Categorias Angolanas 🇦🇴</h2>
               <p className="text-sm text-muted-foreground mt-1">Conteúdo feito por angolanos, para angolanos</p>
             </div>
-            <Link href="/explorar/categorias" className="text-sm text-primary hover:underline flex items-center gap-1">Ver todas<ArrowRight className="w-3.5 h-3.5" /></Link>
+            <Link href="/explorar" className="text-sm text-primary hover:underline flex items-center gap-1">Ver todas<ArrowRight className="w-3.5 h-3.5" /></Link>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {ANGOLA_CATEGORIES.map((cat) => (
@@ -164,7 +164,7 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold">Explora por Categoria</h2>
-            <Link href="/explorar/categorias" className="text-sm text-primary hover:underline flex items-center gap-1">Ver todas<ArrowRight className="w-3.5 h-3.5" /></Link>
+            <Link href="/explorar" className="text-sm text-primary hover:underline flex items-center gap-1">Ver todas<ArrowRight className="w-3.5 h-3.5" /></Link>
           </div>
           <HomeCategories />
         </div>
@@ -177,7 +177,7 @@ export default function HomePage() {
             <h2 className="text-xl font-bold">Criadores em Ascensão 🚀</h2>
             <p className="text-sm text-muted-foreground mt-1">Streamers com menos de 3 meses na plataforma</p>
           </div>
-          <Link href="/explorar/canais" className="text-sm text-primary hover:underline flex items-center gap-1">Explorar canais<ArrowRight className="w-3.5 h-3.5" /></Link>
+          <Link href="/explorar" className="text-sm text-primary hover:underline flex items-center gap-1">Explorar canais<ArrowRight className="w-3.5 h-3.5" /></Link>
         </div>
         <HomeCreators />
       </section>
@@ -193,7 +193,7 @@ export default function HomePage() {
             </p>
             <div className="flex flex-wrap gap-3 justify-center">
               <Link href="/registar"><Button size="lg" className="gap-2"><Radio className="w-4 h-4" />Criar canal grátis</Button></Link>
-              <Link href="/como-funciona/streamers"><Button size="lg" variant="outline">Como funciona</Button></Link>
+              <Link href="/como-funciona"><Button size="lg" variant="outline">Como funciona</Button></Link>
             </div>
           </div>
         </div>

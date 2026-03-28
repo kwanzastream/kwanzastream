@@ -1,12 +1,5 @@
-﻿export default function AoVivoIRLPage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-      <h1 className="text-2xl font-bold text-muted-foreground">
-        AoVivoIRL
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Em construÃ§Ã£o
-      </p>
-    </div>
-  )
+﻿import { LiveCategoryPage } from "@/components/live-category-page"
+
+export default function AoVivoIRLAngolaPage() {
+  return <LiveCategoryPage category="irl" title="IRL Angola" emoji="📍" description="Aventuras nas ruas de Angola — eventos, viagens e dia-a-dia." />
 }

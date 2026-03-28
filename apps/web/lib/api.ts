@@ -1,4 +1,5 @@
 import axios from "axios"
+import { isPublicPath } from "./public-paths"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 
@@ -76,10 +77,13 @@ api.interceptors.response.use(
                 if (typeof window !== "undefined") {
                     localStorage.removeItem("ks_token")
                     document.cookie = "ks_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
+                    const path = window.location.pathname
                     if (
-                        !window.location.pathname.startsWith("/entrar") &&
-                        !window.location.pathname.startsWith("/registar") &&
-                        !window.location.pathname.startsWith("/auth")
+                        !isPublicPath(path) &&
+                        !path.startsWith("/entrar") &&
+                        !path.startsWith("/registar") &&
+                        !path.startsWith("/auth") &&
+                        !path.startsWith("/recuperar-senha")
                     ) {
                         window.location.href = "/entrar"
                     }

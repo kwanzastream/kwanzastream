@@ -1,12 +1,5 @@
-﻿export default function AoVivoJustTalkingPage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-      <h1 className="text-2xl font-bold text-muted-foreground">
-        AoVivoJustTalking
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Em construÃ§Ã£o
-      </p>
-    </div>
-  )
+﻿import { LiveCategoryPage } from "@/components/live-category-page"
+
+export default function AoVivoJustTalkingPage() {
+  return <LiveCategoryPage category="just-talking" title="Just Talking" emoji="💬" description="Conversas, debates e opiniões — a voz de Angola ao vivo." />
 }

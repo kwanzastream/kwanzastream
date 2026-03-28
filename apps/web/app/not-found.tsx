@@ -47,7 +47,7 @@ export default function NotFound() {
             </Link>
           </Button>
           <Button asChild variant="outline" className="font-bold h-11 border-white/10 bg-transparent">
-            <Link href="/explore">
+            <Link href="/explorar">
               <Video className="mr-2 h-4 w-4" /> Lives
             </Link>
           </Button>
@@ -55,10 +55,10 @@ export default function NotFound() {
 
         {/* Footer links */}
         <div className="flex items-center justify-center gap-6 text-xs font-medium text-muted-foreground pt-4">
-          <Link href="/profile" className="hover:text-primary transition-colors flex items-center gap-1">
+          <Link href="/definicoes/perfil" className="hover:text-primary transition-colors flex items-center gap-1">
             <User className="h-3 w-3" /> Perfil
           </Link>
-          <Link href="/help" className="hover:text-primary transition-colors flex items-center gap-1">
+          <Link href="/faq" className="hover:text-primary transition-colors flex items-center gap-1">
             <HelpCircle className="h-3 w-3" /> Ajuda
           </Link>
         </div>

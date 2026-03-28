@@ -1,12 +1,5 @@
-﻿export default function AoVivoNegociosPage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-      <h1 className="text-2xl font-bold text-muted-foreground">
-        AoVivoNegocios
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Em construÃ§Ã£o
-      </p>
-    </div>
-  )
+﻿import { LiveCategoryPage } from "@/components/live-category-page"
+
+export default function AoVivoNegóciosPage() {
+  return <LiveCategoryPage category="negocios" title="Negócios" emoji="💼" description="Empreendedorismo, startups e negócios em Angola." />
 }

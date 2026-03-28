@@ -46,7 +46,7 @@ interface AuthContextType {
   isLoggedIn: boolean // backward compat alias
   login: (credentials: LoginCredentials) => Promise<void>
   loginWithOtp: (phone: string, code: string) => Promise<void>
-  requestOtp: (phone: string) => Promise<void>
+  requestOtp: (phone: string, opts?: { termsAccepted?: boolean; ageConfirmed?: boolean }) => Promise<void>
   register: (data: RegisterData) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
@@ -80,6 +80,14 @@ function clearTokenCookie() {
   document.cookie = "ks_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
 }
 
+function setRoleCookie(role: string) {
+  document.cookie = `ks_role=${role.toLowerCase()}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
+}
+
+function clearRoleCookie() {
+  document.cookie = "ks_role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
+}
+
 function storeToken(token: string) {
   localStorage.setItem("ks_token", token)
   setTokenCookie(token)
@@ -88,6 +96,7 @@ function storeToken(token: string) {
 function clearToken() {
   localStorage.removeItem("ks_token")
   clearTokenCookie()
+  clearRoleCookie()
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -98,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const res = await api.get("/api/auth/me")
       setUser(res.data.user)
+      if (res.data.user?.role) setRoleCookie(res.data.user.role)
     } catch {
       setUser(null)
     }
@@ -115,17 +125,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const res = await api.post("/api/auth/login", payload)
     const { accessToken, user: userData } = res.data
     if (accessToken) storeToken(accessToken)
+    if (userData?.role) setRoleCookie(userData.role)
     setUser(userData)
   }
 
-  const requestOtp = async (phone: string) => {
-    await api.post("/api/auth/request-otp", { phone })
+  const requestOtp = async (phone: string, opts?: { termsAccepted?: boolean; ageConfirmed?: boolean }) => {
+    await api.post("/api/auth/request-otp", { phone, ...opts })
   }
 
   const loginWithOtp = async (phone: string, code: string) => {
     const res = await api.post("/api/auth/verify-otp", { phone, code })
     const { accessToken, user: userData } = res.data
     if (accessToken) storeToken(accessToken)
+    if (userData?.role) setRoleCookie(userData.role)
     setUser(userData)
   }
 

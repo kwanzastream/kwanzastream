@@ -8,10 +8,10 @@ import { connectSocket } from '@/lib/socket'
 
 const NAV_ITEMS = [
     { href: '/feed', icon: Home, label: 'Início' },
-    { href: '/explore', icon: Compass, label: 'Explorar' },
-    { href: '/stream', icon: PlusCircle, label: 'Criar', accent: true },
-    { href: '/feed?tab=notifications', icon: Bell, label: 'Alertas', hasBadge: true },
-    { href: '/profile', icon: User, label: 'Perfil' },
+    { href: '/explorar', icon: Compass, label: 'Explorar' },
+    { href: '/go-live', icon: PlusCircle, label: 'Criar', accent: true },
+    { href: '/notificacoes', icon: Bell, label: 'Alertas', hasBadge: true },
+    { href: '/definicoes/perfil', icon: User, label: 'Perfil' },
 ]
 
 export function MobileNav() {
@@ -44,11 +44,11 @@ export function MobileNav() {
     }, [])
 
     // Hide on standalone pages (pre-launch) — must be AFTER all hooks
-    if (pathname === '/em-breve') return null
+    const AUTH_HIDE = ['/entrar', '/registar', '/recuperar-senha', '/em-breve']
+    if (AUTH_HIDE.some(p => pathname === p || pathname?.startsWith(p + '/'))) return null
 
     const isActive = (href: string) => {
-        if (href.includes('?')) return pathname === href.split('?')[0]
-        return pathname === href || (href === '/profile' && pathname?.startsWith('/profile'))
+        return pathname === href || pathname?.startsWith(href + '/')
     }
 
     const handlePress = useCallback((index: number, href: string) => {
