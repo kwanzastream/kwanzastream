@@ -1,5 +1,13 @@
-import { Shield, AlertTriangle, FileText } from "lucide-react"
+﻿import { Shield, AlertTriangle, FileText } from "lucide-react"
 import Link from "next/link"
+
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Direitos de Autor | Kwanza Stream",
+  description: "Política de direitos de autor e DMCA do Kwanza Stream. Como reportar violações e proteger o teu conteúdo.",
+  openGraph: { title: "Direitos de Autor | Kwanza Stream", description: "Política de direitos de autor e DMCA do Kwanza Stream. Como reportar violações e proteger o teu conteúdo.", type: "website" },
+}
 
 export default function CopyrightPage() {
   return (

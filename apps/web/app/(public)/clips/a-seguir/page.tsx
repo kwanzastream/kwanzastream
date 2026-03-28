@@ -10,7 +10,7 @@ export default function ClipsASeguirPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get("/api/clips?feed=following").then(r => setClips(r.data?.clips || r.data || [])).catch(() => setClips([])).finally(() => setLoading(false))
+    api.get("/api/clips/trending").then(r => setClips(r.data?.clips || r.data || [])).catch(() => setClips([])).finally(() => setLoading(false))
   }, [])
 
   return (

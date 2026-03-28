@@ -1,3 +1,6 @@
+﻿import type { Metadata } from "next"
+export const metadata: Metadata = { title: "Categorias em Tendencia | Kwanza Stream", description: "As categorias mais populares no Kwanza Stream." }
+
 import { TrendingSubPage } from "@/components/public/trending-sub-page"
 const ITEMS = [
   { rank: 1, title: "🎮 Gaming Angola", subtitle: "15 streams ao vivo", change: 45, metric: "62k views", href: "/categoria/gaming" },

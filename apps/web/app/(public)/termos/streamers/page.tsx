@@ -1,3 +1,6 @@
+﻿import type { Metadata } from "next"
+export const metadata: Metadata = { title: "Termos para Streamers | Kwanza Stream", description: "Termos e condicoes para criadores de conteudo no Kwanza Stream." }
+
 import Link from "next/link"
 import { FileText } from "lucide-react"
 

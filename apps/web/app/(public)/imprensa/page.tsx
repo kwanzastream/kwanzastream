@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { Download, Mail, ExternalLink } from "lucide-react"
 
 const PRESS_RELEASES = [
@@ -13,6 +13,14 @@ const STATS = [
   { label: "Províncias cobertas", value: "21" },
   { label: "Lançamento", value: "2026" },
 ]
+
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Imprensa | Kwanza Stream",
+  description: "Recursos de imprensa do Kwanza Stream — press releases, kit de media, estatísticas e contactos de comunicação.",
+  openGraph: { title: "Imprensa | Kwanza Stream", description: "Recursos de imprensa do Kwanza Stream — press releases, kit de media, estatísticas e contactos de comunicação.", type: "website" },
+}
 
 export default function ImprensaPage() {
   return (

@@ -1,3 +1,6 @@
+﻿import type { Metadata } from "next"
+export const metadata: Metadata = { title: "Canais em Tendencia | Kwanza Stream", description: "Os canais que mais crescem no Kwanza Stream." }
+
 import { TrendingSubPage } from "@/components/public/trending-sub-page"
 const ITEMS = Array.from({ length: 20 }, (_, i) => ({
   rank: i + 1, title: `Creator ${i + 1}`, subtitle: `@creator${i} · ${["Gaming", "Música", "Futebol", "IRL"][i % 4]} · ${Math.floor(Math.random() * 5000) + 200} seguidores`,

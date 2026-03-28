@@ -1,3 +1,6 @@
+﻿import type { Metadata } from "next"
+export const metadata: Metadata = { title: "App Desktop | Kwanza Stream", description: "Descarrega o Kwanza Stream para Windows e Mac." }
+
 import Link from "next/link"
 export default function DesktopHubPage() {
   return (

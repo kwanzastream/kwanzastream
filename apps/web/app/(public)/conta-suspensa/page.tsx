@@ -1,3 +1,6 @@
+﻿import type { Metadata } from "next"
+export const metadata: Metadata = { title: "Conta Suspensa | Kwanza Stream", description: "Informacao sobre a suspensao da tua conta Kwanza Stream e como recorrer." }
+
 import Link from "next/link"
 import { Ban, Mail, AlertTriangle, Clock } from "lucide-react"
 

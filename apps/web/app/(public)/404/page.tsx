@@ -1,3 +1,6 @@
+﻿import type { Metadata } from "next"
+export const metadata: Metadata = { title: "Pagina Nao Encontrada | Kwanza Stream", description: "A pagina que procuras nao existe no Kwanza Stream." }
+
 import Link from "next/link"
 
 export default function NaoEncontradoPage() {

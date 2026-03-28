@@ -1,3 +1,6 @@
+﻿import type { Metadata } from "next"
+export const metadata: Metadata = { title: "Acesso Negado | Kwanza Stream", description: "Nao tens permissao para aceder a esta pagina do Kwanza Stream." }
+
 import Link from "next/link"
 
 export default function AcessoNegadoPage() {

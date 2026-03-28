@@ -1,3 +1,6 @@
+﻿import type { Metadata } from "next"
+export const metadata: Metadata = { title: "App Android | Kwanza Stream", description: "Descarrega o Kwanza Stream para Android. Streaming ao vivo na palma da mao." }
+
 import { PwaInstallButton } from "@/components/app-download/pwa-install-button"
 import Link from "next/link"
 export default function AndroidHubPage() {

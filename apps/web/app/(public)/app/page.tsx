@@ -1,3 +1,6 @@
+﻿import type { Metadata } from "next"
+export const metadata: Metadata = { title: "App Kwanza Stream | Kwanza Stream", description: "Descarrega a app do Kwanza Stream para Android, iOS e desktop." }
+
 import { PlatformCard } from "@/components/app-download/platform-card"
 import { PwaInstallButton } from "@/components/app-download/pwa-install-button"
 import Link from "next/link"

@@ -1,3 +1,6 @@
+﻿import type { Metadata } from "next"
+export const metadata: Metadata = { title: "Verificacao Necessaria | Kwanza Stream", description: "Verifica a tua conta Kwanza Stream para aceder a todas as funcionalidades." }
+
 import Link from "next/link"
 import { ShieldCheck, Phone, Mail, ArrowRight } from "lucide-react"
 

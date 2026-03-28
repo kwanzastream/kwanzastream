@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 
 const PROVINCIAS = [
   { name: "Bengo", emoji: "🌴", streamers: 5, live: 0 },
@@ -23,6 +23,14 @@ const PROVINCIAS = [
   { name: "Uíge", emoji: "☕", streamers: 8, live: 0 },
   { name: "Zaire", emoji: "🌍", streamers: 7, live: 0 },
 ]
+
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "21 Províncias de Angola | Kwanza Stream",
+  description: "Descobre criadores de todas as 21 províncias de Angola. O Kwanza Stream é feito de Angola, para Angola.",
+  openGraph: { title: "21 Províncias de Angola | Kwanza Stream", description: "Descobre criadores de todas as 21 províncias de Angola. O Kwanza Stream é feito de Angola, para Angola.", type: "website" },
+}
 
 export default function ProvinciasPage() {
   return (

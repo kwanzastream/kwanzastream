@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { BarChart3, Megaphone, Target, Users, Zap } from "lucide-react"
 
 const AD_FORMATS = [
@@ -14,6 +14,14 @@ const METRICS = [
   { label: "Taxa de engagement", value: "8.5%" },
   { label: "Creators activos", value: "500+" },
 ]
+
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Anunciantes | Kwanza Stream",
+  description: "Anuncia no Kwanza Stream e chega a criadores e audiências de toda Angola. Formatos de publicidade e métricas.",
+  openGraph: { title: "Anunciantes | Kwanza Stream", description: "Anuncia no Kwanza Stream e chega a criadores e audiências de toda Angola. Formatos de publicidade e métricas.", type: "website" },
+}
 
 export default function AnunciantesPage() {
   return (

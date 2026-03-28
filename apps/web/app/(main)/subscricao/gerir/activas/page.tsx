@@ -10,7 +10,7 @@ export default function SubscricoesActivasPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get("/api/subscriptions/active").then(r => setSubs(r.data?.subscriptions || r.data || [])).catch(() => setSubs([])).finally(() => setLoading(false))
+    api.get("/api/subscriptions/me").then(r => setSubs(r.data?.subscriptions || r.data || [])).catch(() => setSubs([])).finally(() => setLoading(false))
   }, [])
 
   return (

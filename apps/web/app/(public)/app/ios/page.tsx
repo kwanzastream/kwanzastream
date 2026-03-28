@@ -1,3 +1,6 @@
+﻿import type { Metadata } from "next"
+export const metadata: Metadata = { title: "App iOS | Kwanza Stream", description: "Descarrega o Kwanza Stream para iPhone e iPad." }
+
 import { IosWaitlistForm } from "@/components/app-download/ios-waitlist-form"
 import Link from "next/link"
 export default function IosHubPage() {

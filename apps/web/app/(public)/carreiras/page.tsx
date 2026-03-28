@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { MapPin, Users, Briefcase, Heart } from "lucide-react"
 
 const POSITIONS = [
@@ -18,6 +18,14 @@ const PERKS = [
   { icon: "🏥", title: "Seguro de saúde", desc: "Para ti e a tua família" },
   { icon: "🚀", title: "Stock options", desc: "Participa no crescimento da empresa" },
 ]
+
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Carreiras | Kwanza Stream",
+  description: "Junta-te à equipa do Kwanza Stream. Veja as vagas abertas e construa o futuro do streaming angolano connosco.",
+  openGraph: { title: "Carreiras | Kwanza Stream", description: "Junta-te à equipa do Kwanza Stream. Veja as vagas abertas e construa o futuro do streaming angolano connosco.", type: "website" },
+}
 
 export default function CarreirasPage() {
   return (
