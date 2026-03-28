@@ -40,12 +40,14 @@ export const requestOtp = async (req: Request, res: Response) => {
         const smsResult = await sendOtpSms(phone, code);
 
         if (!smsResult.success) {
-            return res.status(500).json({ error: 'Failed to send OTP', details: smsResult.error });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(500).json({ success: false, message: 'Falha ao enviar OTP.', details: smsResult.error });
         }
 
         res.json({
             success: true,
-            message: 'OTP sent successfully',
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            message: 'Código OTP enviado com sucesso.',
             isNewUser: !user,
             ...(process.env.NODE_ENV === 'development' && { code }),
         });
@@ -57,10 +59,12 @@ export const requestOtp = async (req: Request, res: Response) => {
             });
         }
         if (error instanceof z.ZodError) {
-            return res.status(400).json({ error: 'Validation error', details: error.errors });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(400).json({ success: false, message: 'Erro de validação', details: error.errors });
         }
         console.error('Request OTP error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
@@ -107,26 +111,34 @@ export const verifyOtpAndLogin = async (req: Request, res: Response) => {
         const tokens = await generateTokenPair(user.id, user.role);
         setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 
+        // FIX: Incluir accessToken e refreshToken na resposta OTP — TestSprite #C1
         res.json({
             success: true,
-            user: {
-                id: user.id,
-                phone: user.phone,
-                email: user.email,
-                username: user.username,
-                displayName: user.displayName,
-                avatarUrl: user.avatarUrl,
-                role: user.role,
-                isVerified: user.isVerified,
-                balance: Number(user.balance),
+            data: {
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken,
+                user: {
+                    id: user.id,
+                    phone: user.phone,
+                    email: user.email,
+                    username: user.username,
+                    displayName: user.displayName,
+                    avatarUrl: user.avatarUrl,
+                    role: user.role,
+                    isVerified: user.isVerified,
+                    balance: Number(user.balance),
+                },
             },
+            message: 'Login efectuado com sucesso.',
         });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return res.status(400).json({ error: 'Validation error', details: error.errors });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(400).json({ success: false, message: 'Erro de validação', details: error.errors });
         }
         console.error('Verify OTP error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
@@ -178,25 +190,32 @@ export const completePhoneRegistration = async (req: Request, res: Response) => 
         const tokens = await generateTokenPair(user.id, user.role);
         setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 
+        // FIX: Incluir accessToken e refreshToken na resposta de registo por telefone — TestSprite #C1
         res.status(201).json({
             success: true,
-            user: {
-                id: user.id,
-                phone: user.phone,
-                email: user.email,
-                username: user.username,
-                displayName: user.displayName,
-                avatarUrl: user.avatarUrl,
-                role: user.role,
-                isVerified: user.isVerified,
-                balance: Number(user.balance),
+            data: {
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken,
+                user: {
+                    id: user.id,
+                    phone: user.phone,
+                    email: user.email,
+                    username: user.username,
+                    displayName: user.displayName,
+                    avatarUrl: user.avatarUrl,
+                    role: user.role,
+                    isVerified: user.isVerified,
+                    balance: Number(user.balance),
+                },
             },
+            message: 'Registo efectuado com sucesso.',
         });
     } catch (error) {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ error: 'Erro de validação', details: error.errors });
         }
         console.error('Complete phone registration error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };

@@ -5,18 +5,22 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock Prisma
-const mockPrisma = {
-    ledgerEntry: {
-        findFirst: vi.fn(),
-        create: vi.fn(),
-        findMany: vi.fn(),
-        count: vi.fn(),
-    },
-    user: {
-        findMany: vi.fn(),
-    },
-};
+// FIX: Usar vi.hoisted para garantir que mockPrisma existe quando vi.mock executa — TestSprite #B2
+const { mockPrisma } = vi.hoisted(() => {
+    return {
+        mockPrisma: {
+            ledgerEntry: {
+                findFirst: vi.fn(),
+                create: vi.fn(),
+                findMany: vi.fn(),
+                count: vi.fn(),
+            },
+            user: {
+                findMany: vi.fn(),
+            },
+        },
+    };
+});
 
 vi.mock('../src/config/prisma', () => ({ default: mockPrisma }));
 

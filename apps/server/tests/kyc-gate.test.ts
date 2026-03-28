@@ -2,16 +2,19 @@
 // kyc-gate.test.ts — Unit Tests for KYC/AML Tier Enforcement
 // Tests: tier limits, operation blocking, daily counter reset
 // ============================================================
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock Prisma
-const mockPrisma = {
-    user: {
-        findUnique: vi.fn(),
-        update: vi.fn(),
-    },
-};
+// FIX: Usar vi.hoisted para garantir que mockPrisma existe quando vi.mock executa — TestSprite #B2
+const { mockPrisma } = vi.hoisted(() => {
+    return {
+        mockPrisma: {
+            user: {
+                findUnique: vi.fn(),
+                update: vi.fn(),
+            },
+        },
+    };
+});
 
 vi.mock('../src/config/prisma', () => ({ default: mockPrisma }));
 

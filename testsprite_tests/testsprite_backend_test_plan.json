@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "postapiauthregisterwithvaliddata",
+    "description": "Test the user registration endpoint with valid email, phone, username, and password to ensure it returns 201 with success and user data."
+  },
+  {
+    "id": "TC002",
+    "title": "postapiauthloginwithvalidcredentials",
+    "description": "Test the login endpoint with valid identifier and password to verify it returns 200 with success, user data, and sets JWT in httpOnly cookie."
+  },
+  {
+    "id": "TC003",
+    "title": "postapiauthrefreshwithvalidrefresh",
+    "description": "Test the token refresh endpoint with a valid refresh token to confirm it returns 200 with success and issues a new access token."
+  },
+  {
+    "id": "TC004",
+    "title": "postapiauthlogoutclearsession",
+    "description": "Test the logout endpoint to ensure it revokes the refresh token, clears cookies, and returns 200 with success."
+  },
+  {
+    "id": "TC005",
+    "title": "postapiauthrequestpasswordresetwithvalidemail",
+    "description": "Test the password reset request endpoint with a valid email to verify it returns 200 with a generic success message."
+  },
+  {
+    "id": "TC006",
+    "title": "postapiauthresetpasswordwithvalidtoken",
+    "description": "Test the password reset endpoint with a valid token and new password to ensure it returns 200 indicating success."
+  },
+  {
+    "id": "TC007",
+    "title": "getapiauthmewithvalidtoken",
+    "description": "Test the authenticated user profile endpoint with a valid JWT token to confirm it returns 200 with user data."
+  },
+  {
+    "id": "TC008",
+    "title": "putapiusersmeupdateprofile",
+    "description": "Test updating user profile with valid data including username, displayName, bio, and avatarUrl to verify it returns 200 with updated user data."
+  },
+  {
+    "id": "TC009",
+    "title": "postapiusersonboardingcompleteonboarding",
+    "description": "Test completing onboarding with valid displayName, username, bio, and interests to ensure it returns 200 with success and updated user data."
+  },
+  {
+    "id": "TC010",
+    "title": "postapiuploadavatarwithvalidimage",
+    "description": "Test avatar upload endpoint with a valid image file (jpeg, less than 5MB) to verify it returns 200 with success and avatarUrl."
+  }
+]

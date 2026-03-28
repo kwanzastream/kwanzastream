@@ -8,6 +8,8 @@ import bcrypt from 'bcrypt';
 import prisma from '../../config/prisma';
 import { generateTokenPair, verifyRefreshToken, revokeRefreshToken, revokeAllUserTokens } from '../../services/jwtService';
 import { loginSchema, registerSchema, SALT_ROUNDS, setAuthCookies, clearAuthCookies } from './authHelpers';
+// FIX: Bloqueio após 5 falhas de login consecutivas — TestSprite #M1
+import { checkLoginLockout, recordLoginFailure, resetLoginFailures } from './loginRateLimiter';
 
 // ============== Password-Based Registration ==============
 export const register = async (req: Request, res: Response) => {
@@ -49,26 +51,33 @@ export const register = async (req: Request, res: Response) => {
         const tokens = await generateTokenPair(user.id, user.role);
         setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 
+        // FIX: Incluir accessToken e refreshToken na resposta — TestSprite #C1
         res.status(201).json({
             success: true,
-            user: {
-                id: user.id,
-                phone: user.phone,
-                email: user.email,
-                username: user.username,
-                displayName: user.displayName,
-                avatarUrl: user.avatarUrl,
-                role: user.role,
-                isVerified: false,
-                balance: Number(user.balance),
+            data: {
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken,
+                user: {
+                    id: user.id,
+                    phone: user.phone,
+                    email: user.email,
+                    username: user.username,
+                    displayName: user.displayName,
+                    avatarUrl: user.avatarUrl,
+                    role: user.role,
+                    isVerified: false,
+                    balance: Number(user.balance),
+                },
             },
+            message: 'Registo efectuado com sucesso.',
         });
     } catch (error) {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ error: 'Erro de validação', details: error.errors });
         }
         console.error('Register error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
@@ -76,6 +85,16 @@ export const register = async (req: Request, res: Response) => {
 export const loginWithPassword = async (req: Request, res: Response) => {
     try {
         const { identifier, password } = loginSchema.parse(req.body);
+
+        // FIX: Verificar bloqueio por excesso de tentativas — TestSprite #M1
+        const lockout = await checkLoginLockout(identifier);
+        if (lockout.locked) {
+            const remainingMin = Math.ceil((lockout.remainingMs || 0) / 60000);
+            return res.status(429).json({
+                success: false,
+                message: `Conta temporariamente bloqueada por excesso de tentativas. Tenta novamente em ${remainingMin} minutos.`,
+            });
+        }
 
         const isEmail = identifier.includes('@');
         const isPhone = /^\+?[0-9]{9,15}$/.test(identifier);
@@ -91,7 +110,9 @@ export const loginWithPassword = async (req: Request, res: Response) => {
         }
 
         if (!user || !user.passwordHash) {
-            return res.status(401).json({ error: 'Credenciais inválidas.' });
+            // FIX: Registar falha de login — TestSprite #M1
+            await recordLoginFailure(identifier);
+            return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
         }
 
         if (user.isBanned) {
@@ -104,8 +125,13 @@ export const loginWithPassword = async (req: Request, res: Response) => {
 
         const isValid = await bcrypt.compare(password, user.passwordHash);
         if (!isValid) {
-            return res.status(401).json({ error: 'Credenciais inválidas.' });
+            // FIX: Registar falha de login — TestSprite #M1
+            await recordLoginFailure(identifier);
+            return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
         }
+
+        // FIX: Reset do contador após login bem-sucedido — TestSprite #M1
+        await resetLoginFailures(identifier);
 
         await prisma.user.update({
             where: { id: user.id },
@@ -115,51 +141,62 @@ export const loginWithPassword = async (req: Request, res: Response) => {
         const tokens = await generateTokenPair(user.id, user.role);
         setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 
+        // FIX: Incluir accessToken e refreshToken na resposta — TestSprite #C1
         res.json({
             success: true,
-            user: {
-                id: user.id,
-                phone: user.phone,
-                email: user.email,
-                username: user.username,
-                displayName: user.displayName,
-                avatarUrl: user.avatarUrl,
-                role: user.role,
-                isVerified: user.isVerified,
-                balance: Number(user.balance),
-                onboardingCompleted: user.onboardingCompleted,
+            data: {
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken,
+                user: {
+                    id: user.id,
+                    phone: user.phone,
+                    email: user.email,
+                    username: user.username,
+                    displayName: user.displayName,
+                    avatarUrl: user.avatarUrl,
+                    role: user.role,
+                    isVerified: user.isVerified,
+                    balance: Number(user.balance),
+                    onboardingCompleted: user.onboardingCompleted,
+                },
             },
+            message: 'Login efectuado com sucesso.',
         });
     } catch (error) {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ error: 'Erro de validação', details: error.errors });
         }
         console.error('Login error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
 // ============== Token Management ==============
 export const refreshAccessToken = async (req: Request, res: Response) => {
     try {
-        const refreshToken = req.cookies?.refresh_token || req.body?.refreshToken;
+        // FIX: Nomes de cookies standardizados — TestSprite cloud (com fallback)
+        const refreshToken = req.cookies?.refreshToken || req.cookies?.refresh_token || req.body?.refreshToken;
 
         if (!refreshToken) {
-            return res.status(401).json({ error: 'No refresh token provided' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(401).json({ success: false, message: 'Token de actualização não fornecido.' });
         }
 
         const userId = await verifyRefreshToken(refreshToken);
 
         if (!userId) {
             clearAuthCookies(res);
-            return res.status(401).json({ error: 'Invalid or expired refresh token' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(401).json({ success: false, message: 'Token de actualização inválido ou expirado.' });
         }
 
         const user = await prisma.user.findUnique({ where: { id: userId } });
 
         if (!user) {
             clearAuthCookies(res);
-            return res.status(401).json({ error: 'User not found' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(401).json({ success: false, message: 'Utilizador não encontrado.' });
         }
 
         await revokeRefreshToken(refreshToken);
@@ -167,29 +204,39 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
         const tokens = await generateTokenPair(user.id, user.role);
         setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 
-        res.json({ success: true });
+        // FIX: Incluir accessToken e refreshToken na resposta do refresh — TestSprite #C1
+        res.json({
+            success: true,
+            data: {
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken,
+            },
+            message: 'Token actualizado com sucesso.',
+        });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return res.status(400).json({ error: 'Validation error', details: error.errors });
+            return res.status(400).json({ success: false, message: 'Erro de validação', details: error.errors });
         }
         console.error('Refresh token error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
 export const logout = async (req: Request, res: Response) => {
     try {
-        const refreshToken = req.cookies?.refresh_token || req.body?.refreshToken;
+        // FIX: Nomes de cookies standardizados — TestSprite cloud (com fallback)
+        const refreshToken = req.cookies?.refreshToken || req.cookies?.refresh_token || req.body?.refreshToken;
 
         if (refreshToken) {
             await revokeRefreshToken(refreshToken);
         }
 
         clearAuthCookies(res);
-        res.json({ success: true, message: 'Logged out successfully' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.json({ success: true, message: 'Sessão terminada com sucesso.' });
     } catch (error) {
         console.error('Logout error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
@@ -198,16 +245,18 @@ export const logoutAll = async (req: Request, res: Response) => {
         const userId = (req as any).user?.userId;
 
         if (!userId) {
-            return res.status(401).json({ error: 'Authentication required' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(401).json({ success: false, message: 'Não tens permissão para aceder a este recurso.' });
         }
 
         await revokeAllUserTokens(userId);
         clearAuthCookies(res);
 
-        res.json({ success: true, message: 'Logged out from all devices' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.json({ success: true, message: 'Sessão terminada em todos os dispositivos.' });
     } catch (error) {
         console.error('Logout all error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
@@ -216,7 +265,8 @@ export const getMe = async (req: Request, res: Response) => {
         const userId = (req as any).user?.userId;
 
         if (!userId) {
-            return res.status(401).json({ error: 'Authentication required' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(401).json({ success: false, message: 'Não tens permissão para aceder a este recurso.' });
         }
 
         const user = await prisma.user.findUnique({
@@ -242,12 +292,13 @@ export const getMe = async (req: Request, res: Response) => {
         });
 
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(404).json({ success: false, message: 'Utilizador não encontrado.' });
         }
 
         res.json({ user: { ...user, balance: Number(user.balance) } });
     } catch (error) {
         console.error('Get me error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };

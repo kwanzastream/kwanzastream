@@ -19,6 +19,8 @@ const onboardingSchema = z.object({
     username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/, 'Username deve conter apenas letras, números e _'),
     bio: z.string().max(500).optional().default(''),
     interests: z.array(z.string()).min(1).max(20),
+    // FIX: Campo de província opcional no onboarding — TestSprite #M4
+    province: z.string().max(50).optional(),
 });
 
 const paginationSchema = z.object({
@@ -62,7 +64,8 @@ export const getUserProfile = async (req: Request, res: Response) => {
         });
 
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(404).json({ success: false, message: 'Utilizador não encontrado.' });
         }
 
         // Check if current user is following this user
@@ -91,7 +94,8 @@ export const getUserProfile = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Get user profile error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
@@ -100,7 +104,8 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response) =>
     try {
         const userId = req.user?.userId;
         if (!userId) {
-            return res.status(401).json({ error: 'Authentication required' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(401).json({ success: false, message: 'Não tens permissão para aceder a este recurso.' });
         }
 
         const data = updateProfileSchema.parse(req.body);
@@ -111,7 +116,8 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response) =>
                 where: { username: data.username },
             });
             if (existing && existing.id !== userId) {
-                return res.status(400).json({ error: 'Username already taken' });
+                // FIX: Mensagem PT-AO — TestSprite #M5
+                return res.status(400).json({ success: false, message: 'Este nome de utilizador já está em uso.' });
             }
         }
 
@@ -121,7 +127,8 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response) =>
                 where: { email: data.email },
             });
             if (existing && existing.id !== userId) {
-                return res.status(400).json({ error: 'Email already taken' });
+                // FIX: Mensagem PT-AO — TestSprite #M5
+                return res.status(400).json({ success: false, message: 'Este email já está registado.' });
             }
         }
 
@@ -147,10 +154,12 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response) =>
         res.json({ user });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return res.status(400).json({ error: 'Validation error', details: error.errors });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(400).json({ success: false, message: 'Erro de validação', details: error.errors });
         }
         console.error('Update profile error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
@@ -159,13 +168,15 @@ export const followUser = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
         if (!userId) {
-            return res.status(401).json({ error: 'Authentication required' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(401).json({ success: false, message: 'Não tens permissão para aceder a este recurso.' });
         }
 
         const { id: targetUserId } = req.params;
 
         if (userId === targetUserId) {
-            return res.status(400).json({ error: 'Cannot follow yourself' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(400).json({ success: false, message: 'Não podes seguir-te a ti próprio.' });
         }
 
         // Check if target user exists
@@ -174,7 +185,8 @@ export const followUser = async (req: AuthenticatedRequest, res: Response) => {
         });
 
         if (!targetUser) {
-            return res.status(404).json({ error: 'User not found' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(404).json({ success: false, message: 'Utilizador não encontrado.' });
         }
 
         // Check if already following
@@ -188,7 +200,8 @@ export const followUser = async (req: AuthenticatedRequest, res: Response) => {
         });
 
         if (existingFollow) {
-            return res.status(400).json({ error: 'Already following this user' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(400).json({ success: false, message: 'Já estás a seguir este utilizador.' });
         }
 
         await prisma.follow.create({
@@ -198,10 +211,11 @@ export const followUser = async (req: AuthenticatedRequest, res: Response) => {
             },
         });
 
-        res.json({ success: true, message: 'Now following user' });
+        res.json({ success: true, message: 'A seguir o utilizador.' });
     } catch (error) {
         console.error('Follow user error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
@@ -210,7 +224,8 @@ export const unfollowUser = async (req: AuthenticatedRequest, res: Response) => 
     try {
         const userId = req.user?.userId;
         if (!userId) {
-            return res.status(401).json({ error: 'Authentication required' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(401).json({ success: false, message: 'Não tens permissão para aceder a este recurso.' });
         }
 
         const { id: targetUserId } = req.params;
@@ -222,10 +237,11 @@ export const unfollowUser = async (req: AuthenticatedRequest, res: Response) => 
             },
         });
 
-        res.json({ success: true, message: 'Unfollowed user' });
+        res.json({ success: true, message: 'Deixaste de seguir o utilizador.' });
     } catch (error) {
         console.error('Unfollow user error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
@@ -240,7 +256,8 @@ export const getFollowers = async (req: Request, res: Response) => {
         });
 
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(404).json({ success: false, message: 'Utilizador não encontrado.' });
         }
 
         const [followers, total] = await Promise.all([
@@ -275,7 +292,8 @@ export const getFollowers = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Get followers error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
@@ -290,7 +308,8 @@ export const getFollowing = async (req: Request, res: Response) => {
         });
 
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(404).json({ success: false, message: 'Utilizador não encontrado.' });
         }
 
         const [following, total] = await Promise.all([
@@ -325,7 +344,8 @@ export const getFollowing = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Get following error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
@@ -334,7 +354,8 @@ export const generateStreamKey = async (req: AuthenticatedRequest, res: Response
     try {
         const userId = req.user?.userId;
         if (!userId) {
-            return res.status(401).json({ error: 'Authentication required' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(401).json({ success: false, message: 'Não tens permissão para aceder a este recurso.' });
         }
 
         const streamKey = `sk_${uuidv4().replace(/-/g, '')}`;
@@ -350,7 +371,8 @@ export const generateStreamKey = async (req: AuthenticatedRequest, res: Response
         res.json({ streamKey });
     } catch (error) {
         console.error('Generate stream key error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
@@ -361,7 +383,8 @@ export const completeOnboarding = async (req: AuthenticatedRequest, res: Respons
     try {
         const userId = req.user?.userId;
         if (!userId) {
-            return res.status(401).json({ error: 'Authentication required' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(401).json({ success: false, message: 'Não tens permissão para aceder a este recurso.' });
         }
 
         const data = onboardingSchema.parse(req.body);
@@ -381,6 +404,8 @@ export const completeOnboarding = async (req: AuthenticatedRequest, res: Respons
                 username: data.username,
                 bio: data.bio || '',
                 interests: data.interests,
+                // FIX: Guardar província no onboarding — TestSprite #M4
+                ...(data.province && { province: data.province }),
                 onboardingCompleted: true,
             },
             select: {
@@ -397,10 +422,11 @@ export const completeOnboarding = async (req: AuthenticatedRequest, res: Respons
         res.json({ success: true, user });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return res.status(400).json({ error: 'Validation error', details: error.errors });
+            return res.status(400).json({ success: false, message: 'Erro de validação', details: error.errors });
         }
         console.error('Complete onboarding error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
@@ -433,7 +459,8 @@ export const checkUsername = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Check username error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
@@ -448,14 +475,14 @@ const autoModSchema = z.object({
 export const getAutoModSettings = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
-        if (!userId) return res.status(401).json({ error: 'Authentication required' });
+        if (!userId) return res.status(401).json({ success: false, message: 'Não tens permissão para aceder a este recurso.' });
 
         const user = await prisma.user.findUnique({
             where: { id: userId },
             select: { autoModEnabled: true, customBannedWords: true },
         });
 
-        if (!user) return res.status(404).json({ error: 'User not found' });
+        if (!user) return res.status(404).json({ success: false, message: 'Utilizador não encontrado.' });
 
         res.json({
             autoModEnabled: user.autoModEnabled,
@@ -463,7 +490,8 @@ export const getAutoModSettings = async (req: AuthenticatedRequest, res: Respons
         });
     } catch (error) {
         console.error('Get AutoMod settings error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
@@ -471,7 +499,7 @@ export const getAutoModSettings = async (req: AuthenticatedRequest, res: Respons
 export const updateAutoModSettings = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
-        if (!userId) return res.status(401).json({ error: 'Authentication required' });
+        if (!userId) return res.status(401).json({ success: false, message: 'Não tens permissão para aceder a este recurso.' });
 
         const data = autoModSchema.parse(req.body);
 
@@ -491,9 +519,11 @@ export const updateAutoModSettings = async (req: AuthenticatedRequest, res: Resp
         });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return res.status(400).json({ error: 'Validation error', details: error.errors });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(400).json({ success: false, message: 'Erro de validação', details: error.errors });
         }
         console.error('Update AutoMod settings error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };

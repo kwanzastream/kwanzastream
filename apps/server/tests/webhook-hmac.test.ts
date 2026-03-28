@@ -6,15 +6,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import crypto from 'crypto';
 
-// Mock Prisma
-const mockPrisma = {
-    webhookEventLog: {
-        findUnique: vi.fn(),
-        create: vi.fn(),
-        update: vi.fn(),
-        updateMany: vi.fn(),
-    },
-};
+// FIX: Usar vi.hoisted para garantir que mockPrisma existe quando vi.mock executa — TestSprite #B2
+const { mockPrisma } = vi.hoisted(() => {
+    return {
+        mockPrisma: {
+            webhookEventLog: {
+                findUnique: vi.fn(),
+                create: vi.fn(),
+                update: vi.fn(),
+                updateMany: vi.fn(),
+            },
+        },
+    };
+});
 
 vi.mock('../src/config/prisma', () => ({ default: mockPrisma }));
 

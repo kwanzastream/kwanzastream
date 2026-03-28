@@ -73,6 +73,8 @@ model User {
   isVerified    Boolean  @default(false)
   streamKey     String?  @unique
   interests     String[] @default([])
+  // FIX: Campo de província adicionado — TestSprite #M4
+  province      String?
   onboardingCompleted Boolean @default(false)
   
   // Featured & Shelf (Dashboard — Grupo 35)

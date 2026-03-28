@@ -9,7 +9,7 @@ import compression from 'compression';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 // Load env vars FIRST
 dotenv.config();
@@ -129,10 +129,9 @@ const authLimiter = rateLimit({
         return path === '/me' || path === '/refresh' || path === '/google' || path === '/google/callback';
     },
     keyGenerator: (req) => {
-        // Combine IP + userId (if present) for shared networks
-        const ip = req.ip || req.socket.remoteAddress || 'unknown';
         const userId = (req.body as any)?.phone || (req.body as any)?.identifier || '';
-        return `${ip}:${userId}`;
+        const ip = req.ip || req.socket.remoteAddress || '127.0.0.1';
+        return `${ipKeyGenerator(ip)}:${userId}`;
     },
 });
 

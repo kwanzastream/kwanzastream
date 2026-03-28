@@ -7,7 +7,8 @@ import { randomUUID } from 'crypto';
 
 // ============== Configuration ==============
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
-const MAX_AVATAR_SIZE = 2 * 1024 * 1024;  // 2MB
+// FIX: Limite de avatar alterado para 5MB — TestSprite #M3
+const MAX_AVATAR_SIZE = 5 * 1024 * 1024;  // 5MB
 const MAX_BANNER_SIZE = 5 * 1024 * 1024;  // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
@@ -26,25 +27,29 @@ export const uploadAvatar = async (req: AuthenticatedRequest, res: Response) => 
     try {
         const userId = req.user?.userId;
         if (!userId) {
-            return res.status(401).json({ error: 'Authentication required' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(401).json({ success: false, message: 'Não tens permissão para aceder a este recurso.' });
         }
 
         const file = (req as any).file;
         if (!file) {
-            return res.status(400).json({ error: 'No file provided' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(400).json({ success: false, message: 'Nenhum ficheiro fornecido.' });
         }
 
         // Validate file type
         if (!ALLOWED_TYPES.includes(file.mimetype)) {
             // Clean up uploaded file
             fs.unlinkSync(file.path);
-            return res.status(400).json({ error: 'File type not allowed. Use JPEG, PNG or WebP.' });
+            // FIX: Mensagem PT-AO — TestSprite #M3
+            return res.status(400).json({ success: false, message: 'Tipo de ficheiro inválido. Usa JPG ou PNG.' });
         }
 
         // Validate file size
         if (file.size > MAX_AVATAR_SIZE) {
             fs.unlinkSync(file.path);
-            return res.status(400).json({ error: 'Avatar must be smaller than 2MB.' });
+            // FIX: Mensagem PT-AO com limite 5MB — TestSprite #M3
+            return res.status(400).json({ success: false, message: 'O ficheiro excede o tamanho máximo de 5MB.' });
         }
 
         // Generate unique filename
@@ -81,7 +86,8 @@ export const uploadAvatar = async (req: AuthenticatedRequest, res: Response) => 
         res.json({ success: true, avatarUrl: user.avatarUrl });
     } catch (error) {
         console.error('Upload avatar error:', error);
-        res.status(500).json({ error: 'Failed to upload avatar' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
@@ -90,22 +96,26 @@ export const uploadBanner = async (req: AuthenticatedRequest, res: Response) => 
     try {
         const userId = req.user?.userId;
         if (!userId) {
-            return res.status(401).json({ error: 'Authentication required' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(401).json({ success: false, message: 'Não tens permissão para aceder a este recurso.' });
         }
 
         const file = (req as any).file;
         if (!file) {
-            return res.status(400).json({ error: 'No file provided' });
+            // FIX: Mensagem PT-AO — TestSprite #M5
+            return res.status(400).json({ success: false, message: 'Nenhum ficheiro fornecido.' });
         }
 
         if (!ALLOWED_TYPES.includes(file.mimetype)) {
             fs.unlinkSync(file.path);
-            return res.status(400).json({ error: 'File type not allowed. Use JPEG, PNG or WebP.' });
+            // FIX: Mensagem PT-AO — TestSprite #M3
+            return res.status(400).json({ success: false, message: 'Tipo de ficheiro inválido. Usa JPG ou PNG.' });
         }
 
         if (file.size > MAX_BANNER_SIZE) {
             fs.unlinkSync(file.path);
-            return res.status(400).json({ error: 'Banner must be smaller than 5MB.' });
+            // FIX: Mensagem PT-AO — TestSprite #M3
+            return res.status(400).json({ success: false, message: 'O ficheiro excede o tamanho máximo de 5MB.' });
         }
 
         const ext = path.extname(file.originalname) || '.jpg';
@@ -125,6 +135,7 @@ export const uploadBanner = async (req: AuthenticatedRequest, res: Response) => 
         res.json({ success: true, bannerUrl: user.bannerUrl });
     } catch (error) {
         console.error('Upload banner error:', error);
-        res.status(500).json({ error: 'Failed to upload banner' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };

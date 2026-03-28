@@ -26,12 +26,15 @@ import {
   Camera,
   AlertCircle,
   CheckCircle2,
+  MapPin,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import { Suspense } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { userService } from "@/lib/services"
+// FIX: Importar províncias para o select de onboarding — TestSprite cloud
+import { ANGOLA_PROVINCES } from "@/lib/angola-provinces"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
 
@@ -61,6 +64,8 @@ function OnboardingContent() {
   const [error, setError] = React.useState("")
   const [profile, setProfile] = React.useState({ name: "", username: "", bio: "" })
   const [selectedInterests, setSelectedInterests] = React.useState<string[]>([])
+  // FIX: Estado para província — TestSprite cloud
+  const [province, setProvince] = React.useState("")
   const [avatarFile, setAvatarFile] = React.useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = React.useState<string>("")
 
@@ -117,8 +122,8 @@ function OnboardingContent() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    if (file.size > 2 * 1024 * 1024) {
-      setError("A foto deve ter menos de 2MB.")
+    if (file.size > 5 * 1024 * 1024) {
+      setError("A foto deve ter menos de 5MB.")
       return
     }
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
@@ -142,12 +147,14 @@ function OnboardingContent() {
         await userService.uploadAvatar(avatarFile)
       }
 
-      // Complete onboarding (persist profile + interests)
+      // Complete onboarding (persist profile + interests + province)
       await userService.completeOnboarding({
         displayName: profile.name,
         username: profile.username,
         bio: profile.bio,
         interests: selectedInterests,
+        // FIX: Enviar província no onboarding — TestSprite cloud
+        ...(province && { province }),
       })
 
       // Refresh user context
@@ -237,7 +244,7 @@ function OnboardingContent() {
                     onChange={handleAvatarSelect}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">Clica na foto para mudar (máx 2MB)</p>
+                <p className="text-xs text-muted-foreground">Clica na foto para mudar (máx 5MB)</p>
               </div>
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -288,6 +295,25 @@ function OnboardingContent() {
                     maxLength={150}
                   />
                   <p className="text-[10px] text-right text-muted-foreground">{profile.bio.length}/150 caracteres</p>
+                </div>
+                {/* FIX: Select de província — TestSprite cloud */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-primary" />
+                    Província (Opcional)
+                  </label>
+                  <select
+                    className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary transition-all appearance-none cursor-pointer"
+                    value={province}
+                    onChange={(e) => setProvince(e.target.value)}
+                  >
+                    <option value="" className="bg-background">Seleciona a tua província</option>
+                    {ANGOLA_PROVINCES.map((p) => (
+                      <option key={p.slug} value={p.slug} className="bg-background">
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </CardContent>
@@ -409,6 +435,12 @@ function OnboardingContent() {
                 </div>
                 {profile.bio && (
                   <p className="text-sm text-muted-foreground border-t border-white/5 pt-3">{profile.bio}</p>
+                )}
+                {province && (
+                  <p className="text-sm text-muted-foreground flex items-center gap-1.5 border-t border-white/5 pt-3">
+                    <MapPin className="h-3.5 w-3.5 text-primary" />
+                    {ANGOLA_PROVINCES.find(p => p.slug === province)?.name || province}
+                  </p>
                 )}
                 <div className="flex flex-wrap gap-2 border-t border-white/5 pt-3">
                   {selectedInterests.map((id) => {

@@ -16,7 +16,8 @@ import { SALT_ROUNDS } from './authHelpers';
 export const sendVerificationEmail = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user?.userId;
-        if (!userId) return res.status(401).json({ error: 'Authentication required' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        if (!userId) return res.status(401).json({ success: false, message: 'Não tens permissão para aceder a este recurso.' });
 
         const user = await prisma.user.findUnique({
             where: { id: userId },
@@ -45,7 +46,8 @@ export const sendVerificationEmail = async (req: Request, res: Response) => {
         res.json({ success: true, message: 'Email de verificação enviado.' });
     } catch (error) {
         console.error('Send verification email error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
@@ -72,7 +74,8 @@ export const verifyEmail = async (req: Request, res: Response) => {
         res.json({ success: true, message: 'Email verificado com sucesso!' });
     } catch (error) {
         console.error('Verify email error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
@@ -112,7 +115,8 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Email inválido.' });
         }
         console.error('Request password reset error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };
 
@@ -120,7 +124,21 @@ export const resetPassword = async (req: Request, res: Response) => {
     try {
         const schema = z.object({
             token: z.string().min(1),
-            password: z.string().min(8, 'Senha deve ter pelo menos 8 caracteres').max(128),
+            // FIX: Validação de password reforçada no reset — TestSprite #M2
+            password: z.string()
+                .min(8, 'A senha deve ter pelo menos 8 caracteres.')
+                .max(128)
+                .superRefine((val, ctx) => {
+                    if (!/[A-Z]/.test(val)) {
+                        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'A senha deve conter pelo menos 1 letra maiúscula.' });
+                    }
+                    if (!/[a-z]/.test(val)) {
+                        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'A senha deve conter pelo menos 1 letra minúscula.' });
+                    }
+                    if (!/[0-9]/.test(val)) {
+                        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'A senha deve conter pelo menos 1 número.' });
+                    }
+                }),
         });
         const { token, password } = schema.parse(req.body);
 
@@ -154,6 +172,7 @@ export const resetPassword = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Dados inválidos.', details: error.errors });
         }
         console.error('Reset password error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        // FIX: Mensagem PT-AO — TestSprite #M5
+        res.status(500).json({ success: false, message: 'Ocorreu um erro interno. Tenta novamente.' });
     }
 };

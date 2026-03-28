@@ -123,7 +123,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password: credentials.password,
     }
     const res = await api.post("/api/auth/login", payload)
-    const { accessToken, user: userData } = res.data
+    // FIX: Ler accessToken de res.data.data — TestSprite #C1
+    const { accessToken, user: userData } = res.data.data || res.data
     if (accessToken) storeToken(accessToken)
     if (userData?.role) setRoleCookie(userData.role)
     setUser(userData)
@@ -135,7 +136,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithOtp = async (phone: string, code: string) => {
     const res = await api.post("/api/auth/verify-otp", { phone, code })
-    const { accessToken, user: userData } = res.data
+    // FIX: Ler accessToken de res.data.data — TestSprite #C1
+    const { accessToken, user: userData } = res.data.data || res.data
     if (accessToken) storeToken(accessToken)
     if (userData?.role) setRoleCookie(userData.role)
     setUser(userData)
@@ -143,7 +145,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (data: RegisterData) => {
     const res = await api.post("/api/auth/register", data)
-    const { accessToken, user: userData } = res.data
+    // FIX: Ler accessToken de res.data.data — TestSprite #C1
+    const { accessToken, user: userData } = res.data.data || res.data
     if (accessToken) storeToken(accessToken)
     setUser(userData)
   }

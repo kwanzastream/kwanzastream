@@ -62,8 +62,8 @@ api.interceptors.response.use(
                     { withCredentials: true }
                 )
 
-                // If server returns a new access token, store it
-                const newToken = res.data?.accessToken
+                // FIX: Ler accessToken de res.data.data — TestSprite #C1
+                const newToken = res.data?.data?.accessToken || res.data?.accessToken
                 if (newToken && typeof window !== "undefined") {
                     localStorage.setItem("ks_token", newToken)
                     document.cookie = `ks_token=${newToken}; path=/; max-age=${60 * 60 * 24 * 7}`

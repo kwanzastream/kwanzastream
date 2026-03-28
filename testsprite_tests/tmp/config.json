@@ -1,0 +1,19 @@
+{
+  "status": "commited",
+  "type": "backend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3001",
+  "backendAuthType": "public",
+  "executionArgs": {
+    "projectName": "kwanza-stream",
+    "projectPath": "c:\\Users\\MSI\\kwanza-stream",
+    "testIds": [],
+    "additionalInstruction": "Project display name: Kwanza Stream. Frontend base URL: http://localhost:3000. Backend base URL: http://localhost:3001. Stack: Next.js 14 App Router + Express + TypeScript + Prisma 5 + PostgreSQL. Use the product requirements in docs/testsprite-prd.md and testsprite_tests/tmp/prd_files/testsprite-prd.md as the source of truth. Execute and validate ONLY flows under PRIORIDADE 1 (Autenticação) and PRIORIDADE 2 (Perfil e Onboarding): registration, duplicate email, weak password messaging, login success/fail, logout, refresh, protected routes, optional account lockout and password reset, profile create/edit, avatar valid/invalid types and size limits, province selection if present, duplicate username, invalid username characters. Prefer PT-AO error messages where specified. testsprite_frontend_test_plan.json may be empty; still cover onboarding/profile UI on the Next.js app at localhost:3000 where relevant.",
+    "serverMode": "development",
+    "envs": {
+      "API_KEY": "sk-user-UrxTzeOAaqoq1IGTJoJxeSbLixF1AIMs2SlGpyw-MFn6xDFTcbxxNRO5JHc0ueziDGDJNrwnXQG2-2zDSxvdpRwI1_msh9YWwoIrH6pJuzdHVc1E5tNlx33V9P8MAywURy0"
+    }
+  },
+  "serverPort": 57490,
+  "proxy": "http://7242a78c-875a-49f0-aaa7-ba3395d11255:ExcAq4rMAmOH1G2iB8EJxupN6eO9SZFS@tun.testsprite.com:8080"
+}
