@@ -1,1 +1,42 @@
-[]
+[
+  {
+    "id": "FT001",
+    "title": "homeorlivetabloadscontent",
+    "description": "Open http://localhost:3000 (home or /ao-vivo). Verify page loads without error and shows area for live streams or placeholder content (not blank white screen)."
+  },
+  {
+    "id": "FT002",
+    "title": "searchshowsptemptywhennorresults",
+    "description": "Navigate to search page or open search UI, submit query with unlikely string. Expect visible PT-AO empty message such as Nenhum resultado or equivalent."
+  },
+  {
+    "id": "FT003",
+    "title": "categoryfilteravailable",
+    "description": "If category filter exists on browse/explore, select Gaming (or Música) and verify UI updates without crash."
+  },
+  {
+    "id": "FT004",
+    "title": "streamorchannelrouteloads",
+    "description": "Navigate to a public stream path e.g. /stream/test or channel path if linked from home; expect 200 page or graceful offline state, not 500."
+  },
+  {
+    "id": "FT005",
+    "title": "onboardingprovincestep",
+    "description": "If accessible without full auth, open registar/onboarding flow Step 4 and verify province dropdown lists Angolan provinces (21 options)."
+  },
+  {
+    "id": "FT006",
+    "title": "chatemptyinputblocked",
+    "description": "On a stream watch page with chat input, try submit empty message; expect no send or validation (blocked)."
+  },
+  {
+    "id": "FT007",
+    "title": "chatlongmessageblocked",
+    "description": "On stream chat, paste 500+ character string; expect block, trim, or error - not silent accept as single message."
+  },
+  {
+    "id": "FT008",
+    "title": "chatptaocharacters",
+    "description": "Send short message with ã ç ê emojis if logged in; message accepted or appropriate auth prompt, no server error visible."
+  }
+]

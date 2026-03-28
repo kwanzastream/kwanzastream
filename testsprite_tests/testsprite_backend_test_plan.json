@@ -2,51 +2,81 @@
   {
     "id": "TC001",
     "title": "postapiauthregisterwithvaliddata",
-    "description": "Test the user registration endpoint with valid email, phone, username, and password to ensure it returns 201 with success and user data."
+    "description": "POST /api/auth/register with email, phone (+244XXXXXXXXX format 9+ digits after country code), username, password meeting rules (uppercase, lowercase, digit, min 8). displayName, termsAccepted, ageConfirmed are optional with server defaults. Expect 201, success true, user object, accessToken and refreshToken in JSON body. Set-Cookie may include accessToken and refreshToken."
   },
   {
     "id": "TC002",
     "title": "postapiauthloginwithvalidcredentials",
-    "description": "Test the login endpoint with valid identifier and password to verify it returns 200 with success, user data, and sets JWT in httpOnly cookie."
+    "description": "First register a user via POST /api/auth/register, then POST /api/auth/login with identifier=email and password. Expect 200, success, user, accessToken, refreshToken in JSON. Session cookies should include accessToken and/or refreshToken (camelCase names)."
   },
   {
     "id": "TC003",
     "title": "postapiauthrefreshwithvalidrefresh",
-    "description": "Test the token refresh endpoint with a valid refresh token to confirm it returns 200 with success and issues a new access token."
+    "description": "Register, login with requests.Session(), then POST /api/auth/refresh with session cookies OR body refreshToken from login JSON. Expect 200, success true, new accessToken (and refreshToken) in JSON body."
   },
   {
     "id": "TC004",
     "title": "postapiauthlogoutclearsession",
-    "description": "Test the logout endpoint to ensure it revokes the refresh token, clears cookies, and returns 200 with success."
+    "description": "Register, login, then POST /api/auth/logout. Expect 200 success. Subsequent POST /api/auth/refresh should return 401."
   },
   {
     "id": "TC005",
     "title": "postapiauthrequestpasswordresetwithvalidemail",
-    "description": "Test the password reset request endpoint with a valid email to verify it returns 200 with a generic success message."
+    "description": "POST /api/auth/request-password-reset with valid email JSON. Expect 200 and generic success message (no enumeration)."
   },
   {
     "id": "TC006",
-    "title": "postapiauthresetpasswordwithvalidtoken",
-    "description": "Test the password reset endpoint with a valid token and new password to ensure it returns 200 indicating success."
+    "title": "postapiauthresetpasswordinvalidtoken",
+    "description": "POST /api/auth/reset-password with JSON token set to a clearly invalid value (e.g. not-a-real-reset-token-hex) and password meeting server rules (uppercase, lowercase, digit, 8+ chars). Expect 400 JSON response indicating invalid or expired token, not 500."
   },
   {
     "id": "TC007",
     "title": "getapiauthmewithvalidtoken",
-    "description": "Test the authenticated user profile endpoint with a valid JWT token to confirm it returns 200 with user data."
+    "description": "Register, login, GET /api/auth/me with Authorization Bearer accessToken from login JSON OR session cookies. Expect 200 and user object."
   },
   {
     "id": "TC008",
     "title": "putapiusersmeupdateprofile",
-    "description": "Test updating user profile with valid data including username, displayName, bio, and avatarUrl to verify it returns 200 with updated user data."
+    "description": "Register, login, PUT /api/users/me with Authorization Bearer accessToken, JSON body displayName, username (new unique), bio, optional avatarUrl as valid http URL. Expect 200 and updated user fields."
   },
   {
     "id": "TC009",
     "title": "postapiusersonboardingcompleteonboarding",
-    "description": "Test completing onboarding with valid displayName, username, bio, and interests to ensure it returns 200 with success and updated user data."
+    "description": "Register, login, POST /api/users/onboarding with displayName, username (unique), bio, interests array (min 1 string). Expect 200 success and user with onboardingCompleted true."
   },
   {
     "id": "TC010",
     "title": "postapiuploadavatarwithvalidimage",
-    "description": "Test avatar upload endpoint with a valid image file (jpeg, less than 5MB) to verify it returns 200 with success and avatarUrl."
+    "description": "Register, login, POST /api/upload/avatar multipart file field file with small valid JPEG bytes under 5MB. Expect 200 JSON success true and avatarUrl (may be relative path starting with /uploads). Do not require avatarUrl to start with http."
+  },
+  {
+    "id": "TC011",
+    "title": "getapistreamslive",
+    "description": "GET /api/streams/live without auth. Expect 200 and JSON containing list of streams or empty array."
+  },
+  {
+    "id": "TC012",
+    "title": "getapistreamscategories",
+    "description": "GET /api/streams/categories without auth. Expect 200 and categories data (array or object)."
+  },
+  {
+    "id": "TC013",
+    "title": "getapisearchquery",
+    "description": "GET /api/search?q=test&type=all without auth. Expect 200 JSON with search results structure."
+  },
+  {
+    "id": "TC014",
+    "title": "getapivodslist",
+    "description": "GET /api/vods without auth. Expect 200 JSON (list or paginated)."
+  },
+  {
+    "id": "TC015",
+    "title": "getapistreamsuserbyid",
+    "description": "After registering a user, GET /api/streams/user/{thatUserId} with the user id from registration response. Expect 200 or 404 with JSON (not 500)."
+  },
+  {
+    "id": "TC016",
+    "title": "getapisearchnoresults",
+    "description": "GET /api/search with q=zzzznonexistent12345xyz&type=all. Expect 200 with empty or zero results for users and streams; response must not be 500."
   }
 ]
