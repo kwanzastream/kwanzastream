@@ -1,54 +1,50 @@
+"""TC003 — POST /api/auth/refresh with valid refresh token"""
 import requests
 import time
+import random
+import os
 
-BASE_URL = "http://localhost:3001"
-TIMEOUT = 30
+BASE_URL = os.getenv("API_URL", "http://localhost:5000")
+TIMEOUT = 10
+
+def _register_and_login():
+    ts = int(time.time())
+    rnd = random.randint(1000, 9999)
+    email = f"test_{ts}_{rnd}@kwanzastream.com"
+    password = "ValidPass123"
+    payload = {
+        "email": email,
+        "phone": f"+244{random.randint(900000000, 999999999)}",
+        "username": f"tester_{ts}_{rnd}",
+        "password": password
+    }
+    session = requests.Session()
+    r = session.post(f"{BASE_URL}/api/auth/register", json=payload, timeout=TIMEOUT)
+    assert r.status_code == 201, f"Register failed: {r.status_code}: {r.text}"
+    reg_data = r.json()["data"]
+
+    r2 = session.post(f"{BASE_URL}/api/auth/login", json={"identifier": email, "password": password}, timeout=TIMEOUT)
+    assert r2.status_code == 200, f"Login failed: {r2.status_code}: {r2.text}"
+    login_data = r2.json()["data"]
+    return session, login_data
 
 def test_postapiauthrefreshwithvalidrefresh():
-    session = requests.Session()
-    timestamp = int(time.time())
-    try:
-        # Step 1: Register a new user to get valid credentials
-        register_payload = {
-            "email": f"testuser_refresh_{timestamp}@example.com",
-            "phone": "+244900000000",
-            "username": f"testuserrefresh{timestamp}",
-            "password": "StrongPassw0rd!"
-        }
-        register_response = session.post(f"{BASE_URL}/api/auth/register", json=register_payload, timeout=TIMEOUT)
-        assert register_response.status_code == 201, f"Register failed with status {register_response.status_code}"
-        register_data = register_response.json()
-        assert register_data.get("success") is True
-        assert "user" in register_data
+    session, login_data = _register_and_login()
+    refresh_token = login_data.get("refreshToken")
+    assert refresh_token, "No refreshToken in login response"
 
-        # Step 2: Login with the registered user's credentials to get refresh token cookie
-        login_payload = {
-            "identifier": register_payload["email"],
-            "password": register_payload["password"]
-        }
-        login_response = session.post(f"{BASE_URL}/api/auth/login", json=login_payload, timeout=TIMEOUT)
-        assert login_response.status_code == 200, f"Login failed with status {login_response.status_code}"
-        login_data = login_response.json()
-        assert login_data.get("success") is True
-        assert "user" in login_data
+    # Refresh using body (works even without cookies)
+    resp = session.post(
+        f"{BASE_URL}/api/auth/refresh",
+        json={"refreshToken": refresh_token},
+        timeout=TIMEOUT
+    )
+    assert resp.status_code == 200, f"Esperado 200, recebeu {resp.status_code}: {resp.text}"
+    json_data = resp.json()
+    assert json_data.get("success") is True, f"Expected success True: {json_data}"
+    data = json_data.get("data")
+    assert isinstance(data, dict), f"Missing data wrapper: {json_data}"
+    assert "accessToken" in data, f"Missing new accessToken: {data.keys()}"
 
-        # Cookies should include the refresh token as httpOnly cookie set by server
-        refresh_cookie = login_response.cookies.get_dict()
-        assert refresh_cookie, "No cookies received on login (refresh token missing)"
-
-        # Step 3: Call refresh endpoint with the refresh token cookie set in session
-        refresh_response = session.post(f"{BASE_URL}/api/auth/refresh", timeout=TIMEOUT)
-        assert refresh_response.status_code == 200, f"Refresh token failed with status {refresh_response.status_code}"
-        refresh_data = refresh_response.json()
-        assert refresh_data.get("success") is True
-
-        # Optional: Verify new access token cookie (if set in cookies)
-        access_token_cookie = refresh_response.cookies.get_dict()
-        assert access_token_cookie, "No cookies received on refresh (new access token missing)"
-
-    finally:
-        # Cleanup: Delete the created user to maintain test isolation
-        # Not implemented due to PRD content limitations.
-        pass
-
-test_postapiauthrefreshwithvalidrefresh()
+if __name__ == "__main__":
+    test_postapiauthrefreshwithvalidrefresh()

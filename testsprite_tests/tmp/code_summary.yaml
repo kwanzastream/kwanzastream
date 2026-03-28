@@ -5,12 +5,12 @@ tech_stack:
   - Express
   - PostgreSQL
   - Prisma ORM
-  - Redis (optional)
+  - Redis optional
   - Socket.io
   - JWT + httpOnly cookies
 features:
   - name: Authentication API
-    description: Registo, login com password, refresh token, logout, OTP, Google OAuth, reset de password
+    description: Registo com defaults; cookies accessToken e refreshToken (camelCase); tokens também no JSON
     files:
       - apps/server/src/controllers/auth/loginController.ts
       - apps/server/src/controllers/auth/authHelpers.ts
@@ -18,92 +18,109 @@ features:
     endpoints:
       - method: POST
         path: /api/auth/register
-        description: Registo com email, telefone, username e password
+        description: Registo — displayName opcional (default Utilizador), termsAccepted e ageConfirmed opcionais (default true). Password exige maiúscula, minúscula e dígito. Body mínimo email, phone, username, password.
         auth_required: false
         response_schema:
-          "201": "{ success, user }"
-          "400": Validation or duplicate user
+          "201": "{ success, user, accessToken, refreshToken }"
       - method: POST
         path: /api/auth/login
-        description: Login com identifier (email/phone/username) e password
+        description: Login; define cookies accessToken e refreshToken; body inclui accessToken e refreshToken
         auth_required: false
         response_schema:
-          "200": "{ success, user }"
-          "401": Invalid credentials
+          "200": "{ success, user, accessToken, refreshToken }"
       - method: POST
         path: /api/auth/refresh
-        description: Renovar access token via refresh token (cookie/body)
+        description: Cookie refreshToken ou body; resposta inclui accessToken e refreshToken
         auth_required: false
         response_schema:
-          "200": "{ success }"
-          "401": Invalid refresh
+          "200": "{ success, accessToken, refreshToken }"
       - method: POST
         path: /api/auth/logout
-        description: Revogar refresh token e limpar cookies
+        description: Revoga refresh e limpa cookies
         auth_required: false
-        response_schema:
-          "200": "{ success }"
       - method: POST
         path: /api/auth/request-password-reset
-        description: Pedido de reset de password por email
+        description: Pedido reset password
         auth_required: false
-        response_schema:
-          "200": Generic success message
       - method: POST
         path: /api/auth/reset-password
-        description: Definir nova password com token
+        description: Reset com token
         auth_required: false
-        response_schema:
-          "200": Success
       - method: GET
         path: /api/auth/me
-        description: Perfil do utilizador autenticado
+        description: Perfil autenticado — Bearer ou cookie accessToken
         auth_required: true
-        response_schema:
-          "200": "{ user }"
-          "401": Unauthorized
   - name: User profile and onboarding
-    description: Actualização de perfil, onboarding, verificação de username
+    description: Perfil e onboarding
     files:
       - apps/server/src/controllers/userController.ts
       - apps/server/src/routes/userRoutes.ts
     endpoints:
       - method: PUT
         path: /api/users/me
-        description: Actualizar perfil (username, displayName, bio, avatarUrl, etc.)
+        description: Actualizar perfil
         auth_required: true
-        response_schema:
-          "200": "{ user }"
-          "400": Validation or duplicate username
       - method: POST
         path: /api/users/onboarding
-        description: Completar onboarding (displayName, username, bio, interests)
+        description: Completar onboarding
         auth_required: true
-        response_schema:
-          "200": "{ success, user }"
       - method: GET
         path: /api/users/check-username/:username
-        description: Verificar disponibilidade de username
+        description: Disponibilidade username
         auth_required: false
-        response_schema:
-          "200": "{ available }"
   - name: Avatar upload
-    description: Upload de avatar com validação MIME e tamanho
+    description: JPEG/PNG/WebP até 5MB
     files:
       - apps/server/src/controllers/uploadController.ts
       - apps/server/src/routes/uploadRoutes.ts
     endpoints:
       - method: POST
         path: /api/upload/avatar
-        description: Multipart upload de imagem de perfil
+        description: multipart file
         auth_required: true
         response_schema:
           "200": "{ success, avatarUrl }"
-          "400": Invalid type or size
+  - name: Content discovery
+    description: Streams ao vivo, categorias, pesquisa, VODs
+    files:
+      - apps/server/src/controllers/streamController.ts
+      - apps/server/src/controllers/searchController.ts
+      - apps/server/src/controllers/vodController.ts
+      - apps/server/src/routes/streamRoutes.ts
+      - apps/server/src/routes/searchRoutes.ts
+      - apps/server/src/routes/vodRoutes.ts
+    endpoints:
+      - method: GET
+        path: /api/streams/live
+        description: Lista streams ao vivo
+        auth_required: false
+      - method: GET
+        path: /api/streams/categories
+        description: Categorias de streams
+        auth_required: false
+      - method: GET
+        path: /api/search
+        description: Query q, type all|users|streams
+        auth_required: false
+      - method: GET
+        path: /api/vods
+        description: Lista VODs
+        auth_required: false
+      - method: GET
+        path: /api/streams/user/:id
+        description: Streams de um utilizador
+        auth_required: false
+  - name: Stream chat realtime
+    description: Socket.io event chat-message com streamId e message; validação em chatFilter (vazio, 500 chars, PT-AO)
+    files:
+      - apps/server/src/streaming/chatService.ts
+      - apps/server/src/streaming/chatFilter.ts
+    endpoints:
+      - method: SOCKET
+        path: chat-message
+        description: Emitir após join chat:streamId; requer autenticação socket
+        auth_required: true
 known_limitations:
-  - issue: Rate limit auth custom keyGenerator must use ipKeyGenerator for IPv6 (addressed in index.ts)
-    location: apps/server/src/index.ts
-    impact: Startup validation in express-rate-limit v8+
-  - issue: RTMP node-media-server may throw unhandled rejection on some Node versions
-    location: apps/server/src/streaming/mediaServer.ts
-    impact: Log noise; API may still listen
+  - issue: Chat de stream é WebSocket não REST; testes backend HTTP não cobrem envio de mensagem sem cliente Socket.io
+    location: apps/server/src/streaming/chatService.ts
+    impact: Prioridade 4 pode precisar testes frontend ou cliente socket

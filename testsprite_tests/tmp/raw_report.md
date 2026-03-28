@@ -17,11 +17,11 @@
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 50, in <module>
-  File "<string>", line 31, in test_postapiauthregisterwithvaliddata
-AssertionError: Expected 201 but got 400
+  File "<string>", line 37, in <module>
+  File "<string>", line 24, in test_postapiauthregisterwithvaliddata
+AssertionError: Expected status 201, got 400. Response: {"error":"Este número de telefone já está registado."}
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/29f834d9-2188-4b30-9ba3-dde500e82327/b4e2437a-7a21-43f2-a2df-b1009e7b8884
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/5bac08b8-b36e-4fb2-932a-25efe3705cbd
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -31,11 +31,11 @@ AssertionError: Expected 201 but got 400
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 52, in <module>
-  File "<string>", line 24, in test_postapiauthloginwithvalidcredentials
-AssertionError: Expected status code 200, got 401
+  File "<string>", line 68, in <module>
+  File "<string>", line 33, in test_postapiauthloginwithvalidcredentials
+AssertionError: Expected 201, got 400
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/29f834d9-2188-4b30-9ba3-dde500e82327/1aaebe6d-4eb5-4748-a08d-0a9c24b95cf0
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/84bcd79f-0edd-4791-873e-c44316592cc6
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -45,11 +45,11 @@ AssertionError: Expected status code 200, got 401
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 54, in <module>
-  File "<string>", line 19, in test_postapiauthrefreshwithvalidrefresh
-AssertionError: Register failed with status 400
+  File "<string>", line 86, in <module>
+  File "<string>", line 41, in test_postapiauthrefreshwithvalidrefresh
+AssertionError: No user object in register response
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/29f834d9-2188-4b30-9ba3-dde500e82327/eeebbb1a-43a3-4d44-b889-46d53a9ed852
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/298a6b3b-90c7-4a7e-b91c-9bb8e8ac68bc
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -59,18 +59,18 @@ AssertionError: Register failed with status 400
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 56, in <module>
-  File "<string>", line 17, in test_postapiauthlogoutclearsession
-AssertionError: Register failed: {"error":"Erro de validação","details":[{"code":"invalid_type","expected":"string","received":"undefined","path":["displayName"],"message":"Required"},{"code":"invalid_literal","expected":true,"path":["termsAccepted"],"message":"Deves aceitar os Termos de Serviço"},{"code":"invalid_literal","expected":true,"path":["ageConfirmed"],"message":"Deves confirmar a idade mínima"}]}
+  File "<string>", line 60, in <module>
+  File "<string>", line 21, in test_postapiauthlogoutclearsession
+AssertionError
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/29f834d9-2188-4b30-9ba3-dde500e82327/be250003-7fbc-4fe3-b37d-94c6c64a55f6
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/9057e51f-01e4-4269-92d0-fb06f49e0628
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC005 postapiauthrequestpasswordresetwithvalidemail
 - **Test Code:** [TC005_postapiauthrequestpasswordresetwithvalidemail.py](./TC005_postapiauthrequestpasswordresetwithvalidemail.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/29f834d9-2188-4b30-9ba3-dde500e82327/8c9fffb6-db1c-4ca1-846f-268925f6a127
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/29e45462-722b-4dbe-9a20-a91e9ef50726
 - **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -80,11 +80,11 @@ AssertionError: Register failed: {"error":"Erro de validação","details":[{"cod
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 56, in <module>
-  File "<string>", line 27, in test_postapiauthresetpasswordwithvalidtoken
-AssertionError: Register failed: 400 {"error":"Erro de validação","details":[{"code":"invalid_type","expected":"string","received":"undefined","path":["displayName"],"message":"Required"},{"validation":"regex","code":"invalid_string","message":"Número de telefone inválido","path":["phone"]},{"code":"invalid_literal","expected":true,"path":["termsAccepted"],"message":"Deves aceitar os Termos de Serviço"},{"code":"invalid_literal","expected":true,"path":["ageConfirmed"],"message":"Deves confirmar a idade mínima"}]}
+  File "<string>", line 118, in <module>
+  File "<string>", line 59, in test_postapiauthresetpasswordwithvalidtoken
+AssertionError
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/29f834d9-2188-4b30-9ba3-dde500e82327/ef445770-62dd-4881-8f32-9e5a0c06a226
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/d104b38c-23b6-4cee-b50d-5f610c0eae25
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -94,11 +94,11 @@ AssertionError: Register failed: 400 {"error":"Erro de validação","details":[{
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 55, in <module>
-  File "<string>", line 22, in test_getapiauthmewithvalidtoken
-AssertionError: Registration failed: {"error":"Erro de validação","details":[{"code":"invalid_type","expected":"string","received":"undefined","path":["displayName"],"message":"Required"},{"code":"invalid_literal","expected":true,"path":["termsAccepted"],"message":"Deves aceitar os Termos de Serviço"},{"code":"invalid_literal","expected":true,"path":["ageConfirmed"],"message":"Deves confirmar a idade mínima"}]}
+  File "<string>", line 94, in <module>
+  File "<string>", line 36, in test_get_api_auth_me_with_valid_token
+AssertionError
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/29f834d9-2188-4b30-9ba3-dde500e82327/a9bbe7d9-d561-4bd7-8e44-8520a5d3c2fd
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/aad23f1c-3b19-43d2-9bc6-0070d355cd22
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -108,11 +108,11 @@ AssertionError: Registration failed: {"error":"Erro de validação","details":[{
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 64, in <module>
-  File "<string>", line 23, in test_put_api_users_me_update_profile
-AssertionError: Registration failed: {"error":"Erro de validação","details":[{"code":"invalid_type","expected":"string","received":"undefined","path":["displayName"],"message":"Required"},{"code":"invalid_literal","expected":true,"path":["termsAccepted"],"message":"Deves aceitar os Termos de Serviço"},{"code":"invalid_literal","expected":true,"path":["ageConfirmed"],"message":"Deves confirmar a idade mínima"}]}
+  File "<string>", line 94, in <module>
+  File "<string>", line 38, in test_putapiusersmeupdateprofile
+AssertionError
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/29f834d9-2188-4b30-9ba3-dde500e82327/170aec52-e214-4657-ae96-dc38fd024a70
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/2ce4ad32-cfa5-4159-88c8-2cd2d0bea157
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -122,11 +122,12 @@ AssertionError: Registration failed: {"error":"Erro de validação","details":[{
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 92, in <module>
-  File "<string>", line 31, in test_post_api_users_onboarding_complete_onboarding
-AssertionError: Register failed: {"error":"Erro de validação","details":[{"code":"invalid_type","expected":"string","received":"undefined","path":["displayName"],"message":"Required"},{"code":"invalid_literal","expected":true,"path":["termsAccepted"],"message":"Deves aceitar os Termos de Serviço"},{"code":"invalid_literal","expected":true,"path":["ageConfirmed"],"message":"Deves confirmar a idade mínima"}]}
+  File "<string>", line 86, in <module>
+  File "<string>", line 41, in test_post_api_users_onboarding_complete_onboarding
+  File "<string>", line 38, in test_post_api_users_onboarding_complete_onboarding
+AssertionError
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/29f834d9-2188-4b30-9ba3-dde500e82327/cac3ec27-4789-4471-9f39-b97272d9702c
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/116a94cc-6ac4-4471-b4cc-1b1a103a91d1
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -136,11 +137,90 @@ AssertionError: Register failed: {"error":"Erro de validação","details":[{"cod
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 94, in <module>
-  File "<string>", line 29, in test_postapiuploadavatarwithvalidimage
-AssertionError: Expected 201 on register, got 500 with message Proxy server error: 
+  File "<string>", line 54
+    b'\x1f\x1e\x1d\x19\x1c\x1c $.'" \' ",#\x1c\x1c(7),01444\x1f\'9=82<.342'
+                                        ^
+SyntaxError: cannot mix bytes and nonbytes literals
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/29f834d9-2188-4b30-9ba3-dde500e82327/bf6240bd-37c9-468c-989a-9ed3fc7a4204
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/3f4a7e6a-8e63-40b8-807c-e21a3eb1564a
+- **Status:** ❌ Failed
+- **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
+---
+
+#### Test TC011 getapistreamslive
+- **Test Code:** [TC011_getapistreamslive.py](./TC011_getapistreamslive.py)
+- **Test Error:** Traceback (most recent call last):
+  File "<string>", line 11, in test_getapistreamslive
+  File "/var/lang/lib/python3.12/site-packages/requests/models.py", line 1024, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://localhost:3001/api/streams?status=live&limit=20
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/var/task/handler.py", line 258, in run_with_retry
+    exec(code, exec_env)
+  File "<string>", line 26, in <module>
+  File "<string>", line 13, in test_getapistreamslive
+AssertionError: Request failed: 401 Client Error: Unauthorized for url: http://localhost:3001/api/streams?status=live&limit=20
+
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/7d095b35-b98d-412e-90c9-81b339ce28e3
+- **Status:** ❌ Failed
+- **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
+---
+
+#### Test TC012 getapistreamscategories
+- **Test Code:** [TC012_getapistreamscategories.py](./TC012_getapistreamscategories.py)
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/ab9630bf-e737-4b1a-bd7f-b92f37704139
+- **Status:** ✅ Passed
+- **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
+---
+
+#### Test TC013 getapisearchquery
+- **Test Code:** [TC013_getapisearchquery.py](./TC013_getapisearchquery.py)
+- **Test Error:** Traceback (most recent call last):
+  File "/var/task/handler.py", line 258, in run_with_retry
+    exec(code, exec_env)
+  File "<string>", line 23, in <module>
+  File "<string>", line 18, in test_get_api_search_query
+AssertionError: Response JSON does not contain 'results' key
+
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/f26e2991-638a-496c-b6fd-016f2f67a173
+- **Status:** ❌ Failed
+- **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
+---
+
+#### Test TC014 getapivodslist
+- **Test Code:** [TC014_getapivodslist.py](./TC014_getapivodslist.py)
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/19b6072f-8e6a-4a90-ba14-851425a25d71
+- **Status:** ✅ Passed
+- **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
+---
+
+#### Test TC015 getapistreamsuserbyid
+- **Test Code:** [TC015_getapistreamsuserbyid.py](./TC015_getapistreamsuserbyid.py)
+- **Test Error:** Traceback (most recent call last):
+  File "/var/task/handler.py", line 258, in run_with_retry
+    exec(code, exec_env)
+  File "<string>", line 43, in <module>
+  File "<string>", line 22, in test_get_api_streams_user_by_id
+AssertionError: Expected 201 Created, got 400
+
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/532252f8-219e-4f82-8387-8c1651199eec
+- **Status:** ❌ Failed
+- **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
+---
+
+#### Test TC016 getapisearchnoresults
+- **Test Code:** [TC016_getapisearchnoresults.py](./TC016_getapisearchnoresults.py)
+- **Test Error:** Traceback (most recent call last):
+  File "/var/task/handler.py", line 258, in run_with_retry
+    exec(code, exec_env)
+  File "<string>", line 45, in <module>
+  File "<string>", line 24, in test_get_api_search_no_results
+AssertionError: Response JSON missing 'results' key
+
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/b2a5cd79-e975-4ccc-8627-6f8bb8e1d90d
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -148,7 +228,7 @@ AssertionError: Expected 201 on register, got 500 with message Proxy server erro
 
 ## 3️⃣ Coverage & Matching Metrics
 
-- **10.00** of tests passed
+- **18.75** of tests passed
 
 | Requirement        | Total Tests | ✅ Passed | ❌ Failed  |
 |--------------------|-------------|-----------|------------|

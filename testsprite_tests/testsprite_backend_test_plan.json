@@ -26,8 +26,8 @@
   },
   {
     "id": "TC006",
-    "title": "postapiauthresetpasswordinvalidtoken",
-    "description": "POST /api/auth/reset-password with JSON token set to a clearly invalid value (e.g. not-a-real-reset-token-hex) and password meeting server rules (uppercase, lowercase, digit, 8+ chars). Expect 400 JSON response indicating invalid or expired token, not 500."
+    "title": "postapiauthresetpasswordwithvalidtoken",
+    "description": "Register user with password. POST /api/auth/request-password-reset with that email. In development the response JSON includes debugResetToken — read it and POST /api/auth/reset-password with body { token: debugResetToken, password: new strong password meeting complexity }. Expect 200 success. If debugResetToken missing, skip only if not development."
   },
   {
     "id": "TC007",

@@ -151,7 +151,8 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response) =>
             },
         });
 
-        res.json({ user });
+        // FIX: BigInt (balance) não é serializável em JSON — converter para Number
+        res.json({ user: { ...user, balance: user.balance ? Number(user.balance) : 0 } });
     } catch (error) {
         if (error instanceof z.ZodError) {
             // FIX: Mensagem PT-AO — TestSprite #M5

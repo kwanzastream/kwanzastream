@@ -95,12 +95,19 @@ export const search = async (req: Request, res: Response) => {
             results.totalStreams = totalStreams;
         }
 
+        // `results` wrapper helps automated API tests (TestSprite) while keeping top-level keys for the web app
         res.json({
             query: q,
             type,
             page,
             limit,
             ...results,
+            results: {
+                users: results.users ?? [],
+                streams: results.streams ?? [],
+                totalUsers: results.totalUsers ?? 0,
+                totalStreams: results.totalStreams ?? 0,
+            },
         });
     } catch (error) {
         if (error instanceof z.ZodError) {

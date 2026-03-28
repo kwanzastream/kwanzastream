@@ -1,52 +1,44 @@
+"""TC002 — POST /api/auth/login with valid credentials"""
 import requests
+import time
+import random
+import os
 
-BASE_URL = "http://localhost:3001"
-TIMEOUT = 30
+BASE_URL = os.getenv("API_URL", "http://localhost:5000")
+TIMEOUT = 10
 
+def _create_user():
+    ts = int(time.time())
+    rnd = random.randint(1000, 9999)
+    email = f"test_{ts}_{rnd}@kwanzastream.com"
+    password = "ValidPass123"
+    payload = {
+        "email": email,
+        "phone": f"+244{random.randint(900000000, 999999999)}",
+        "username": f"tester_{ts}_{rnd}",
+        "password": password
+    }
+    r = requests.post(f"{BASE_URL}/api/auth/register", json=payload, timeout=TIMEOUT)
+    assert r.status_code == 201, f"Register failed: {r.status_code}: {r.text}"
+    return email, password
 
 def test_postapiauthloginwithvalidcredentials():
-    session = requests.Session()
-    login_url = f"{BASE_URL}/api/auth/login"
+    email, password = _create_user()
 
-    # Use a known valid user. Since no resource ID or user details are provided,
-    # assume test user credentials exist. Adjust as necessary.
-    valid_credentials = {
-        "identifier": "testuser@example.com",
-        "password": "TestPassword123!"
-    }
+    login_payload = {"identifier": email, "password": password}
+    resp = requests.post(f"{BASE_URL}/api/auth/login", json=login_payload, timeout=TIMEOUT)
+    assert resp.status_code == 200, f"Esperado 200, recebeu {resp.status_code}: {resp.text}"
+    json_data = resp.json()
+    assert json_data.get("success") is True, f"Expected success True: {json_data}"
+    data = json_data.get("data")
+    assert isinstance(data, dict), f"Missing 'data' wrapper: {json_data}"
+    # BUG-C1 fix: accessToken MUST be in response
+    assert "accessToken" in data, f"accessToken missing in login response data: {data.keys()}"
+    assert data["accessToken"] is not None, "accessToken is None"
+    assert "refreshToken" in data, f"refreshToken missing in login response data: {data.keys()}"
+    user = data.get("user")
+    assert isinstance(user, dict), "User object missing"
+    assert user.get("email") == email
 
-    try:
-        response = session.post(login_url, json=valid_credentials, timeout=TIMEOUT)
-    except requests.RequestException as e:
-        raise AssertionError(f"Login request failed: {e}")
-
-    # Assert HTTP status code 200 OK
-    assert response.status_code == 200, f"Expected status code 200, got {response.status_code}"
-
-    # Assert response JSON structure
-    try:
-        json_data = response.json()
-    except ValueError:
-        raise AssertionError("Response is not valid JSON")
-
-    # Check success field is True
-    assert json_data.get("success") is True, "Login response 'success' field is not True"
-
-    # Check user data presence
-    user = json_data.get("user")
-    assert user and isinstance(user, dict), "User data missing or invalid in response"
-
-    # Check JWT presence in httpOnly cookie (commonly named 'jwt' or similar, check cookies)
-    jwt_cookie = None
-    cookie_names_of_interest = ['jwt', 'token', 'access_token', 'refresh_token']
-    for cookie_name in cookie_names_of_interest:
-        if cookie_name in session.cookies:
-            jwt_cookie = session.cookies.get(cookie_name)
-            break
-
-    assert jwt_cookie is not None, "JWT token cookie not set in response cookies"
-
-    print("test_postapiauthloginwithvalidcredentials passed.")
-
-
-test_postapiauthloginwithvalidcredentials()
+if __name__ == "__main__":
+    test_postapiauthloginwithvalidcredentials()

@@ -1,92 +1,53 @@
+"""TC009 — POST /api/users/onboarding complete onboarding"""
 import requests
-import uuid
+import time
+import random
+import os
 
-BASE_URL = "http://localhost:3001"
-TIMEOUT = 30
+BASE_URL = os.getenv("API_URL", "http://localhost:5000")
+TIMEOUT = 10
 
-def test_post_api_users_onboarding_complete_onboarding():
-    session = requests.Session()
-
-    # Step 1: Register a new user to get credentials (email, username, password)
-    unique_suffix = str(uuid.uuid4())[:8]
-    email = f"testuser_{unique_suffix}@example.com"
-    # Phone must be in valid format, e.g. 9 digits after +244
-    phone = f"+24491234567"  # fixed valid phone
-    username = f"testuser_{unique_suffix}"
-    password = "StrongPassw0rd!"
-
-    register_payload = {
+def _register_and_login():
+    ts = int(time.time())
+    rnd = random.randint(1000, 9999)
+    email = f"test_{ts}_{rnd}@kwanzastream.com"
+    password = "StrongPass1"
+    payload = {
         "email": email,
-        "phone": phone,
-        "username": username,
+        "phone": f"+244{random.randint(900000000, 999999999)}",
+        "username": f"tester_{ts}_{rnd}",
         "password": password
     }
+    r = requests.post(f"{BASE_URL}/api/auth/register", json=payload, timeout=TIMEOUT)
+    assert r.status_code == 201, f"Register failed: {r.status_code}: {r.text}"
 
-    try:
-        register_resp = session.post(
-            f"{BASE_URL}/api/auth/register",
-            json=register_payload,
-            timeout=TIMEOUT
-        )
-        assert register_resp.status_code == 201, f"Register failed: {register_resp.text}"
-        register_data = register_resp.json()
-        assert register_data.get("success") is True
-        assert "user" in register_data
-    except Exception as e:
-        session.close()
-        raise
+    r2 = requests.post(f"{BASE_URL}/api/auth/login", json={"identifier": email, "password": password}, timeout=TIMEOUT)
+    assert r2.status_code == 200, f"Login failed: {r2.status_code}: {r2.text}"
+    login_data = r2.json()["data"]
+    return login_data
 
-    # Step 2: Login with the registered user to get authentication cookies (JWT)
-    login_payload = {
-        "identifier": email,
-        "password": password
-    }
-    try:
-        login_resp = session.post(
-            f"{BASE_URL}/api/auth/login",
-            json=login_payload,
-            timeout=TIMEOUT
-        )
-        assert login_resp.status_code == 200, f"Login failed: {login_resp.text}"
-        login_data = login_resp.json()
-        assert login_data.get("success") is True
-        assert "user" in login_data
-    except Exception as e:
-        # Cleanup: delete the user if possible (not in requirements though)
-        session.close()
-        raise
+def test_postapiusersonboardingcompleteonboarding():
+    login_data = _register_and_login()
+    token = login_data["accessToken"]
+    headers = {"Authorization": f"Bearer {token}"}
 
-    # Step 3: Complete onboarding with valid data
-    onboarding_payload = {
-        "displayName": "Test User Display",
-        "username": f"onboard_{unique_suffix}",
-        "bio": "This is a test bio for onboarding completion.",
-        "interests": ["music", "gaming", "technology"]
+    ts = int(time.time())
+    rnd = random.randint(1000, 9999)
+    onboarding_data = {
+        "displayName": "Onboard User",
+        "username": f"onboard_{ts}_{rnd}",
+        "bio": "Bio de onboarding teste.",
+        "interests": ["music", "gaming", "cooking"]
     }
 
-    try:
-        onboarding_resp = session.post(
-            f"{BASE_URL}/api/users/onboarding",
-            json=onboarding_payload,
-            timeout=TIMEOUT
-        )
-        assert onboarding_resp.status_code == 200, f"Onboarding failed: {onboarding_resp.text}"
-        onboarding_data = onboarding_resp.json()
-        assert onboarding_data.get("success") is True
-        user = onboarding_data.get("user")
-        assert user is not None
-        assert user.get("displayName") == onboarding_payload["displayName"]
-        assert user.get("username") == onboarding_payload["username"]
-        assert user.get("bio") == onboarding_payload["bio"]
-        # interests field may be inside user or not; check if present
-        if "interests" in user:
-            assert set(onboarding_payload["interests"]).issubset(set(user["interests"]))
-    finally:
-        # Cleanup: delete created user by logging out (no actual deletion endpoint in PRD)
-        try:
-            session.post(f"{BASE_URL}/api/auth/logout", timeout=TIMEOUT)
-        except Exception:
-            pass
-        session.close()
+    resp = requests.post(f"{BASE_URL}/api/users/onboarding", json=onboarding_data, headers=headers, timeout=TIMEOUT)
+    assert resp.status_code == 200, f"Esperado 200, recebeu {resp.status_code}: {resp.text}"
+    resp_json = resp.json()
+    assert resp_json.get("success") is True, f"Expected success True: {resp_json}"
+    user = resp_json.get("user")
+    assert user is not None, f"Missing 'user' in response: {resp_json}"
+    assert user.get("displayName") == onboarding_data["displayName"]
+    assert user.get("username") == onboarding_data["username"]
 
-test_post_api_users_onboarding_complete_onboarding()
+if __name__ == "__main__":
+    test_postapiusersonboardingcompleteonboarding()

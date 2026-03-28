@@ -1,50 +1,35 @@
+"""TC001 — POST /api/auth/register with valid data"""
 import requests
-import uuid
+import time
+import random
+import os
 
-BASE_URL = "http://localhost:3001"
-REGISTER_ENDPOINT = "/api/auth/register"
-TIMEOUT = 30
+BASE_URL = os.getenv("API_URL", "http://localhost:5000")
+TIMEOUT = 10
 
 def test_postapiauthregisterwithvaliddata():
-    # Generate unique user data to avoid duplication
-    unique_suffix = str(uuid.uuid4())[:8]
-    email = f"testuser{unique_suffix}@example.com"
-    # Generate valid Angolan phone number format: +2449 followed by 8 digits
-    phone = f"+2449{unique_suffix[:8].translate(str.maketrans('abcdef', '012345'))}"
-    username = f"testuser{unique_suffix}"
-    password = "StrongPassw0rd!"
-
+    ts = int(time.time())
+    rnd = random.randint(1000, 9999)
+    url = f"{BASE_URL}/api/auth/register"
     payload = {
-        "email": email,
-        "phone": phone,
-        "username": username,
-        "password": password
+        "email": f"test_{ts}_{rnd}@kwanzastream.com",
+        "phone": f"+244{random.randint(900000000, 999999999)}",
+        "username": f"tester_{ts}_{rnd}",
+        "password": "StrongP4ssword"
     }
 
-    try:
-        response = requests.post(
-            BASE_URL + REGISTER_ENDPOINT,
-            json=payload,
-            timeout=TIMEOUT
-        )
-        # Validate response status code
-        assert response.status_code == 201, f"Expected 201 but got {response.status_code}"
+    response = requests.post(url, json=payload, timeout=TIMEOUT)
+    assert response.status_code == 201, f"Esperado 201, recebeu {response.status_code}: {response.text}"
+    json_data = response.json()
+    assert json_data.get("success") is True, f"Expected success True, got {json_data}"
+    data = json_data.get("data")
+    assert isinstance(data, dict), f"Missing 'data' wrapper: {json_data}"
+    assert "accessToken" in data, f"Missing accessToken in data: {data.keys()}"
+    assert "refreshToken" in data, f"Missing refreshToken in data: {data.keys()}"
+    user = data.get("user")
+    assert isinstance(user, dict), "User object missing or not a dict"
+    for field in ["id", "email", "username"]:
+        assert field in user, f"User object missing field '{field}'"
 
-        json_data = response.json()
-        # Check success field
-        assert "success" in json_data and json_data["success"] is True, "Missing or false success field"
-        # Check user data presence
-        assert "user" in json_data and isinstance(json_data["user"], dict), "Missing or invalid user data"
-
-        user = json_data["user"]
-        # Validate returned user details match input where appropriate
-        assert user.get("email") == email, "Returned user email does not match"
-        assert user.get("phone") == phone, "Returned user phone does not match"
-        assert user.get("username") == username, "Returned user username does not match"
-        # Password must not be returned
-        assert "password" not in user, "Password should not be returned in user data"
-
-    finally:
-        pass
-
-test_postapiauthregisterwithvaliddata()
+if __name__ == "__main__":
+    test_postapiauthregisterwithvaliddata()

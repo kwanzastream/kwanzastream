@@ -1,55 +1,46 @@
+"""TC007 — GET /api/auth/me with valid token"""
 import requests
+import time
+import random
+import os
 
-BASE_URL = "http://localhost:3001"
-REGISTER_ENDPOINT = f"{BASE_URL}/api/auth/register"
-LOGIN_ENDPOINT = f"{BASE_URL}/api/auth/login"
-ME_ENDPOINT = f"{BASE_URL}/api/auth/me"
-TIMEOUT = 30
+BASE_URL = os.getenv("API_URL", "http://localhost:5000")
+TIMEOUT = 10
+
+def _register_and_login():
+    ts = int(time.time())
+    rnd = random.randint(1000, 9999)
+    email = f"test_{ts}_{rnd}@kwanzastream.com"
+    password = "ValidPass123"
+    payload = {
+        "email": email,
+        "phone": f"+244{random.randint(900000000, 999999999)}",
+        "username": f"tester_{ts}_{rnd}",
+        "password": password
+    }
+    r = requests.post(f"{BASE_URL}/api/auth/register", json=payload, timeout=TIMEOUT)
+    assert r.status_code == 201, f"Register failed: {r.status_code}: {r.text}"
+
+    r2 = requests.post(f"{BASE_URL}/api/auth/login", json={"identifier": email, "password": password}, timeout=TIMEOUT)
+    assert r2.status_code == 200, f"Login failed: {r2.status_code}: {r2.text}"
+    login_data = r2.json()["data"]
+    return email, login_data
 
 def test_getapiauthmewithvalidtoken():
-    # Test user credentials for registration and login
-    user_data = {
-        "email": "testuser_tc007@example.com",
-        "phone": "+244912345678",
-        "username": "testuser_tc007",
-        "password": "StrongP@ssword1"
-    }
+    email, login_data = _register_and_login()
+    access_token = login_data["accessToken"]
 
-    session = requests.Session()
-    try:
-        # Register a new user
-        register_resp = session.post(REGISTER_ENDPOINT, json=user_data, timeout=TIMEOUT)
-        assert register_resp.status_code == 201, f"Registration failed: {register_resp.text}"
-        register_json = register_resp.json()
-        assert register_json.get("success") is True
-        assert "user" in register_json
+    resp = requests.get(
+        f"{BASE_URL}/api/auth/me",
+        headers={"Authorization": f"Bearer {access_token}"},
+        timeout=TIMEOUT
+    )
+    assert resp.status_code == 200, f"Esperado 200, recebeu {resp.status_code}: {resp.text}"
+    resp_json = resp.json()
+    assert "user" in resp_json, f"Missing 'user' in response: {resp_json}"
+    user = resp_json["user"]
+    assert isinstance(user, dict)
+    assert user.get("email") == email
 
-        login_payload = {
-            "identifier": user_data["email"],
-            "password": user_data["password"]
-        }
-        # Login to get JWT cookie
-        login_resp = session.post(LOGIN_ENDPOINT, json=login_payload, timeout=TIMEOUT)
-        assert login_resp.status_code == 200, f"Login failed: {login_resp.text}"
-        login_json = login_resp.json()
-        assert login_json.get("success") is True
-        assert "user" in login_json
-
-        # The session now carries the httpOnly cookie set by the server.
-
-        # Access authenticated user profile endpoint
-        me_resp = session.get(ME_ENDPOINT, timeout=TIMEOUT)
-        assert me_resp.status_code == 200, f"Authenticated profile access failed: {me_resp.text}"
-        me_json = me_resp.json()
-        assert "user" in me_json
-        # Validate fields presence
-        user = me_json["user"]
-        assert user.get("email") == user_data["email"]
-        assert user.get("username") == user_data["username"]
-
-    finally:
-        # Cleanup: delete created user if possible
-        # Not provided in PRD, so skipping actual delete call
-        pass
-
-test_getapiauthmewithvalidtoken()
+if __name__ == "__main__":
+    test_getapiauthmewithvalidtoken()

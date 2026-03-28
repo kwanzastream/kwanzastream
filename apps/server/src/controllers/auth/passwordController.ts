@@ -109,6 +109,15 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
             token,
         );
 
+        // Development only: allow automated tests (TestSprite) to complete reset flow without reading email
+        if (process.env.NODE_ENV === 'development') {
+            return res.json({
+                success: true,
+                message: 'Se o email existir, receberás um link de recuperação.',
+                debugResetToken: token,
+            });
+        }
+
         res.json({ success: true, message: 'Se o email existir, receberás um link de recuperação.' });
     } catch (error) {
         if (error instanceof z.ZodError) {
