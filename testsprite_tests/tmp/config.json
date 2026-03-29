@@ -2,18 +2,16 @@
   "status": "commited",
   "type": "backend",
   "scope": "codebase",
-  "localEndpoint": "http://localhost:3001",
+  "localEndpoint": "https://kwanza-stream-server-production.up.railway.app",
   "backendAuthType": "public",
   "executionArgs": {
     "projectName": "kwanza-stream",
     "projectPath": "c:\\Users\\MSI\\kwanza-stream",
     "testIds": [],
-    "additionalInstruction": "Project display name: Kwanza Stream. Frontend base URL: http://localhost:3000. Backend base URL: http://localhost:3001. Stack: Next.js 14 App Router + Express + TypeScript + Prisma 5 + PostgreSQL. Use the product requirements in docs/testsprite-prd.md and testsprite_tests/tmp/prd_files/testsprite-prd.md as the source of truth. Execute and validate ONLY flows under PRIORIDADE 1 (Autenticação) and PRIORIDADE 2 (Perfil e Onboarding): registration, duplicate email, weak password messaging, login success/fail, logout, refresh, protected routes, optional account lockout and password reset, profile create/edit, avatar valid/invalid types and size limits, province selection if present, duplicate username, invalid username characters. Prefer PT-AO error messages where specified. testsprite_frontend_test_plan.json may be empty; still cover onboarding/profile UI on the Next.js app at localhost:3000 where relevant.",
-    "serverMode": "development",
+    "additionalInstruction": "Project display name: Kwanza Stream. Frontend base URL: https://kwanza-stream.vercel.app. Backend base URL: https://kwanza-stream-server-production.up.railway.app. Use the committed TC001-TC016 Python tests in testsprite_tests/ as the source of truth; do not regenerate incompatible test code. Stack: Next.js 14 App Router + Express + TypeScript + Prisma 5 + PostgreSQL.",
+    "serverMode": "production",
     "envs": {
-      "API_KEY": "sk-user-UrxTzeOAaqoq1IGTJoJxeSbLixF1AIMs2SlGpyw-MFn6xDFTcbxxNRO5JHc0ueziDGDJNrwnXQG2-2zDSxvdpRwI1_msh9YWwoIrH6pJuzdHVc1E5tNlx33V9P8MAywURy0"
+      "API_KEY": "sk-user-pNpFHS324p3CEmQhkiKMczEJw6yhovitW3eP6cZmT8iO6VJWSx9OiNQpPR4Hnua50-agdmKfTz08BjebTnXlTr7RdI58XaOWTunIANX53018eJ5x-H_q2jztjGI96akyFbA"
     }
-  },
-  "serverPort": 52481,
-  "proxy": "http://c3e43a66-7684-4dba-baf5-eca47a9cca0d:7xGKoG8HalhJ22dZlCz4P7fy4yshjPtl@tun.testsprite.com:8080"
+  }
 }
