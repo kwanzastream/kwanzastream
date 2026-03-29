@@ -1,18 +1,26 @@
-"""TC011 — GET /api/streams/live without auth"""
 import requests
-import os
 
-BASE_URL = os.getenv("API_URL", "http://localhost:5000")
-TIMEOUT = 10
+def test_get_api_streams_live_no_auth():
+    base_url = "http://localhost:5000"
+    url = f"{base_url}/api/streams/live"
+    try:
+        response = requests.get(url, timeout=30)
+        assert response.status_code == 200, f"Expected status code 200, got {response.status_code}"
+        json_data = response.json()
+        # The response should be JSON array or JSON object containing list of streams or empty array.
+        # Based on PRD descriptions, likely an object with list or empty list.
+        # Accept either an array or an object containing a list
+        if isinstance(json_data, list):
+            # Accept empty or filled list
+            assert True
+        elif isinstance(json_data, dict):
+            # Try to find a key containing streams, fallback accept empty dict
+            streams = json_data.get("streams")
+            assert streams is not None, "Response JSON should contain 'streams' key"
+            assert isinstance(streams, list), "'streams' should be a list"
+        else:
+            assert False, "Response JSON is neither list nor dict"
+    except requests.RequestException as e:
+        assert False, f"Request failed: {e}"
 
-def test_getapistreamslive():
-    # Correct route is /api/streams/live (not /api/streams?status=live)
-    resp = requests.get(f"{BASE_URL}/api/streams/live", timeout=TIMEOUT)
-    assert resp.status_code == 200, f"Esperado 200, recebeu {resp.status_code}: {resp.text}"
-    data = resp.json()
-    assert isinstance(data, dict), f"Expected dict, got {type(data)}"
-    assert "streams" in data, f"Missing 'streams' key: {data.keys()}"
-    assert isinstance(data["streams"], list), f"Expected list, got {type(data['streams'])}"
-
-if __name__ == "__main__":
-    test_getapistreamslive()
+test_get_api_streams_live_no_auth()

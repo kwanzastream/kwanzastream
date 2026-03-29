@@ -1,60 +1,61 @@
-"""TC010 — POST /api/upload/avatar with valid JPEG image"""
 import requests
-import time
-import random
-import os
 from io import BytesIO
 
-BASE_URL = os.getenv("API_URL", "http://localhost:5000")
-TIMEOUT = 10
-
-# Minimal valid JPEG (1x1 pixel) — standard JFIF
-JPEG_BYTES = bytes([
-    0xFF,0xD8,0xFF,0xE0,0x00,0x10,0x4A,0x46,0x49,0x46,0x00,0x01,
-    0x01,0x00,0x00,0x01,0x00,0x01,0x00,0x00,0xFF,0xDB,0x00,0x43,
-    0x00,0x08,0x06,0x06,0x07,0x06,0x05,0x08,0x07,0x07,0x07,0x09,
-    0x09,0x08,0x0A,0x0C,0x14,0x0D,0x0C,0x0B,0x0B,0x0C,0x19,0x12,
-    0x13,0x0F,0x14,0x1D,0x1A,0x1F,0x1E,0x1D,0x1A,0x1C,0x1C,0x20,
-    0x24,0x2E,0x27,0x20,0x22,0x2C,0x23,0x1C,0x1C,0x28,0x37,0x29,
-    0x2C,0x30,0x31,0x34,0x34,0x34,0x1F,0x27,0x39,0x3D,0x38,0x32,
-    0x3C,0x2E,0x33,0x34,0x32,0xFF,0xC0,0x00,0x0B,0x08,0x00,0x01,
-    0x00,0x01,0x01,0x01,0x11,0x00,0xFF,0xC4,0x00,0x1F,0x00,0x00,
-    0x01,0x05,0x01,0x01,0x01,0x01,0x01,0x01,0x00,0x00,0x00,0x00,
-    0x00,0x00,0x00,0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,
-    0x09,0x0A,0x0B,0xFF,0xDA,0x00,0x08,0x01,0x01,0x00,0x00,0x3F,
-    0x00,0xFB,0xD4,0xFF,0xD9
-])
-
-def _register_and_login():
-    ts = int(time.time())
-    rnd = random.randint(1000, 9999)
-    email = f"test_{ts}_{rnd}@kwanzastream.com"
-    password = "Aa1strongpassword"
-    payload = {
-        "email": email,
-        "phone": f"+244{random.randint(900000000, 999999999)}",
-        "username": f"tester_{ts}_{rnd}",
-        "password": password
-    }
-    r = requests.post(f"{BASE_URL}/api/auth/register", json=payload, timeout=TIMEOUT)
-    assert r.status_code == 201, f"Register failed: {r.status_code}: {r.text}"
-
-    r2 = requests.post(f"{BASE_URL}/api/auth/login", json={"identifier": email, "password": password}, timeout=TIMEOUT)
-    assert r2.status_code == 200, f"Login failed: {r2.status_code}: {r2.text}"
-    return r2.json()["data"]["accessToken"]
+BASE_URL = "http://localhost:5000"
+TIMEOUT = 30
 
 def test_postapiuploadavatarwithvalidimage():
-    token = _register_and_login()
-    headers = {"Authorization": f"Bearer {token}"}
+    session = requests.Session()
 
-    files = {"file": ("avatar.jpg", BytesIO(JPEG_BYTES), "image/jpeg")}
-    resp = requests.post(f"{BASE_URL}/api/upload/avatar", files=files, headers=headers, timeout=TIMEOUT)
-    assert resp.status_code == 200, f"Esperado 200, recebeu {resp.status_code}: {resp.text}"
-    upload_json = resp.json()
-    assert upload_json.get("success") is True, f"Expected success: {upload_json}"
-    avatar_url = upload_json.get("avatarUrl")
-    assert avatar_url is not None, f"Missing avatarUrl: {upload_json}"
-    assert isinstance(avatar_url, str)
+    # Step 1: Register user
+    register_data = {
+        "email": "testuser_tc010@example.com",
+        "phone": "+244912345678",
+        "username": "testuser_tc010",
+        "password": "Aa12345678"
+    }
+    resp = session.post(f"{BASE_URL}/api/auth/register", json=register_data, timeout=TIMEOUT)
+    assert resp.status_code == 201, f"Register failed: {resp.text}"
+    resp_json = resp.json()
+    assert resp_json.get("success") is True
+    user = resp_json.get("user")
+    assert user is not None
 
-if __name__ == "__main__":
-    test_postapiuploadavatarwithvalidimage()
+    try:
+        # Step 2: Login user
+        login_data = {
+            "identifier": register_data["email"],
+            "password": register_data["password"]
+        }
+        resp = session.post(f"{BASE_URL}/api/auth/login", json=login_data, timeout=TIMEOUT)
+        assert resp.status_code == 200, f"Login failed: {resp.text}"
+        resp_json = resp.json()
+        assert resp_json.get("success") is True
+        # Authorization via session cookies automatically handled by session
+
+        # Step 3: Upload avatar with small valid JPEG < 5MB
+        jpeg_bytes = (
+            b"\xff\xd8\xff\xe0"  # SOI + APP0 marker
+            b"\x00\x10JFIF\x00\x01\x01\x01\x00H\x00H\x00\x00"
+            b"\xff\xdb\x00C\x00" + b"\x08" * 64 +  # Quantization Table
+            b"\xff\xc0\x00\x11\x08\x00\x01\x00\x01\x03\x01\"\x00\x02\x11\x01\x03\x11\x01"
+            b"\xff\xda\x00\x0c\x03\x01\x00\x02\x11\x03\x11\x00?\x00\xd2\xcf \xff\xd9"  # Minimal valid JPEG
+        )
+        files = {
+            "file": ("avatar.jpg", BytesIO(jpeg_bytes), "image/jpeg")
+        }
+        resp = session.post(f"{BASE_URL}/api/upload/avatar", files=files, timeout=TIMEOUT)
+        assert resp.status_code == 200, f"Avatar upload failed: {resp.text}"
+        resp_json = resp.json()
+        assert resp_json.get("success") is True
+        avatar_url = resp_json.get("avatarUrl")
+        assert isinstance(avatar_url, str) and len(avatar_url) > 0
+        # avatarUrl may be relative path starting with /uploads, no http required
+        assert avatar_url.startswith("/") or avatar_url.startswith("uploads") or avatar_url.startswith("/uploads")
+
+    finally:
+        # Cleanup: Delete the created user if possible
+        # No delete user endpoint mentioned in PRD, so skipping actual delete.
+        pass
+
+test_postapiuploadavatarwithvalidimage()

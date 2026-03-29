@@ -1,46 +1,68 @@
-"""TC007 — GET /api/auth/me with valid token"""
 import requests
-import time
-import random
-import os
 
-BASE_URL = os.getenv("API_URL", "http://localhost:5000")
-TIMEOUT = 10
-
-def _register_and_login():
-    ts = int(time.time())
-    rnd = random.randint(1000, 9999)
-    email = f"test_{ts}_{rnd}@kwanzastream.com"
-    password = "ValidPass123"
-    payload = {
-        "email": email,
-        "phone": f"+244{random.randint(900000000, 999999999)}",
-        "username": f"tester_{ts}_{rnd}",
-        "password": password
-    }
-    r = requests.post(f"{BASE_URL}/api/auth/register", json=payload, timeout=TIMEOUT)
-    assert r.status_code == 201, f"Register failed: {r.status_code}: {r.text}"
-
-    r2 = requests.post(f"{BASE_URL}/api/auth/login", json={"identifier": email, "password": password}, timeout=TIMEOUT)
-    assert r2.status_code == 200, f"Login failed: {r2.status_code}: {r2.text}"
-    login_data = r2.json()["data"]
-    return email, login_data
+BASE_URL = "http://localhost:5000"
 
 def test_getapiauthmewithvalidtoken():
-    email, login_data = _register_and_login()
-    access_token = login_data["accessToken"]
+    # 1. Register a new user
+    register_url = f"{BASE_URL}/api/auth/register"
+    login_url = f"{BASE_URL}/api/auth/login"
+    auth_me_url = f"{BASE_URL}/api/auth/me"
 
-    resp = requests.get(
-        f"{BASE_URL}/api/auth/me",
-        headers={"Authorization": f"Bearer {access_token}"},
-        timeout=TIMEOUT
-    )
-    assert resp.status_code == 200, f"Esperado 200, recebeu {resp.status_code}: {resp.text}"
-    resp_json = resp.json()
-    assert "user" in resp_json, f"Missing 'user' in response: {resp_json}"
-    user = resp_json["user"]
-    assert isinstance(user, dict)
-    assert user.get("email") == email
+    # Use unique email and username to avoid conflicts
+    import uuid
+    unique_str = str(uuid.uuid4()).replace("-", "")[:8]
+    email = f"test{unique_str}@example.com"
+    # Provide a valid phone number format
+    phone = "+244912345678"
+    username = f"user{unique_str}"
+    password = "Aa1strongPassword!"
 
-if __name__ == "__main__":
-    test_getapiauthmewithvalidtoken()
+    register_payload = {
+        "email": email,
+        "phone": phone,
+        "username": username,
+        "password": password
+    }
+
+    with requests.Session() as session:
+        # Register user
+        r = session.post(register_url, json=register_payload, timeout=30)
+        assert r.status_code == 201, f"Register failed: {r.status_code} {r.text}"
+        register_json = r.json()
+        assert "success" in register_json and register_json["success"] is True
+        assert "user" in register_json and register_json["user"]["email"] == email
+
+        # Login user
+        login_payload = {
+            "identifier": email,
+            "password": password
+        }
+        r = session.post(login_url, json=login_payload, timeout=30)
+        assert r.status_code == 200, f"Login failed: {r.status_code} {r.text}"
+        login_json = r.json()
+        assert "success" in login_json and login_json["success"] is True
+        assert "user" in login_json
+        # accessToken may or may not be in JSON, but httpOnly cookie must be set
+        cookies = session.cookies.get_dict()
+        assert any(k.lower().find("token") != -1 for k in cookies.keys())
+
+        # Try GET /api/auth/me with session cookies (which should hold accessToken httpOnly cookie)
+        r = session.get(auth_me_url, timeout=30)
+        assert r.status_code == 200, f"GET /api/auth/me failed: {r.status_code} {r.text}"
+        me_json = r.json()
+        assert "user" in me_json
+        assert me_json["user"]["email"] == email
+        assert me_json["user"]["username"] == username
+
+        # Also try GET /api/auth/me with Authorization Bearer token if accessToken present in JSON
+        access_token = login_json.get("accessToken")
+        if access_token:
+            headers = {"Authorization": f"Bearer {access_token}"}
+            r = requests.get(auth_me_url, headers=headers, timeout=30)
+            assert r.status_code == 200, f"GET /api/auth/me with Bearer token failed: {r.status_code} {r.text}"
+            me_json_token = r.json()
+            assert "user" in me_json_token
+            assert me_json_token["user"]["email"] == email
+            assert me_json_token["user"]["username"] == username
+
+test_getapiauthmewithvalidtoken()

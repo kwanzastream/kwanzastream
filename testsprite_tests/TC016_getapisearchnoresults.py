@@ -1,21 +1,38 @@
-"""TC016 — GET /api/search with no results"""
 import requests
-import os
 
-BASE_URL = os.getenv("API_URL", "http://localhost:5000")
-TIMEOUT = 10
+BASE_URL = "http://localhost:5000"
+
 
 def test_getapisearchnoresults():
-    resp = requests.get(f"{BASE_URL}/api/search", params={"q": "zzzznonexistent12345xyz"}, timeout=TIMEOUT)
-    assert resp.status_code == 200, f"Esperado 200, recebeu {resp.status_code}: {resp.text}"
-    data = resp.json()
-    assert isinstance(data, dict), "Response is not a dict"
-    # API returns { results: { users: [], streams: [], totalUsers: 0, totalStreams: 0 } }
-    assert "results" in data, f"Missing 'results' key: {data.keys()}"
-    results = data["results"]
-    assert isinstance(results, dict), f"Expected dict, got {type(results)}"
-    assert len(results.get("users", [])) == 0, f"Expected empty users, got {len(results.get('users', []))}"
-    assert len(results.get("streams", [])) == 0, f"Expected empty streams, got {len(results.get('streams', []))}"
+    params = {
+        "q": "zzzznonexistent12345xyz",
+        "type": "all"
+    }
+    try:
+        resp = requests.get(f"{BASE_URL}/api/search", params=params, timeout=30)
+    except requests.RequestException as e:
+        assert False, f"Request failed: {e}"
 
-if __name__ == "__main__":
-    test_getapisearchnoresults()
+    assert resp.status_code == 200, f"Expected status code 200 but got {resp.status_code}"
+
+    try:
+        data = resp.json()
+    except ValueError:
+        assert False, "Response is not valid JSON"
+
+    # The description says users and streams results must be empty or zero
+    # Since the schema says GET /api/search returns { results: [...] } with matching channels and VODs,
+    # check that results array is empty or contains no user/streams data
+    # We relax assumption to results empty array
+
+    results = data.get("results")
+    assert results is not None, "Missing 'results' key in response JSON"
+    assert isinstance(results, list), "'results' should be a list"
+
+    # Assert results is empty or contains no users/streams - usually empty for nonexistent query
+    assert len(results) == 0 or all(
+        (not ("user" in r or "stream" in r)) for r in results
+    ), "Results should be empty or contain no user/stream entries for nonexistent query"
+
+
+test_getapisearchnoresults()

@@ -1,44 +1,63 @@
-"""TC004 — POST /api/auth/logout clears session"""
 import requests
-import time
-import random
-import os
+import uuid
 
-BASE_URL = os.getenv("API_URL", "http://localhost:5000")
-TIMEOUT = 10
-
-def _register_and_login():
-    ts = int(time.time())
-    rnd = random.randint(1000, 9999)
-    email = f"test_{ts}_{rnd}@kwanzastream.com"
-    password = "StrongPass1"
-    payload = {
-        "email": email,
-        "phone": f"+244{random.randint(900000000, 999999999)}",
-        "username": f"tester_{ts}_{rnd}",
-        "password": password
-    }
-    session = requests.Session()
-    r = session.post(f"{BASE_URL}/api/auth/register", json=payload, timeout=TIMEOUT)
-    assert r.status_code == 201, f"Register failed: {r.status_code}: {r.text}"
-
-    r2 = session.post(f"{BASE_URL}/api/auth/login", json={"identifier": email, "password": password}, timeout=TIMEOUT)
-    assert r2.status_code == 200, f"Login failed: {r2.status_code}: {r2.text}"
-    login_data = r2.json()["data"]
-    return session, login_data
+BASE_URL = "http://localhost:5000"
+TIMEOUT = 30
 
 def test_postapiauthlogoutclearsession():
-    session, login_data = _register_and_login()
-    refresh_token = login_data.get("refreshToken")
+    session = requests.Session()
+    email = f'test_{uuid.uuid4().hex[:8]}@example.com'
+    phone = "+244912345678"
+    username = f'testuser_{uuid.uuid4().hex[:8]}'
+    password = "StrongPass1"
 
-    # Logout
-    logout_resp = session.post(f"{BASE_URL}/api/auth/logout", json={"refreshToken": refresh_token}, timeout=TIMEOUT)
-    assert logout_resp.status_code == 200, f"Esperado 200, recebeu {logout_resp.status_code}: {logout_resp.text}"
-    assert logout_resp.json().get("success") is True
+    register_payload = {
+        "email": email,
+        "phone": phone,
+        "username": username,
+        "password": password
+    }
 
-    # Subsequent refresh should fail
-    refresh_resp = session.post(f"{BASE_URL}/api/auth/refresh", json={"refreshToken": refresh_token}, timeout=TIMEOUT)
-    assert refresh_resp.status_code == 401, f"Esperado 401 após logout, recebeu {refresh_resp.status_code}: {refresh_resp.text}"
+    # Register user
+    try:
+        register_resp = session.post(
+            f"{BASE_URL}/api/auth/register", json=register_payload, timeout=TIMEOUT
+        )
+        assert register_resp.status_code == 201, f"Register failed: {register_resp.text}"
+        register_json = register_resp.json()
+        assert register_json.get("success") is True
+        user = register_json.get("user")
+        assert user and user.get("email") == email
 
-if __name__ == "__main__":
-    test_postapiauthlogoutclearsession()
+        # Login user
+        login_payload = {
+            "identifier": email,
+            "password": password
+        }
+        login_resp = session.post(
+            f"{BASE_URL}/api/auth/login", json=login_payload, timeout=TIMEOUT
+        )
+        assert login_resp.status_code == 200, f"Login failed: {login_resp.text}"
+        login_json = login_resp.json()
+        assert login_json.get("success") is True
+        login_user = login_json.get("user")
+        assert login_user and login_user.get("email") == email
+
+        # POST /api/auth/logout
+        logout_resp = session.post(
+            f"{BASE_URL}/api/auth/logout", timeout=TIMEOUT
+        )
+        assert logout_resp.status_code == 200, f"Logout failed: {logout_resp.text}"
+        logout_json = logout_resp.json()
+        assert logout_json.get("success") is True
+
+        # POST /api/auth/refresh (should return 401 Unauthorized after logout)
+        refresh_resp = session.post(
+            f"{BASE_URL}/api/auth/refresh", timeout=TIMEOUT
+        )
+        assert refresh_resp.status_code == 401, f"Refresh post logout expected 401 but got {refresh_resp.status_code}, response: {refresh_resp.text}"
+
+    finally:
+        session.close()
+
+test_postapiauthlogoutclearsession()

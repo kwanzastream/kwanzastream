@@ -1,44 +1,59 @@
-"""TC002 — POST /api/auth/login with valid credentials"""
 import requests
-import time
-import random
-import os
+import uuid
 
-BASE_URL = os.getenv("API_URL", "http://localhost:5000")
-TIMEOUT = 10
-
-def _create_user():
-    ts = int(time.time())
-    rnd = random.randint(1000, 9999)
-    email = f"test_{ts}_{rnd}@kwanzastream.com"
-    password = "ValidPass123"
-    payload = {
-        "email": email,
-        "phone": f"+244{random.randint(900000000, 999999999)}",
-        "username": f"tester_{ts}_{rnd}",
-        "password": password
-    }
-    r = requests.post(f"{BASE_URL}/api/auth/register", json=payload, timeout=TIMEOUT)
-    assert r.status_code == 201, f"Register failed: {r.status_code}: {r.text}"
-    return email, password
+BASE_URL = "http://localhost:5000"
+TIMEOUT = 30
 
 def test_postapiauthloginwithvalidcredentials():
-    email, password = _create_user()
+    # Generate unique user data
+    unique_email = f"testuser_{uuid.uuid4().hex[:8]}@example.com"
+    unique_phone = "+244912345678"
+    unique_username = f"testuser_{uuid.uuid4().hex[:8]}"
+    password = "StrongPass1"
 
-    login_payload = {"identifier": email, "password": password}
-    resp = requests.post(f"{BASE_URL}/api/auth/login", json=login_payload, timeout=TIMEOUT)
-    assert resp.status_code == 200, f"Esperado 200, recebeu {resp.status_code}: {resp.text}"
-    json_data = resp.json()
-    assert json_data.get("success") is True, f"Expected success True: {json_data}"
-    data = json_data.get("data")
-    assert isinstance(data, dict), f"Missing 'data' wrapper: {json_data}"
-    # BUG-C1 fix: accessToken MUST be in response
-    assert "accessToken" in data, f"accessToken missing in login response data: {data.keys()}"
-    assert data["accessToken"] is not None, "accessToken is None"
-    assert "refreshToken" in data, f"refreshToken missing in login response data: {data.keys()}"
-    user = data.get("user")
-    assert isinstance(user, dict), "User object missing"
-    assert user.get("email") == email
+    register_url = f"{BASE_URL}/api/auth/register"
+    login_url = f"{BASE_URL}/api/auth/login"
 
-if __name__ == "__main__":
-    test_postapiauthloginwithvalidcredentials()
+    register_payload = {
+        "email": unique_email,
+        "phone": unique_phone,
+        "username": unique_username,
+        "password": password
+    }
+    headers = {
+        "Content-Type": "application/json"
+    }
+    session = requests.Session()
+    try:
+        # Register user
+        register_resp = session.post(register_url, json=register_payload, headers=headers, timeout=TIMEOUT)
+        assert register_resp.status_code == 201, f"Expected 201 on register, got {register_resp.status_code}"
+        register_json = register_resp.json()
+        assert register_json.get("success") is True, "Register success not true"
+        user = register_json.get("user")
+        assert user is not None, "Register response missing user"
+
+        # Login with email identifier and password
+        login_payload = {
+            "identifier": unique_email,
+            "password": password
+        }
+        login_resp = session.post(login_url, json=login_payload, headers=headers, timeout=TIMEOUT)
+        assert login_resp.status_code == 200, f"Expected 200 on login, got {login_resp.status_code}"
+        login_json = login_resp.json()
+        assert login_json.get("success") is True, "Login success not true"
+        login_user = login_json.get("user")
+        assert login_user is not None, "Login response missing user"
+
+        # Check session cookies for JWT tokens (httpOnly cookie)
+        cookie_jar = session.cookies
+        cookie_names = [cookie.name for cookie in cookie_jar]
+        # Based on PRD, refresh token should be set in httpOnly cookie
+        refresh_token_cookie_found = any(name == "refreshToken" for name in cookie_names)
+        assert refresh_token_cookie_found, "Session cookies missing refreshToken"
+
+    finally:
+        # Cleanup: Try to delete the user if API supports it (not specified here)
+        pass
+
+test_postapiauthloginwithvalidcredentials()

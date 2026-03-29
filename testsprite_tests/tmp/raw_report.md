@@ -5,7 +5,7 @@
 
 ## 1️⃣ Document Metadata
 - **Project Name:** kwanza-stream
-- **Date:** 2026-03-28
+- **Date:** 2026-03-29
 - **Prepared by:** TestSprite AI Team
 
 ---
@@ -17,11 +17,11 @@
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 37, in <module>
-  File "<string>", line 24, in test_postapiauthregisterwithvaliddata
-AssertionError: Expected status 201, got 400. Response: {"error":"Este número de telefone já está registado."}
+  File "<string>", line 76, in <module>
+  File "<string>", line 65, in test_postapiauthregisterwithvaliddata
+AssertionError: 'user' key missing in response JSON
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/5bac08b8-b36e-4fb2-932a-25efe3705cbd
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/508d47f9-37a2-4040-8e57-348401bf671e/206d1c5b-6fb5-44aa-8a18-ab3fc0e22d0d
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -31,11 +31,11 @@ AssertionError: Expected status 201, got 400. Response: {"error":"Este número d
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 68, in <module>
-  File "<string>", line 33, in test_postapiauthloginwithvalidcredentials
-AssertionError: Expected 201, got 400
+  File "<string>", line 59, in <module>
+  File "<string>", line 30, in test_postapiauthloginwithvalidcredentials
+AssertionError: Expected 201 on register, got 429
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/84bcd79f-0edd-4791-873e-c44316592cc6
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/508d47f9-37a2-4040-8e57-348401bf671e/01a3deb5-e77e-4784-b976-a51da7a78a93
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -45,11 +45,11 @@ AssertionError: Expected 201, got 400
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 86, in <module>
-  File "<string>", line 41, in test_postapiauthrefreshwithvalidrefresh
-AssertionError: No user object in register response
+  File "<string>", line 77, in <module>
+  File "<string>", line 39, in test_postapiauthrefreshwithvalidrefresh
+AssertionError
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/298a6b3b-90c7-4a7e-b91c-9bb8e8ac68bc
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/508d47f9-37a2-4040-8e57-348401bf671e/3c2912ab-ee5b-4483-bf73-d6a18d082908
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -59,18 +59,18 @@ AssertionError: No user object in register response
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 60, in <module>
-  File "<string>", line 21, in test_postapiauthlogoutclearsession
-AssertionError
+  File "<string>", line 63, in <module>
+  File "<string>", line 26, in test_postapiauthlogoutclearsession
+AssertionError: Register failed: {"error":"Muitas tentativas. Aguarda 15 minutos."}
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/9057e51f-01e4-4269-92d0-fb06f49e0628
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/508d47f9-37a2-4040-8e57-348401bf671e/1840f66c-35ed-4b2e-a96c-1a60b38c5a27
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC005 postapiauthrequestpasswordresetwithvalidemail
 - **Test Code:** [TC005_postapiauthrequestpasswordresetwithvalidemail.py](./TC005_postapiauthrequestpasswordresetwithvalidemail.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/29e45462-722b-4dbe-9a20-a91e9ef50726
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/508d47f9-37a2-4040-8e57-348401bf671e/38b1aebc-dce7-42b9-a092-0b17274d0c95
 - **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -80,11 +80,11 @@ AssertionError
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 118, in <module>
-  File "<string>", line 59, in test_postapiauthresetpasswordwithvalidtoken
+  File "<string>", line 65, in <module>
+  File "<string>", line 49, in test_postapiauthresetpasswordwithvalidtoken
 AssertionError
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/d104b38c-23b6-4cee-b50d-5f610c0eae25
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/508d47f9-37a2-4040-8e57-348401bf671e/865f3b54-e92e-4922-ac58-fd03c9e427b5
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -94,11 +94,11 @@ AssertionError
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 94, in <module>
-  File "<string>", line 36, in test_get_api_auth_me_with_valid_token
-AssertionError
+  File "<string>", line 68, in <module>
+  File "<string>", line 30, in test_getapiauthmewithvalidtoken
+AssertionError: Register failed: 429 {"error":"Muitas tentativas. Aguarda 15 minutos."}
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/aad23f1c-3b19-43d2-9bc6-0070d355cd22
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/508d47f9-37a2-4040-8e57-348401bf671e/982d28b6-1e3b-4475-8db6-e3366ce4f762
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -108,11 +108,11 @@ AssertionError
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 94, in <module>
-  File "<string>", line 38, in test_putapiusersmeupdateprofile
+  File "<string>", line 79, in <module>
+  File "<string>", line 35, in test_putapiusersmeupdateprofile
 AssertionError
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/2ce4ad32-cfa5-4159-88c8-2cd2d0bea157
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/508d47f9-37a2-4040-8e57-348401bf671e/b054724c-beea-48dc-8908-33272630a686
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -122,12 +122,11 @@ AssertionError
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 86, in <module>
-  File "<string>", line 41, in test_post_api_users_onboarding_complete_onboarding
-  File "<string>", line 38, in test_post_api_users_onboarding_complete_onboarding
-AssertionError
+  File "<string>", line 78, in <module>
+  File "<string>", line 27, in test_post_api_users_onboarding_complete_onboarding
+AssertionError: Register failed: {"error":"Muitas tentativas. Aguarda 15 minutos."}
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/116a94cc-6ac4-4471-b4cc-1b1a103a91d1
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/508d47f9-37a2-4040-8e57-348401bf671e/924dc23d-f0a6-40ef-9b72-8c39d9ba5540
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -137,41 +136,25 @@ AssertionError
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 54
-    b'\x1f\x1e\x1d\x19\x1c\x1c $.'" \' ",#\x1c\x1c(7),01444\x1f\'9=82<.342'
-                                        ^
-SyntaxError: cannot mix bytes and nonbytes literals
+  File "<string>", line 61, in <module>
+  File "<string>", line 18, in test_postapiuploadavatarwithvalidimage
+AssertionError: Register failed: {"error":"Muitas tentativas. Aguarda 15 minutos."}
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/3f4a7e6a-8e63-40b8-807c-e21a3eb1564a
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/508d47f9-37a2-4040-8e57-348401bf671e/0080873c-b4bd-4244-8610-84513ca8f182
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC011 getapistreamslive
 - **Test Code:** [TC011_getapistreamslive.py](./TC011_getapistreamslive.py)
-- **Test Error:** Traceback (most recent call last):
-  File "<string>", line 11, in test_getapistreamslive
-  File "/var/lang/lib/python3.12/site-packages/requests/models.py", line 1024, in raise_for_status
-    raise HTTPError(http_error_msg, response=self)
-requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://localhost:3001/api/streams?status=live&limit=20
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/var/task/handler.py", line 258, in run_with_retry
-    exec(code, exec_env)
-  File "<string>", line 26, in <module>
-  File "<string>", line 13, in test_getapistreamslive
-AssertionError: Request failed: 401 Client Error: Unauthorized for url: http://localhost:3001/api/streams?status=live&limit=20
-
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/7d095b35-b98d-412e-90c9-81b339ce28e3
-- **Status:** ❌ Failed
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/508d47f9-37a2-4040-8e57-348401bf671e/928fe023-e3dd-4642-9ba7-15017cce0c5d
+- **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC012 getapistreamscategories
 - **Test Code:** [TC012_getapistreamscategories.py](./TC012_getapistreamscategories.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/ab9630bf-e737-4b1a-bd7f-b92f37704139
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/508d47f9-37a2-4040-8e57-348401bf671e/b5600e2a-bd9b-4977-87ca-7038f179c7b7
 - **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -181,18 +164,18 @@ AssertionError: Request failed: 401 Client Error: Unauthorized for url: http://l
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 23, in <module>
-  File "<string>", line 18, in test_get_api_search_query
-AssertionError: Response JSON does not contain 'results' key
+  File "<string>", line 29, in <module>
+  File "<string>", line 27, in test_get_api_search_query
+AssertionError: 'results' key is not a list, got type dict
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/f26e2991-638a-496c-b6fd-016f2f67a173
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/508d47f9-37a2-4040-8e57-348401bf671e/c542a164-1c3a-4328-8d2e-a110927c801c
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC014 getapivodslist
 - **Test Code:** [TC014_getapivodslist.py](./TC014_getapivodslist.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/19b6072f-8e6a-4a90-ba14-851425a25d71
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/508d47f9-37a2-4040-8e57-348401bf671e/05467225-16f0-4879-9121-18d13075067c
 - **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -202,11 +185,11 @@ AssertionError: Response JSON does not contain 'results' key
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 43, in <module>
+  File "<string>", line 46, in <module>
   File "<string>", line 22, in test_get_api_streams_user_by_id
-AssertionError: Expected 201 Created, got 400
+AssertionError: Registration failed with status 429
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/532252f8-219e-4f82-8387-8c1651199eec
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/508d47f9-37a2-4040-8e57-348401bf671e/fdaa662a-c97b-4147-ad0f-a9825db4f7c2
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -216,11 +199,11 @@ AssertionError: Expected 201 Created, got 400
 - **Test Error:** Traceback (most recent call last):
   File "/var/task/handler.py", line 258, in run_with_retry
     exec(code, exec_env)
-  File "<string>", line 45, in <module>
-  File "<string>", line 24, in test_get_api_search_no_results
-AssertionError: Response JSON missing 'results' key
+  File "<string>", line 38, in <module>
+  File "<string>", line 30, in test_getapisearchnoresults
+AssertionError: 'results' should be a list
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/0f2cd640-f07e-4205-be5d-7523f7940c8b/b2a5cd79-e975-4ccc-8627-6f8bb8e1d90d
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/508d47f9-37a2-4040-8e57-348401bf671e/20a246d8-c780-4a40-92a8-3b7dfb3ca344
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -228,7 +211,7 @@ AssertionError: Response JSON missing 'results' key
 
 ## 3️⃣ Coverage & Matching Metrics
 
-- **18.75** of tests passed
+- **25.00** of tests passed
 
 | Requirement        | Total Tests | ✅ Passed | ❌ Failed  |
 |--------------------|-------------|-----------|------------|

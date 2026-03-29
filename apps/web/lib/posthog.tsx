@@ -8,9 +8,11 @@ const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://eu.i.posthog.com";
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
+    const hasKey = !!POSTHOG_KEY;
+
     useEffect(() => {
-        if (POSTHOG_KEY && typeof window !== "undefined") {
-            posthog.init(POSTHOG_KEY, {
+        if (hasKey && typeof window !== "undefined") {
+            posthog.init(POSTHOG_KEY!, {
                 api_host: POSTHOG_HOST,
                 person_profiles: "identified_only",
                 capture_pageview: true,
@@ -20,9 +22,10 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
                 autocapture: false,
             });
         }
-    }, []);
+    }, [hasKey]);
 
-    if (!POSTHOG_KEY) {
+    // Always render children — only wrap in PHProvider when key is available
+    if (!hasKey) {
         return <>{children}</>;
     }
 

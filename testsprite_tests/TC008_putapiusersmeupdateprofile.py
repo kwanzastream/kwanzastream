@@ -1,51 +1,79 @@
-"""TC008 — PUT /api/users/me update profile"""
 import requests
-import time
+import uuid
 import random
-import os
 
-BASE_URL = os.getenv("API_URL", "http://localhost:5000")
-TIMEOUT = 10
+BASE_URL = "http://localhost:5000"
+REGISTER_URL = f"{BASE_URL}/api/auth/register"
+LOGIN_URL = f"{BASE_URL}/api/auth/login"
+UPDATE_PROFILE_URL = f"{BASE_URL}/api/users/me"
+TIMEOUT = 30
 
-def _register_and_login():
-    ts = int(time.time())
-    rnd = random.randint(1000, 9999)
-    email = f"test_{ts}_{rnd}@kwanzastream.com"
-    password = "Aa1234567"
-    payload = {
-        "email": email,
-        "phone": f"+244{random.randint(900000000, 999999999)}",
-        "username": f"tester_{ts}_{rnd}",
-        "password": password
-    }
-    r = requests.post(f"{BASE_URL}/api/auth/register", json=payload, timeout=TIMEOUT)
-    assert r.status_code == 201, f"Register failed: {r.status_code}: {r.text}"
-
-    r2 = requests.post(f"{BASE_URL}/api/auth/login", json={"identifier": email, "password": password}, timeout=TIMEOUT)
-    assert r2.status_code == 200, f"Login failed: {r2.status_code}: {r2.text}"
-    login_data = r2.json()["data"]
-    return login_data
 
 def test_putapiusersmeupdateprofile():
-    login_data = _register_and_login()
-    token = login_data["accessToken"]
-    headers = {"Authorization": f"Bearer {token}"}
+    # Generate unique user data
+    unique_suffix = str(uuid.uuid4()).replace('-', '')[:8]
+    email = f"testuser_{unique_suffix}@example.com"
+    # Generate valid Angolan phone number: +244 + 9 digits, e.g. +2449XXXXXXXX
+    phone = "+2449" + ''.join(str(random.randint(0,9)) for _ in range(8))
+    username_original = f"testuser_{unique_suffix}"
+    password = "Aa12345678"
+    displayName_original = "Test User Original"
+    bio_original = "Original bio"
 
-    ts = int(time.time())
-    rnd = random.randint(1000, 9999)
-    update_payload = {
-        "displayName": "Nome Actualizado",
-        "username": f"updated_{ts}_{rnd}",
-        "bio": "Bio de teste actualizada."
+    # Register user
+    register_payload = {
+        "email": email,
+        "phone": phone,
+        "username": username_original,
+        "password": password
     }
-    resp = requests.put(f"{BASE_URL}/api/users/me", json=update_payload, headers=headers, timeout=TIMEOUT)
-    assert resp.status_code == 200, f"Esperado 200, recebeu {resp.status_code}: {resp.text}"
-    resp_json = resp.json()
-    user = resp_json.get("user")
-    assert user is not None, f"Missing 'user' in response: {resp_json}"
-    assert user.get("displayName") == update_payload["displayName"]
-    assert user.get("username") == update_payload["username"]
-    assert user.get("bio") == update_payload["bio"]
+    register_resp = requests.post(REGISTER_URL, json=register_payload, timeout=TIMEOUT)
+    assert register_resp.status_code == 201, f"Register failed: {register_resp.text}"
+    register_data = register_resp.json()
+    assert register_data.get("success") is True
+    user = register_data.get("user")
+    assert user is not None
 
-if __name__ == "__main__":
-    test_putapiusersmeupdateprofile()
+    # Login user
+    login_payload = {"identifier": email, "password": password}
+    session = requests.Session()
+    login_resp = session.post(LOGIN_URL, json=login_payload, timeout=TIMEOUT)
+    assert login_resp.status_code == 200, f"Login failed: {login_resp.text}"
+    login_data = login_resp.json()
+    assert login_data.get("success") is True
+    user_login = login_data.get("user")
+    assert user_login is not None
+
+    # Prepare updated profile data with new unique username
+    username_updated = f"updated_{unique_suffix}"
+    displayName_updated = "Updated DisplayName"
+    bio_updated = "This is an updated bio for the user."
+    avatar_url = "http://localhost:3000/images/avatar.png"
+
+    update_payload = {
+        "displayName": displayName_updated,
+        "username": username_updated,
+        "bio": bio_updated,
+        "avatarUrl": avatar_url
+    }
+
+    try:
+        # PUT update profile without Authorization header, the session manages cookie
+        update_resp = session.put(UPDATE_PROFILE_URL, json=update_payload, timeout=TIMEOUT)
+        assert update_resp.status_code == 200, f"Update profile failed: {update_resp.text}"
+        updated_data = update_resp.json()
+        updated_user = updated_data.get("user")
+        assert updated_user is not None
+        assert updated_user.get("displayName") == displayName_updated
+        assert updated_user.get("username") == username_updated
+        assert updated_user.get("bio") == bio_updated
+        # avatarUrl returned may be null or the same URL, if included check matches
+        avatar_returned = updated_user.get("avatarUrl")
+        if avatar_url:
+            assert avatar_returned == avatar_url or avatar_returned is None
+    finally:
+        # Cleanup: logout to clear session
+        session.post(f"{BASE_URL}/api/auth/logout", timeout=TIMEOUT)
+
+
+test_putapiusersmeupdateprofile()
